@@ -48,7 +48,7 @@ Source code is located at [BlogWrite](https://github.com/torum/BlogWrite) repo.
 Feel free to open issues and send PRs. 
 
 # Technologies, Frameworks, Libraries
-* [.NET 6](https://github.com/dotnet/runtime)  
+* [.NET 8](https://github.com/dotnet/runtime)  
 * [WinUI3 (Windows App SDK)](https://github.com/microsoft/WindowsAppSDK) 
 * [Community Toolkit](https://github.com/CommunityToolkit) 
 * [WinUIEx](https://github.com/dotMorten/WinUIEx)
