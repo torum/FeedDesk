@@ -1,0 +1,100 @@
+<Page
+    x:Class="FeedDesk.Views.FeedEditPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:FeedDesk.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    NavigationCacheMode="Disabled"
+     Background="{ThemeResource NavigationViewContentBackground}">
+    <Grid x:Name="ContentArea">
+        <ScrollViewer>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
+
+                    <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackCommand}">
+                        <!-- <SymbolIcon Symbol="Back" /> -->
+                        <Viewbox Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <PathIcon Margin="-2,-2,0,0" Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></PathIcon>
+                        </Viewbox>
+                    </Button>
+
+                </Border>
+
+                <Grid Grid.Row="1" Grid.Column="0">
+
+                    <StackPanel Margin="50,12,50,0" HorizontalAlignment="Left">
+
+                        <TextBlock x:Uid="FeedEditPage_Title_EditFeed" Margin="0,0,0,12" Style="{StaticResource PageTitleStyle}" />
+
+                        <StackPanel Margin="12,6,0,0">
+
+                            <TextBlock x:Uid="FeedEditPage_Property" Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+                            <StackPanel Margin="12,6,0,0">
+                                <TextBlock x:Uid="FeedEditPage_Feed_Name" Style="{ThemeResource BodyTextBlockStyle}" Margin="{StaticResource XSmallTopMargin}"/>
+                                <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}" Margin="{StaticResource XSmallTopMargin}" Width="300" MaxWidth="800" HorizontalAlignment="Left"></TextBox>
+                            </StackPanel>
+
+                            <StackPanel Margin="12,6,0,0">
+                                <Button x:Uid="FeedEditPage_Button_Update" Command="{x:Bind ViewModel.UpdateFeedItemPropertyCommand}" Margin="{StaticResource XSmallTopMargin}"></Button>
+                            </StackPanel>
+
+                        </StackPanel>
+
+                        <StackPanel Margin="12,12,0,0">
+
+                            <TextBlock Text="Data" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="{StaticResource SmallTopMargin}" Visibility="Collapsed"/>
+
+                            <StackPanel Margin="12,6,0,0">
+                                <TextBlock x:Uid="FeedEditPage_Feed_Url" Margin="{StaticResource XSmallTopMargin}"/>
+                                <HyperlinkButton NavigateUri="{x:Bind ViewModel.Feed.EndPoint, Mode=OneTime}" Content="{x:Bind ViewModel.Feed.EndPoint, Mode=OneTime}" Margin="{StaticResource XSmallTopMargin}" />
+
+                                <Button x:Uid="FeedEditPage_Button_CheckFeedValidity" Command="{x:Bind ViewModel.CheckIfFeedIsValidUsingValidatorCommand}" Margin="{StaticResource XSmallTopMargin}"></Button>
+
+                            </StackPanel>
+
+                            <StackPanel Margin="12,6,0,0">
+                                <TextBlock x:Uid="FeedEditPage_Feed_Title" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                <StackPanel Margin="12,6,0,0">
+                                    <TextBlock Text="{x:Bind ViewModel.Feed.Title,Mode=OneTime}" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Margin="12,6,0,0">
+                                <TextBlock x:Uid="FeedEditPage_Feed_Description" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                <StackPanel Margin="12,6,0,0">
+                                    <TextBlock Text="{x:Bind ViewModel.Feed.Description,Mode=OneTime}" TextWrapping="Wrap" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Margin="12,6,0,0">
+                                <TextBlock x:Uid="FeedEditPage_Feed_Link" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                <HyperlinkButton NavigateUri="{x:Bind ViewModel.Feed.HtmlUri.AbsoluteUri, Mode=OneTime}" Content="{x:Bind ViewModel.Feed.HtmlUri.AbsoluteUri, Mode=OneTime}" Margin="{StaticResource XSmallTopMargin}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="12,6,0,0">
+                                <TextBlock x:Uid="FeedEditPage_Feed_Updated" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                <StackPanel Margin="12,6,0,0">
+                                    <TextBlock Text="{x:Bind ViewModel.Feed.UpdatedDateTimeFormated,Mode=OneTime}" Margin="{StaticResource XSmallTopMargin}"></TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </StackPanel>
+
+                    </StackPanel>
+
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>
