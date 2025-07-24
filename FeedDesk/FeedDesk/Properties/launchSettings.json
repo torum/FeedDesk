@@ -4,8 +4,7 @@
       "commandName": "MsixPackage"
     },
     "FeedDesk (Unpackaged)": {
-      "commandName": "Project",
-      "nativeDebugging": false
+      "commandName": "Project"
     }
   }
 }

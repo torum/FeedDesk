@@ -6,27 +6,15 @@ namespace FeedDesk.Views;
 
 public sealed partial class SettingsPage : Page
 {
-    public SettingsViewModel ViewModel
+    public MainViewModel ViewModel
     {
         get;
     }
 
     public SettingsPage()
     {
-        ViewModel = App.GetService<SettingsViewModel>();
+        ViewModel = App.GetService<MainViewModel>();
 
-        try
-        {
-            InitializeComponent();
-        }
-        catch (XamlParseException parseException)
-        {
-            Debug.WriteLine($"Unhandled XamlParseException in SettingsPage: {parseException.Message}");
-            foreach (var key in parseException.Data.Keys)
-            {
-                Debug.WriteLine("{Key}:{Value}", key.ToString(), parseException.Data[key]?.ToString());
-            }
-            throw;
-        }
+        InitializeComponent();
     }
 }

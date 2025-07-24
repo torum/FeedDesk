@@ -5,8 +5,8 @@
     xmlns:local="using:FeedDesk.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="using:XmlClients.Core.Models"
-    NavigationCacheMode="Disabled"
+    xmlns:model="using:FeedDesk.Models"
+    NavigationCacheMode="Required"
     mc:Ignorable="d"
      Background="{ThemeResource NavigationViewContentBackground}">
     <Grid x:Name="ContentArea">
@@ -135,16 +135,16 @@
                                                             <!--
                                                 <Ellipse Grid.RowSpan="3" x:Name="Ellipse" Width ="24" Height="24" Margin="0,0,12,0" VerticalAlignment="Center" HorizontalAlignment="Center" Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>
 -->
-                                                            <PathIcon Data="{Binding IconPath, Mode=OneWay}" Width ="24" Height="24" Margin="0,0,12,0"></PathIcon>
+                                                            <PathIcon Data="{x:Bind IconPath, Mode=OneWay}" Width ="24" Height="24" Margin="0,0,12,0"></PathIcon>
 
                                                             <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="Bold" Text="Type:" Padding="3"/>
-                                                            <TextBlock Grid.Row="0" Grid.Column="2" FontWeight="Normal" Text="{Binding TypeText, Mode=OneWay}" Padding="3"/>
+                                                            <TextBlock Grid.Row="0" Grid.Column="2" FontWeight="Normal" Text="{x:Bind TypeText, Mode=OneWay}" Padding="3"/>
 
                                                             <TextBlock Grid.Row="1" Grid.Column="1" FontWeight="Bold" Text="Title:" Padding="3"/>
-                                                            <TextBlock Grid.Row="1" Grid.Column="2" FontWeight="Normal" Text="{Binding Title, Mode=OneWay}" Padding="3"/>
+                                                            <TextBlock Grid.Row="1" Grid.Column="2" FontWeight="Normal" Text="{x:Bind Title, Mode=OneWay}" Padding="3"/>
 
                                                             <TextBlock Grid.Row="2" Grid.Column="1" FontWeight="Bold" Text="Url:" Padding="3"/>
-                                                            <TextBlock Grid.Row="2" Grid.Column="2" FontWeight="Normal" Text="{Binding DisplayUrl, Mode=OneWay}" Padding="3"/>
+                                                            <TextBlock Grid.Row="2" Grid.Column="2" FontWeight="Normal" Text="{x:Bind DisplayUrl, Mode=OneWay}" Padding="3"/>
                                                         </Grid>
 
                                                     </DataTemplate>

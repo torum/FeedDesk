@@ -1,7 +1,9 @@
-﻿using XmlClients.Core.Helpers;
-using FeedDesk.Contracts.Services;
+﻿using FeedDesk.Helpers;
+using FeedDesk.Services.Contracts;
 using Microsoft.UI.Xaml;
 using Windows.Storage;
+using System.Threading.Tasks;
+using System;
 
 namespace FeedDesk.Services;
 
@@ -34,17 +36,17 @@ public class ThemeSelectorService : IThemeSelectorService
 
     public async Task SetRequestedThemeAsync()
     {
-        if (App.MainWindow.Content is FrameworkElement rootElement)
+        if (App.MainWnd?.Content is FrameworkElement rootElement)
         {
             rootElement.RequestedTheme = Theme;
 
-            TitleBarHelper.UpdateTitleBar(Theme, App.MainWindow);
+            TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
         }
 
         await Task.CompletedTask;
     }
 
-    private ElementTheme LoadThemeFromSettingsAsync()
+    private static ElementTheme LoadThemeFromSettingsAsync()
     {
         /*
         var themeName = await _localSettingsService.ReadSettingAsync<string>(SettingsKey);
@@ -70,7 +72,7 @@ public class ThemeSelectorService : IThemeSelectorService
         return ElementTheme.Default;
     }
 
-    private async Task SaveThemeInSettingsAsync(ElementTheme theme)
+    private static async Task SaveThemeInSettingsAsync(ElementTheme theme)
     {
         //await _localSettingsService.SaveSettingAsync(SettingsKey, theme.ToString());
 

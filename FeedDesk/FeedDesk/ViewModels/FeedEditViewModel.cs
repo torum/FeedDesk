@@ -1,16 +1,20 @@
-﻿using System.Web;
-using System.Windows.Input;
-using XmlClients.Core.Models;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FeedDesk.Contracts.Services;
-using FeedDesk.Contracts.ViewModels;
+using FeedDesk.Models;
+using FeedDesk.Services.Contracts;
+using FeedDesk.Views;
+using Microsoft.UI.Xaml.Media.Animation;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Web;
+using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
 
-public class FeedEditViewModel : ObservableRecipient, INavigationAware
+public class FeedEditViewModel : ObservableRecipient
 {
-    private readonly INavigationService _navigationService;
+    //private readonly INavigationService _navigationService;
 
     #region == Properties ==
 
@@ -49,9 +53,9 @@ public class FeedEditViewModel : ObservableRecipient, INavigationAware
 
     #endregion
 
-    public FeedEditViewModel(INavigationService navigationService)
+    public FeedEditViewModel()
     {
-        _navigationService = navigationService;
+        //_navigationService = navigationService;
 
         GoBackCommand = new RelayCommand(OnGoBack);
         UpdateFeedItemPropertyCommand = new RelayCommand(OnUpdateFeedItemProperty);
@@ -63,6 +67,7 @@ public class FeedEditViewModel : ObservableRecipient, INavigationAware
 
     public void OnNavigatedTo(object parameter)
     {
+        Debug.WriteLine("OnNavigatedTo FeedEditViewModel");
         Feed = null;
         Name = "";
 
@@ -82,10 +87,14 @@ public class FeedEditViewModel : ObservableRecipient, INavigationAware
 
     private void OnGoBack()
     {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+        /*
         if (_navigationService.CanGoBack)
         {
             _navigationService.GoBack();
         }
+        */
     }
 
     private void OnCheckIfFeedIsValidUsingValidator()
@@ -122,7 +131,9 @@ public class FeedEditViewModel : ObservableRecipient, INavigationAware
                 
             }
 
-            _navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+            var shell = App.GetService<ShellPage>();
+            _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+            //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
         }
     }
 }

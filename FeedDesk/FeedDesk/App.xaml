@@ -1,13 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Application
     x:Class="FeedDesk.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:FeedDesk"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
     xmlns:animatedvisuals="using:Microsoft.UI.Xaml.Controls.AnimatedVisuals"
-    xmlns:helpers="using:XmlClients.Core.Helpers">
+    xmlns:helpers="using:FeedDesk.Helpers">
     <Application.Resources>
         <ResourceDictionary>
+
+
 
             <x:Double x:Key="BodyTextBlockFontSize">24</x:Double>
 
@@ -16,15 +20,19 @@
             <helpers:ElementThemeEnumToBooleanConverter x:Key="ElementThemeEnumToBooleanConverter" />
             <helpers:SystemBackdropEnumToBooleanConverter x:Key="SystemBackdropEnumToBooleanConverter" />
 
-            <ResourceDictionary.MergedDictionaries>
 
+
+
+            <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                
+                <!-- Other merged dictionaries here -->
+
+
                 <ResourceDictionary Source="ms-appx:///Styles/Colors.xaml"/>
                 <ResourceDictionary Source="ms-appx:///Styles/FontSizes.xaml"/>
-                <ResourceDictionary Source="ms-appx:///Styles/Thickness.xaml"/>
                 <ResourceDictionary Source="ms-appx:///Styles/TextBlock.xaml"/>
-                
+                <ResourceDictionary Source="ms-appx:///Styles/Thickness.xaml"/>
+
                 <ResourceDictionary>
 
                     <x:Double x:Key="MenuBarHeight">29</x:Double>
@@ -137,6 +145,7 @@
                 </ResourceDictionary>
 
             </ResourceDictionary.MergedDictionaries>
+            <!-- Other app resources here -->
 
         </ResourceDictionary>
     </Application.Resources>

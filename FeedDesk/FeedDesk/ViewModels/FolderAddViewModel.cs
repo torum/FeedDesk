@@ -1,15 +1,16 @@
-﻿using System.Windows.Input;
-using XmlClients.Core.Models;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FeedDesk.Contracts.Services;
-using FeedDesk.Contracts.ViewModels;
+using FeedDesk.Models;
+using FeedDesk.Services.Contracts;
+using FeedDesk.Views;
+using Microsoft.UI.Xaml.Media.Animation;
+using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
 
-public class FolderAddViewModel : ObservableRecipient, INavigationAware
+public class FolderAddViewModel : ObservableRecipient
 {
-    private readonly INavigationService _navigationService;
+    //private readonly INavigationService _navigationService;
 
     #region == Properties ==
     
@@ -46,9 +47,9 @@ public class FolderAddViewModel : ObservableRecipient, INavigationAware
 
     #endregion
 
-    public FolderAddViewModel(INavigationService navigationService)
+    public FolderAddViewModel()
     {
-        _navigationService = navigationService;
+        //_navigationService = navigationService;
 
         GoBackCommand = new RelayCommand(OnGoBack);
         AddFolderItemPropertyCommand = new RelayCommand(OnAddFolderItemProperty);
@@ -77,10 +78,14 @@ public class FolderAddViewModel : ObservableRecipient, INavigationAware
 
     private void OnGoBack()
     {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+        /*
         if (_navigationService.CanGoBack)
         {
             _navigationService.GoBack();
         }
+        */
     }
 
     private void OnAddFolderItemProperty()
@@ -100,7 +105,10 @@ public class FolderAddViewModel : ObservableRecipient, INavigationAware
 
                 folder.IsSelected = true;
 
-                _navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+                //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+
+                var shell = App.GetService<ShellPage>();
+                _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
             }
         }
     }

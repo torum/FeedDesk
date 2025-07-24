@@ -1,15 +1,16 @@
-﻿using System.Windows.Input;
-using FeedDesk.Contracts.Services;
-using FeedDesk.Contracts.ViewModels;
-using XmlClients.Core.Models;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FeedDesk.Models;
+using FeedDesk.Services.Contracts;
+using FeedDesk.Views;
+using Microsoft.UI.Xaml.Media.Animation;
+using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
 
-public class FolderEditViewModel : ObservableRecipient, INavigationAware
+public class FolderEditViewModel : ObservableRecipient
 {
-    private readonly INavigationService _navigationService;
+    //private readonly INavigationService _navigationService;
 
     #region == Properties ==
     
@@ -44,9 +45,9 @@ public class FolderEditViewModel : ObservableRecipient, INavigationAware
 
     #endregion
 
-    public FolderEditViewModel(INavigationService navigationService)
+    public FolderEditViewModel()
     {
-        _navigationService = navigationService;
+        //_navigationService = navigationService;
 
         GoBackCommand = new RelayCommand(OnGoBack);
         UpdateFolderItemPropertyCommand = new RelayCommand(OnUpdateFolderItemProperty);
@@ -76,10 +77,14 @@ public class FolderEditViewModel : ObservableRecipient, INavigationAware
 
     private void OnGoBack()
     {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+        /*
         if (_navigationService.CanGoBack)
         {
             _navigationService.GoBack();
         }
+        */
     }
 
 
@@ -91,7 +96,11 @@ public class FolderEditViewModel : ObservableRecipient, INavigationAware
             {
                 Folder.Name = Name;
             }
-            _navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+
+            var shell = App.GetService<ShellPage>();
+            _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+
+            //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
         }
     }
 }

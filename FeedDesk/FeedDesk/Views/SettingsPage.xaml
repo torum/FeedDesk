@@ -4,10 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:helpers="using:XmlClients.Core.Helpers"
+    xmlns:helpers="using:FeedDesk.Helpers"
     xmlns:xaml="using:Microsoft.UI.Xaml"
-    xmlns:vm="usging:FeedDesk.ViewModels"
-    NavigationCacheMode="Required"
+    xmlns:vm="usging:FeedDesk.ViewModels" 
+    xmlns:viewmodels="using:FeedDesk.ViewModels" 
+    d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
+    NavigationCacheMode="Enabled"
     mc:Ignorable="d" Background="{ThemeResource NavigationViewContentBackground}">
     <Grid x:Name="ContentArea">
         <Grid.RowDefinitions>
@@ -20,7 +22,8 @@
 
         <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
 
-            <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackCommand}">
+            <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackToMainCommand}" >
+                <!--   -->
                 <!-- <SymbolIcon Symbol="Back" /> -->
                 <Viewbox Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <PathIcon Margin="-2,-2,0,0" Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></PathIcon>
@@ -31,7 +34,7 @@
 
         <Grid Grid.Row="1" Grid.Column="0">
             <ScrollViewer>
-                
+
                 <StackPanel Margin="50,12,0,0">
 
                     <TextBlock x:Uid="Settings" Margin="0,0,0,12" Style="{StaticResource PageTitleStyle}" />
@@ -48,20 +51,20 @@
                                     <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
 
                                         <StackPanel Margin="{StaticResource XSmallTopMargin}">
-                                            
+
                                             <TextBlock x:Uid="Settings_Theme" Margin="0,0,0,12" />
 
-                                            <RadioButton x:Uid="Settings_Theme_Light" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
+                                            <RadioButton x:Uid="Settings_Theme_Light" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.EleTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
                                                 <RadioButton.CommandParameter>
                                                     <xaml:ElementTheme>Light</xaml:ElementTheme>
                                                 </RadioButton.CommandParameter>
                                             </RadioButton>
-                                            <RadioButton x:Uid="Settings_Theme_Dark" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
+                                            <RadioButton x:Uid="Settings_Theme_Dark" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.EleTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
                                                 <RadioButton.CommandParameter>
                                                     <xaml:ElementTheme>Dark</xaml:ElementTheme>
                                                 </RadioButton.CommandParameter>
                                             </RadioButton>
-                                            <RadioButton x:Uid="Settings_Theme_Default" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Default, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
+                                            <RadioButton x:Uid="Settings_Theme_Default" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.EleTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Default, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
                                                 <RadioButton.CommandParameter>
                                                     <xaml:ElementTheme>Default</xaml:ElementTheme>
                                                 </RadioButton.CommandParameter>
@@ -173,7 +176,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
                                     </StackPanel>
 
                                     <StackPanel Margin="0,0,0,48"></StackPanel>
-                                    
+
                                 </StackPanel>
 
                             </ScrollViewer>
@@ -182,7 +185,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
                     </Pivot>
 
                 </StackPanel>
-                
+
             </ScrollViewer>
         </Grid>
 

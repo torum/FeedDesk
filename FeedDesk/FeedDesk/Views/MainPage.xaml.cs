@@ -1,9 +1,11 @@
-﻿using XmlClients.Core.Helpers;
-using XmlClients.Core.Models;
+﻿using FeedDesk.Helpers;
+using FeedDesk.Models;
 using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
+using System;
+using System.Collections.Generic;
 using Windows.Storage;
 
 namespace FeedDesk.Views;
@@ -21,19 +23,7 @@ public sealed partial class MainPage : Page
     {
         ViewModel = App.GetService<MainViewModel>();
 
-        try
-        {
-            InitializeComponent();
-        }
-        catch (XamlParseException parseException)
-        {
-            Debug.WriteLine($"Unhandled XamlParseException in FeedsPage: {parseException.Message}");
-            foreach (var key in parseException.Data.Keys)
-            {
-                Debug.WriteLine("{Key}:{Value}", key.ToString(), parseException.Data[key]?.ToString());
-            }
-            throw;
-        }
+        InitializeComponent();
 
         //
         ViewModel.ShowWaitDialog += (sender, arg) => { OnShowWaitDialog(arg); };
@@ -128,8 +118,10 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private async void ListViewEntryItem_DoubleTappedAsync(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    /*
+        private async void ListViewEntryItem_DoubleTappedAsync(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
+
         if (ListViewEntryItem.SelectedItem is EntryItem item)
         {
             if (item != null)
@@ -141,9 +133,11 @@ public sealed partial class MainPage : Page
             }
         }
     }
+    */
 
     private void ListViewEntryItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
+        // right click select.
         if (e.OriginalSource is FrameworkElement)
         {
             if (((FrameworkElement)e.OriginalSource).DataContext is FeedEntryItem item)
@@ -220,6 +214,7 @@ public sealed partial class MainPage : Page
 
     private void TreeView_DragItemsCompleted(TreeView sender, TreeViewDragItemsCompletedEventArgs args)
     {
+        // TODO: cast
         foreach (NodeTree item in args.Items)
         {
 
@@ -277,10 +272,24 @@ public sealed partial class MainPage : Page
     {
         ViewModel.WidthDetailPane = col2.ActualWidth;
     }
-
+    
     private void ListViewEntryItem_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        //
-        DetailsPaneScrollViewer.ChangeView(0,0,1);
+        // reset scrollviewer pos.
+        DetailsPaneScrollViewer.ChangeView(0, 0, 1);
+    }
+
+    private async void ListViewEntryItem_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    {
+        if (ListViewEntryItem.SelectedItem is EntryItem item)
+        {
+            if (item != null)
+            {
+                if (item.AltHtmlUri != null)
+                {
+                    await Windows.System.Launcher.LaunchUriAsync(item.AltHtmlUri);
+                }
+            }
+        }
     }
 }

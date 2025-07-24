@@ -1,34 +1,43 @@
-﻿using System.Collections;
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using System.Text.Json.Nodes;
-using XmlClients.Core.Contracts.Services;
-using XmlClients.Core.Helpers;
-using XmlClients.Core.Services;
-using FeedDesk.Activation;
-using FeedDesk.Contracts.Services;
-using FeedDesk.Services;
+﻿using FeedDesk.Services;
+using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
 using FeedDesk.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
-using Windows.Storage;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Xaml.Shapes;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
+using System.Threading.Tasks;
+using Windows.ApplicationModel;
+using Windows.ApplicationModel.Activation;
+using Windows.Foundation;
+using Windows.Foundation.Collections;
+using Windows.UI.ApplicationSettings;
 
 namespace FeedDesk;
 
 public partial class App : Application
 {
     // AppDataFolder
-    //private static readonly ResourceLoader _resourceLoader = new();
     private static readonly string _appName = "FeedDesk";//_resourceLoader.GetString("AppName");
     private static readonly string _appDeveloper = "torum";
     private static readonly string _envDataFolder = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
     public static readonly string AppName = _appName;
     public static string AppDataFolder { get; } = _envDataFolder + System.IO.Path.DirectorySeparatorChar + _appDeveloper + System.IO.Path.DirectorySeparatorChar + _appName;
-    public static string AppConfigFilePath { get; } = Path.Combine(AppDataFolder, _appName + ".config");
-
+    public static string AppConfigFilePath { get; } = System.IO.Path.Combine(AppDataFolder, _appName + ".config");
 
     // DispatcherQueue
     private static readonly Microsoft.UI.Dispatching.DispatcherQueue _currentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
@@ -39,13 +48,18 @@ public partial class App : Application
     public string LogFilePath = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + System.IO.Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
     private readonly StringBuilder Errortxt = new();
 
+
     public const string BackdropSettingsKey = "AppSystemBackdropOption";
 
-    // MainWindow
-    public static WindowEx MainWindow { get; } = new MainWindow();
     public static UIElement? AppTitlebar
     {
         get; set;
+    }
+
+    // MainWindow
+    public static MainWindow? MainWnd
+    {
+        get; private set;
     }
 
     public IHost Host
@@ -84,7 +98,7 @@ public partial class App : Application
         ConfigureServices((context, services) =>
         {
             // Default Activation Handler
-            services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
+            //services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
 
             // Other Activation Handlers
             //services.AddTransient<IActivationHandler, AppNotificationActivationHandler>();
@@ -94,9 +108,9 @@ public partial class App : Application
             //services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
             services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
             //services.AddTransient<IWebViewService, WebViewService>();
-            services.AddSingleton<IActivationService, ActivationService>();
-            services.AddSingleton<IPageService, PageService>();
-            services.AddSingleton<INavigationService, NavigationService>();
+            //services.AddSingleton<IActivationService, ActivationService>();
+            //services.AddSingleton<IPageService, PageService>();
+            //services.AddSingleton<INavigationService, NavigationService>();
             //services.AddTransient<INavigationViewService, NavigationViewService>();
 
             // Core Services
@@ -108,35 +122,33 @@ public partial class App : Application
             services.AddSingleton<IOpmlService, OpmlService>();
 
             // Views and ViewModels
-            services.AddSingleton<SettingsViewModel>();
+            //services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<SettingsPage>();
-            services.AddTransient<FeedAddViewModel>();
-            services.AddTransient<FeedAddPage>();
-            services.AddTransient<FeedEditViewModel>();
-            services.AddTransient<FeedEditPage>();
-            services.AddTransient<FolderEditViewModel>();
-            services.AddTransient<FolderEditPage>();
-            services.AddTransient<FolderAddViewModel>();
-            services.AddTransient<FolderAddPage>();
+            services.AddSingleton<FeedAddViewModel>();
+            services.AddSingleton<FeedAddPage>();
+            services.AddSingleton<FeedEditViewModel>();
+            services.AddSingleton<FeedEditPage>();
+            services.AddSingleton<FolderEditViewModel>();
+            services.AddSingleton<FolderEditPage>();
+            services.AddSingleton<FolderAddViewModel>();
+            services.AddSingleton<FolderAddPage>();
+            services.AddSingleton<MainWindow>();
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainPage>();
             services.AddSingleton<ShellPage>();
-            services.AddSingleton<ShellViewModel>();
 
             // Configuration
             //services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
         }).
         Build();
 
-        //App.GetService<IAppNotificationService>().Initialize();
 
-        // 
         Microsoft.UI.Xaml.Application.Current.UnhandledException += App_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
     }
 
-    protected async override void OnLaunched(LaunchActivatedEventArgs args)
+    protected async override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
 
@@ -160,9 +172,7 @@ public partial class App : Application
             Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().Activated += App_Activated;
         }
 
-
-
-
+        /*
         // WinUIEx Storage option.
         if (!RuntimeHelper.IsMSIX)
         {
@@ -174,21 +184,34 @@ public partial class App : Application
 
             WinUIEx.WindowManager.PersistenceStorage = new FilePersistence(Path.Combine(AppDataFolder, "WinUIExPersistence.json"));
         }
-        
+        */
         // Nortification example.
         //App.GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
 
-        await App.GetService<IActivationService>().ActivateAsync(args);
+
+        // Testing
+        //await App.GetService<IActivationService>().ActivateAsync(args);
+        
+        //MainWnd = new();
+        MainWnd = App.GetService<MainWindow>();
+        //(MainWindow.Content as ShellPage)!.NavFrame.Content = App.GetService<MainPage>();
+        MainWnd.Content = App.GetService<ShellPage>();
+        //MainWindow?.Activate();
+        MainWnd.AppWindow.Show();
+
+        //(MainWnd.Content as ShellPage)!.NavFrame?.Navigate(typeof(Views.MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
     }
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)
     {
         CurrentDispatcherQueue?.TryEnqueue(() =>
         {
-            MainWindow.Activate();
-            MainWindow.BringToFront();
+            MainWnd?.Activate();
+            // TODO:
+            //MainWindow?.BringToFront();
         });
     }
+
 
     #region == UnhandledException ==
 
@@ -280,88 +303,4 @@ public partial class App : Application
     }
 
     #endregion
-
-    #region == FilePersistence for WinUIEx ==
-
-    private class FilePersistence : IDictionary<string, object>
-    {
-        private readonly Dictionary<string, object> _data = [];
-        private readonly string _file;
-
-        public FilePersistence(string filename)
-        {
-            _file = filename;
-            try
-            {
-                if (File.Exists(filename))
-                {
-                    if (JsonNode.Parse(File.ReadAllText(filename)) is JsonObject jo)
-                    {
-                        foreach (var node in jo)
-                        {
-                            if (node.Value is JsonValue jvalue && jvalue.TryGetValue<string>(out var value))
-                            {
-                                _data[node.Key] = value;
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-        }
-        private void Save()
-        {
-            var jo = new JsonObject();
-            foreach (var item in _data)
-            {
-                if (item.Value is string s) // In this case we only need string support. TODO: Support other types
-                {
-                    jo.Add(item.Key, s);
-                }
-            }
-            File.WriteAllText(_file, jo.ToJsonString());
-        }
-        public object this[string key] { get => _data[key]; set { _data[key] = value; Save(); } }
-
-        public ICollection<string> Keys => _data.Keys;
-
-        public ICollection<object> Values => _data.Values;
-
-        public int Count => _data.Count;
-
-        public bool IsReadOnly => false;
-
-        public void Add(string key, object value)
-        {
-            _data.Add(key, value); Save();
-        }
-
-        public void Add(KeyValuePair<string, object> item)
-        {
-            _data.Add(item.Key, item.Value); Save();
-        }
-
-        public void Clear()
-        {
-            _data.Clear(); Save();
-        }
-
-        public bool Contains(KeyValuePair<string, object> item) => _data.Contains(item);
-
-        public bool ContainsKey(string key) => _data.ContainsKey(key);
-
-        public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) => throw new NotImplementedException();
-
-        public IEnumerator<KeyValuePair<string, object>> GetEnumerator() => throw new NotImplementedException();
-
-        public bool Remove(string key) => throw new NotImplementedException();
-
-        public bool Remove(KeyValuePair<string, object> item) => throw new NotImplementedException();
-
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value) => throw new NotImplementedException();
-
-        IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
-    }
-
-    #endregion
-}
+} 

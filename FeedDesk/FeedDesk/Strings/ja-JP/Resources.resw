@@ -313,7 +313,7 @@
     <value>コメントページ</value>
   </data>
   <data name="MainPage_DetailsPane_Content.Text" xml:space="preserve">
-    <value>コンテンツ</value>
+    <value>本文</value>
   </data>
   <data name="MainPage_DetailsPane_Published.Text" xml:space="preserve">
     <value>公開日時</value>
@@ -402,11 +402,11 @@
   <data name="FeedEntryItem_Published_Year" xml:space="preserve">
     <value>年</value>
   </data>
-  <data name="MainPage_DetailsPane_PlayAudio.Content" xml:space="preserve">
-    <value>オーディオを再生</value>
-  </data>
   <data name="MainPage_DetailsPane_CopyURL.Content" xml:space="preserve">
     <value>URLをコピー</value>
+  </data>
+  <data name="MainPage_DetailsPane_PlayAudio.Content" xml:space="preserve">
+    <value>オーディオを再生</value>
   </data>
   <data name="AppBarButton_Add_Feed.Label" xml:space="preserve">
     <value>フィード</value>
@@ -428,5 +428,23 @@
   </data>
   <data name="WaitDialog_Title" xml:space="preserve">
     <value>お待ちください・・・</value>
+  </data>
+  <data name="AppBarButton_Add_Feed.ToolTipService.ToolTip" xml:space="preserve">
+    <value>フィードの追加 (Ctrl+N)</value>
+  </data>
+  <data name="AppBarButton_Add_Folder.ToolTipService.ToolTip" xml:space="preserve">
+    <value>フォルダーの追加</value>
+  </data>
+  <data name="AppBarButton_Refresh.ToolTipService.ToolTip" xml:space="preserve">
+    <value>すべて更新 (Ctrl+R)</value>
+  </data>
+  <data name="AppBarButton_Archive.ToolTipService.ToolTip" xml:space="preserve">
+    <value>すべてアーカイブ (Ctrl+A)</value>
+  </data>
+  <data name="ShellMenuBarItem_Entry_View_Inbox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>インボックス</value>
+  </data>
+  <data name="ShellMenuBarItem_Entry_View_All.ToolTipService.ToolTip" xml:space="preserve">
+    <value>全て</value>
   </data>
 </root>

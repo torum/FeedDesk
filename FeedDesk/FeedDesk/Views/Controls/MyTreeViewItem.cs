@@ -1,11 +1,11 @@
-﻿using XmlClients.Core.Models;
+﻿using FeedDesk.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using DataPackageOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation;
 
-namespace FeedDesk.Views;
+namespace FeedDesk.Views.Controls;
 
-class MyTreeViewItem : TreeViewItem
+internal partial class MyTreeViewItem : TreeViewItem
 {
     protected override void OnDragEnter(DragEventArgs e)
     {
@@ -19,7 +19,7 @@ class MyTreeViewItem : TreeViewItem
         var draggedItem = MainPage.DraggedItems[0];
         var draggedOverItem = DataContext as NodeTree;
 
-        if ((draggedItem is NodeFolder) && (draggedOverItem is NodeFolder) || (draggedItem is NodeFeed) && (draggedOverItem is NodeFolder))
+        if (draggedItem is NodeFolder && draggedOverItem is NodeFolder || draggedItem is NodeFeed && draggedOverItem is NodeFolder)
         {
             //e.Handled = true;
         }
@@ -58,7 +58,7 @@ class MyTreeViewItem : TreeViewItem
         //
 
         // only allow a feed move into a folder
-        if ((draggedItem is NodeFeed) && (draggedOverItem is NodeFolder))
+        if (draggedItem is NodeFeed && draggedOverItem is NodeFolder)
         {
             // same place is meaningless
             if (draggedItem.Parent == draggedOverItem)
@@ -77,7 +77,7 @@ class MyTreeViewItem : TreeViewItem
                 e.AcceptedOperation = DataPackageOperation.Move;
             }
         }
-        else if ((draggedItem is NodeFolder) && (draggedOverItem is NodeFolder))
+        else if (draggedItem is NodeFolder && draggedOverItem is NodeFolder)
         {
             // same place is meaningless
             if (draggedItem.Parent == draggedOverItem)
@@ -118,11 +118,11 @@ class MyTreeViewItem : TreeViewItem
         var draggedItem = MainPage.DraggedItems[0];
         var draggedOverItem = DataContext as NodeTree;
 
-        if ((draggedItem is NodeFeed) && (draggedOverItem is NodeFolder))
+        if (draggedItem is NodeFeed && draggedOverItem is NodeFolder)
         {
             // ok
         }
-        else if ((draggedItem is NodeFolder) && (draggedOverItem is NodeFolder)) 
+        else if (draggedItem is NodeFolder && draggedOverItem is NodeFolder) 
         { 
             // OK
         }

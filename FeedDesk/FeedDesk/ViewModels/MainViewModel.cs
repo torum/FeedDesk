@@ -1,24 +1,203 @@
-﻿using System.Collections.ObjectModel;
-using System.Xml;
-using XmlClients.Core.Contracts.Services;
-using XmlClients.Core.Helpers;
-using XmlClients.Core.Models;
-using XmlClients.Core.Models.Clients;
-using XmlClients.Core.Services;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FeedDesk.Contracts.Services;
-using FeedDesk.Contracts.ViewModels;
+using FeedDesk.Helpers;
+using FeedDesk.Models;
+using FeedDesk.Models.Clients;
+using FeedDesk.Services;
+using FeedDesk.Services.Contracts;
+using FeedDesk.Views;
+using Microsoft.UI.Composition.SystemBackdrops;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Xml;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Media.Core;
+using Windows.Storage;
 using WinRT.Interop;
 
 namespace FeedDesk.ViewModels;
 
-public partial class MainViewModel : ObservableRecipient, INavigationAware
+public partial class MainViewModel : ObservableRecipient//, INavigationAware
 {
+    #region == Moved from setting ==
+
+    private ElementTheme _elementTheme = ElementTheme.Default;
+    public ElementTheme EleTheme
+    {
+        get => _elementTheme;
+        set => SetProperty(ref _elementTheme, value);
+    }
+
+    private SystemBackdropOption _material = SystemBackdropOption.Mica;
+    public SystemBackdropOption Material
+    {
+        get => _material;
+        set => SetProperty(ref _material, value);
+    }
+
+    private bool _isAcrylicSupported;
+    public bool IsAcrylicSupported
+    {
+        get => _isAcrylicSupported;
+        set => SetProperty(ref _isAcrylicSupported, value);
+    }
+
+    private bool _isSystemBackdropSupported = true;
+    public bool IsSystemBackdropSupported
+    {
+        get => _isSystemBackdropSupported;
+        set => SetProperty(ref _isSystemBackdropSupported, value);
+    }
+
+#pragma warning disable IDE0079
+#pragma warning disable CA1822
+    public string VersionText
+#pragma warning restore CA1822
+#pragma warning restore IDE0079
+    {
+        get
+        {
+            Version version;
+
+            if (RuntimeHelper.IsMSIX)
+            {
+                var packageVersion = Package.Current.Id.Version;
+
+                version = new(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
+            }
+            else
+            {
+                version = Assembly.GetExecutingAssembly().GetName().Version!;
+                //Debug.WriteLine("asdf" + Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            }
+
+            return $"{"Version".GetLocalized()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        }
+    }
+
+
+    [RelayCommand]
+    private async Task SwitchTheme(ElementTheme? param)
+    {
+        if (param is null)
+        {
+            return;
+        }
+
+        if (EleTheme != param)
+        {
+            EleTheme = (ElementTheme)param;
+            await _themeSelectorService.SetThemeAsync((ElementTheme)param);
+        }
+    }
+
+    [RelayCommand]
+    private void SwitchSystemBackdrop(string? backdrop)
+    {
+        if (backdrop != null)
+        {
+            if (App.MainWnd is not null)
+            {
+                if (backdrop == "Mica")
+                {
+                    if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported() || Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+                    {
+                        App.MainWnd.SystemBackdrop = new MicaBackdrop()
+                        {
+                            Kind = MicaKind.Base
+                        };
+                        if (RuntimeHelper.IsMSIX)
+                        {
+                            ApplicationData.Current.LocalSettings.Values[App.BackdropSettingsKey] = SystemBackdropOption.Mica.ToString();
+                        }
+                        Material = SystemBackdropOption.Mica;
+                    }
+                }
+                else if (backdrop == "Acrylic")
+                {
+                    if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+                    {
+                        App.MainWnd.SystemBackdrop = new DesktopAcrylicBackdrop();
+                        if (RuntimeHelper.IsMSIX)
+                        {
+                            ApplicationData.Current.LocalSettings.Values[App.BackdropSettingsKey] = SystemBackdropOption.Acrylic.ToString();
+                        }
+                        Material = SystemBackdropOption.Acrylic;
+                    }
+                }
+            }
+        }
+    }
+
+    #endregion
+
+
+    #region == Moved from shell ==
+
+    /*
+    private bool _isBackEnabled;
+    public bool IsBackEnabled
+    {
+        get => _isBackEnabled;
+        set => SetProperty(ref _isBackEnabled, value);
+    }
+    */
+    [RelayCommand]
+    private static void MenuFileExit() => App.Current.Exit();
+
+    [RelayCommand]
+    private static void MenuSettings()
+    {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(SettingsPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
+    } //=> NavigationService.NavigateTo(typeof(SettingsViewModel).FullName!);
+
+    [RelayCommand]
+    private static void GoBackToMain()
+    {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+    }
+
+    /*
+    [RelayCommand]
+    private static void MenuGoToMain()
+    {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+    } //=> NavigationService.NavigateTo(typeof(MainViewModel).FullName!);
+    */
+
+    [RelayCommand]
+    private static async Task MenuHelpProjectPage()
+    {
+        var projectUri = new Uri("https://torum.github.io/FeedDesk/");
+
+        await Windows.System.Launcher.LaunchUriAsync(projectUri);
+    }
+
+    [RelayCommand]
+    private static async Task MenuHelpProjectGitHub()
+    {
+        var projectUri = new Uri("https://github.com/torum/FeedDesk");
+
+        await Windows.System.Launcher.LaunchUriAsync(projectUri);
+    }
+
+    #endregion
 
     #region == Service Treeview ==
 
@@ -94,21 +273,21 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                     // NodeFeed is selected
                     if (_selectedTreeViewItem is NodeFeed nfeed)
                     {
-                        Entries = new ObservableCollection<EntryItem>();
+                        Entries = [];
                         
                         LoadEntriesAwaiter(nfeed);
                     }
                     else
                     {
                         // TODO: 
-                        Entries = new ObservableCollection<EntryItem>();
+                        Entries = [];
                     }
                 }
                 else if (_selectedTreeViewItem is NodeFolder folder)
                 {
                     IsShowInboxEntries = folder.IsDisplayUnarchivedOnly;
 
-                    Entries = new ObservableCollection<EntryItem>();
+                    Entries = [];
 
                     LoadEntriesAwaiter(folder);
                     /*
@@ -163,7 +342,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
     //[NotifyCanExecuteChangedFor(nameof(EntryArchiveAllCommand))]
     //private ObservableCollection<EntryItem> entries = new();
 
-    private ObservableCollection<EntryItem> _entries = new();
+    private ObservableCollection<EntryItem> _entries = [];
     public ObservableCollection<EntryItem> Entries
     {
         get => _entries;
@@ -588,6 +767,24 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
     #endregion
 
+    #region == Options ==
+
+    private double _widthLeftPane = 256;
+    public double WidthLeftPane
+    {
+        get => _widthLeftPane;
+        set => SetProperty(ref _widthLeftPane, value);
+    }
+
+    private double _widthDetailPane = 256;
+    public double WidthDetailPane
+    {
+        get => _widthDetailPane;
+        set => SetProperty(ref _widthDetailPane, value);
+    }
+
+    #endregion
+
     #region == Events ==
 
     public event EventHandler<bool>? ShowWaitDialog;
@@ -654,8 +851,6 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
     #region == Services ==
 
-    private readonly INavigationService _navigationService;
-
     private readonly IFileDialogService _fileDialogService;
 
     private readonly IDataAccessService _dataAccessService;
@@ -664,42 +859,60 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
     private readonly IOpmlService _opmlService;
 
-    #endregion
-
-    #region == Options ==
-
-    private double _widthLeftPane = 256;
-    public double WidthLeftPane
-    {
-        get => _widthLeftPane;
-        set => SetProperty(ref _widthLeftPane, value);
-    }
-
-    private double _widthDetailPane = 256;
-    public double WidthDetailPane
-    {
-        get => _widthDetailPane;
-        set => SetProperty(ref _widthDetailPane, value);
-    }
+    private readonly IThemeSelectorService _themeSelectorService;
 
     #endregion
 
-    public MainViewModel(INavigationService navigationService, IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService, IThemeSelectorService themeSelectorService)
     {
-        _navigationService = navigationService;
-        _navigationService.Navigated += OnNavigated;
+
+
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
         _feedClientService = feedClientService;
         _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
         _opmlService = opmlService;
-        
+        _themeSelectorService = themeSelectorService;
+        _elementTheme = _themeSelectorService.Theme;
+
         InitializeFeedTree();
         InitializeDatabase();
         InitializeFeedClient();
 
+        if (App.MainWnd?.SystemBackdrop is DesktopAcrylicBackdrop)
+        {
+            Material = SystemBackdropOption.Acrylic;
+        }
+        else if (App.MainWnd?.SystemBackdrop is MicaBackdrop)
+        {
+            Material = SystemBackdropOption.Mica;
+        }
+
+        if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+        {
+            IsAcrylicSupported = true;
+        }
+        else
+        {
+            IsAcrylicSupported = false;
+
+            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            {
+                //
+            }
+            else
+            {
+                IsSystemBackdropSupported = false;
+            }
+        }
+
+
+#if DEBUG
         //IsDebugWindowEnabled = true;
 
+#else
+        IsDebugWindowEnabled = false;
+#endif
     }
 
     #region == Initialization ==
@@ -789,22 +1002,6 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
     #endregion
 
-    #region == INavigationService ==
-
-    private void OnNavigated(object sender, NavigationEventArgs e) => IsBackEnabled = _navigationService.CanGoBack;
-
-    public void OnNavigatedTo(object parameter)
-    {
-
-    }
-
-    public void OnNavigatedFrom()
-    {
-
-    }
-
-    #endregion
-
     #region == Finalization ==
     public void CleanUp()
     {
@@ -878,7 +1075,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
     {
         if (nt == null)
         {
-            return new List<EntryItem>();
+            return [];
         }
 
         // don't clear Entries here.
@@ -918,7 +1115,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                     feed.IsBusy = false;
                 });
 
-                return new List<EntryItem>();
+                return [];
             }
             else
             {
@@ -962,7 +1159,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         }
         else if (nt is NodeFolder folder)
         {
-            List<string> tmpList = new();
+            List<string> tmpList = [];
 
             App.CurrentDispatcherQueue?.TryEnqueue(() =>
             {
@@ -986,7 +1183,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                 {
                     folder.IsBusy = false;
                 });
-                return new List<EntryItem>();
+                return [];
             }
 
             var res = await Task.FromResult(_dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsDisplayUnarchivedOnly));
@@ -1006,7 +1203,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                     folder.IsBusy = false;
                 });
 
-                return new List<EntryItem>();
+                return [];
             }
             else
             {
@@ -1039,11 +1236,11 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
             }
         }
 
-        return new List<EntryItem>();
+        return [];
     }
 
     // gets all children's feed ids.
-    private List<string> GetAllFeedIdsFromChildNodes(ObservableCollection<NodeTree> list)
+    private static List<string> GetAllFeedIdsFromChildNodes(ObservableCollection<NodeTree> list)
     {
         var res = new List<string>();
 
@@ -1529,7 +1726,11 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
             if (resEntries.Entries.Count > 0)
             {
+#pragma warning disable IDE0028
+#pragma warning disable IDE0306 
                 return new List<EntryItem>(resEntries.Entries);
+#pragma warning restore IDE0306 
+#pragma warning restore IDE0028
 
                 /*
                 App.CurrentDispatcherQueue?.TryEnqueue(() =>
@@ -1542,7 +1743,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                         Entries = feed.List;
                 });
                 */
-    }
+            }
             else
             {
                 return res;
@@ -1666,7 +1867,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private void UpdateNewEntryCount(NodeFeed feed, int newCount)
+    private static void UpdateNewEntryCount(NodeFeed feed, int newCount)
     {
         if (feed != null)
         {
@@ -1689,7 +1890,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         */
     }
 
-    private void UpdateParentNewEntryCount(NodeFolder folder, int newCount)
+    private static void UpdateParentNewEntryCount(NodeFolder folder, int newCount)
     {
         if (folder != null)
         {
@@ -1738,10 +1939,10 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                 //feed.Status = NodeFeed.DownloadStatus.saving;
             });
 
-            List<string> list = new()
-            {
+            List<string> list =
+            [
                 feed.Id
-            };
+            ];
 
             var res = await Task.FromResult(_dataAccessService.UpdateAllEntriesAsArchived(list));
 
@@ -1833,7 +2034,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                     }
                 });
 
-                List<string> tmpList = new();
+                List<string> tmpList = [];
 
                 tmpList = GetAllFeedIdsFromChildNodes(folder.Children);
 
@@ -1884,7 +2085,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private void ResetAllEntryCountAtChildNodes(ObservableCollection<NodeTree> list)
+    private static void ResetAllEntryCountAtChildNodes(ObservableCollection<NodeTree> list)
     {
         foreach (var nt in list)
         {
@@ -1904,7 +2105,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         }
     }
 
-    private void MinusAllParentEntryCount(NodeFolder folder, int minusCount)
+    private static void MinusAllParentEntryCount(NodeFolder folder, int minusCount)
     {
         if (folder is not null)
         {
@@ -2026,7 +2227,11 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
     #region == Feed Treeview commands ==
 
     [RelayCommand]
-    private void FeedAdd() => _navigationService.NavigateTo(typeof(FeedAddViewModel).FullName!, null);
+    private static void FeedAdd()
+    {    
+        var shell = App.GetService<ShellPage>();
+        shell.NavFrame.Navigate(typeof(FeedAddPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
+    }//=> _navigationService.NavigateTo(typeof(FeedAddViewModel).FullName!, null);
 
     public void AddFeed(FeedLink feedlink)
     {
@@ -2125,7 +2330,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         return FeedDupeCheckRecursiveLoop(Services, feedUri);
     }
 
-    private bool FeedDupeCheckRecursiveLoop(ObservableCollection<NodeTree> nt, string feedUri)
+    private static bool FeedDupeCheckRecursiveLoop(ObservableCollection<NodeTree> nt, string feedUri)
     {
         foreach (var c in nt)
         {
@@ -2157,13 +2362,18 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
             return;
         }
 
+        var shell = App.GetService<ShellPage>();
+
         if (SelectedTreeViewItem is NodeFeed)
         {
-            _navigationService.NavigateTo(typeof(FeedEditViewModel).FullName!, SelectedTreeViewItem);
+            Debug.WriteLine("NodeEdit()");
+            //_navigationService.NavigateTo(typeof(FeedEditViewModel).FullName!, SelectedTreeViewItem);
+            shell.NavFrame.Navigate(typeof(FeedEditPage), SelectedTreeViewItem, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
         }
         else if (SelectedTreeViewItem is NodeFolder)
         {
-            _navigationService.NavigateTo(typeof(FolderEditViewModel).FullName!, SelectedTreeViewItem);
+            //_navigationService.NavigateTo(typeof(FolderEditViewModel).FullName!, SelectedTreeViewItem);
+            shell.NavFrame.Navigate(typeof(FolderEditPage), SelectedTreeViewItem, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
         }
     }
 
@@ -2261,7 +2471,9 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
         if (targetNode is not null)
         {
             _isFeedTreeLoaded = true;
-            _navigationService.NavigateTo(typeof(FolderAddViewModel).FullName!, targetNode);
+            var shell = App.GetService<ShellPage>();
+            shell.NavFrame.Navigate(typeof(FolderAddPage), targetNode, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
+            //_navigationService.NavigateTo(typeof(FolderAddViewModel).FullName!, targetNode);
         }
     }
 
@@ -2315,7 +2527,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
             });
         }
 
-        List<NodeTree> nodeToBeDeleted = new();
+        List<NodeTree> nodeToBeDeleted = [];
 
         await DeleteNodesAsync(SelectedTreeViewItem, nodeToBeDeleted);
 
@@ -2385,10 +2597,10 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                 feed.IsBusy = true;
             });
 
-            List<string> ids = new()
-                {
+            List<string> ids =
+                [
                     feed.Id
-                };
+                ];
 
             var resDelete = await Task.FromResult(_dataAccessService.DeleteFeed(feed.Id));
 
@@ -2490,7 +2702,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
     public async Task OpmlImportAsync()
     {
-        var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+        var hwnd = WindowNative.GetWindowHandle(App.MainWnd);
         var file = await _fileDialogService.GetOpenOpmlFileDialog(hwnd);
         if (file is null)
         {
@@ -2548,7 +2760,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
 
         if (dummyFolder is not null)
         {
-            List<NodeFeed> dupeFeeds = new();
+            List<NodeFeed> dupeFeeds = [];
 
             foreach (var nt in dummyFolder.Children)
             {
@@ -2665,7 +2877,7 @@ public partial class MainViewModel : ObservableRecipient, INavigationAware
                 return;
             }
 
-            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            var hwnd = WindowNative.GetWindowHandle(App.MainWnd);
             var file = await _fileDialogService.GetSaveOpmlFileDialog(hwnd);
 
             if (file is null)

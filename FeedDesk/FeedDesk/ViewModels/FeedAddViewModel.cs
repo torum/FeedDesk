@@ -1,18 +1,19 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows.Input;
-using XmlClients.Core.Contracts.Services;
-using XmlClients.Core.Models;
-using XmlClients.Core.Services;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FeedDesk.Contracts.Services;
-using FeedDesk.Contracts.ViewModels;
+using FeedDesk.Models;
+using FeedDesk.Services;
+using FeedDesk.Services.Contracts;
+using FeedDesk.Views;
+using Microsoft.UI.Xaml.Media.Animation;
+using System;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
 
-public class FeedAddViewModel : ObservableRecipient, INavigationAware
+public partial class FeedAddViewModel : ObservableRecipient
 {
-    private readonly INavigationService _navigationService;
+    //private readonly INavigationService _navigationService;
 
     private readonly IAutoDiscoveryService _serviceDiscovery;
 
@@ -224,9 +225,9 @@ public class FeedAddViewModel : ObservableRecipient, INavigationAware
 
     #endregion
 
-    public FeedAddViewModel(INavigationService navigationService, IAutoDiscoveryService serviceDiscovery)
+    public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery)
     {
-        _navigationService = navigationService;
+        //_navigationService = navigationService;
 
         _serviceDiscovery = serviceDiscovery;//new ServiceDiscovery();
         _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
@@ -253,10 +254,14 @@ public class FeedAddViewModel : ObservableRecipient, INavigationAware
 
     private void OnGoBack()
     {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+        /*
         if (_navigationService.CanGoBack)
         {
             _navigationService.GoBack();
         }
+        */
     }
 
     private void OnGoToFirstTab()
@@ -677,7 +682,9 @@ public class FeedAddViewModel : ObservableRecipient, INavigationAware
 
             var vm = App.GetService<MainViewModel>();
             vm.AddFeed(fli.FeedLinkData);
-            _navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+            
+            // TODO:!
+            //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
         }
         else if (SelectedLinkItem is ServiceDocumentLinkItem sdli)
         {

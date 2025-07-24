@@ -1,4 +1,4 @@
-using FeedDesk.Contracts.Services;
+using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -41,10 +41,12 @@ public sealed partial class FolderEditPage : Page
 
     private static void OnKeyboardAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
+        /*
         var navigationService = App.GetService<INavigationService>();
 
         var result = navigationService.GoBack();
 
         args.Handled = result;
+        */
     }
 }
