@@ -1,13 +1,9 @@
 # FeedDesk
 
-
 A desktop feed reader. (work in progress)
 
 ## Download app
 from [Microsoft Store](https://www.microsoft.com/store/apps/9PGDGKFSV6L9).
-
-## Source code
-Source code is located at [XMLClients](https://github.com/torum/XMLClients) repo.
 
 ## Features
 ### Implements following formats:  
