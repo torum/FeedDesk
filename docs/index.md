@@ -38,10 +38,11 @@ from [Microsoft Store](https://www.microsoft.com/store/apps/9PGDGKFSV6L9).
 
 ![FeedDesk](https://github.com/torum/XmlClients/blob/master/docs/images/FeedDesk-Screenshot1-Acrylic-Light.png?raw=true) 
 
-![FeedDesk](https://github.com/torum/XmlClients/blob/master/docs/images/FeedDesk-Screenshot1-Light-vertical.png?raw=true) 
+<img width="380" alt="MPDCtrlx, minimal with albumcover" src="https://github.com/torum/XmlClients/blob/master/docs/images/FeedDesk-Screenshot1-Light-vertical.png?raw=true">
+
 
 ## GitHub Project Page:
 
-Visit the [project page](https://github.com/torum/XmlClients/). Any feedback or help are always welcome.
+Visit the [project page](https://github.com/torum/FeedDesk/). Any feedback or help are always welcome.
 
 
