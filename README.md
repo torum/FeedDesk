@@ -55,6 +55,6 @@ Feel free to open issues and send PRs.
 * Windows 10.0.19041.0 or higher
 
 ## Building
-1. Visual Studio 2022 with support for .NET Desktop App UI development (and optionally .NET Universal App development)
-2. Clone ［XMLClients］（https：//github.com/torum/XMLClients）this repository
-3. Open solution in Visual Studio, then compile and run.
+1. Use Visual Studio (with support for .NET Desktop App UI development) or VS code, or JetBrains rider.
+2. Clone or download source code from this repository.
+3. Open solution in Visual Studio or VS code, or JetBrains rider, then compile and run.
