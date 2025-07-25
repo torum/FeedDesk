@@ -38,7 +38,7 @@ from [Microsoft Store](https://www.microsoft.com/store/apps/9PGDGKFSV6L9).
 
 ![FeedDesk](https://github.com/torum/XMLClients/blob/master/docs/images/FeedDesk-Screenshot1-Acrylic-Light.png?raw=true) 
 
-![FeedDesk](https://github.com/torum/XMLClients/blob/master/docs/images/FeedDesk-Screenshot1-Light-vertical.png?raw=true) 
+<img width="380" alt="FeedDesk" src="https://github.com/torum/XmlClients/blob/master/docs/images/FeedDesk-Screenshot1-Light-vertical.png?raw=true">
 
 # Contributing
 Feel free to open issues and send PRs. 
@@ -47,7 +47,6 @@ Feel free to open issues and send PRs.
 * [.NET 8](https://github.com/dotnet/runtime)  
 * [WinUI3 (Windows App SDK)](https://github.com/microsoft/WindowsAppSDK) 
 * [Community Toolkit](https://github.com/CommunityToolkit) 
-* [WinUIEx](https://github.com/dotMorten/WinUIEx)
 * [SQLite](https://github.com/sqlite/sqlite) ([System.Data.SQLite](https://system.data.sqlite.org/index.html/doc/trunk/www/index.wiki))
 
 # Getting Started
@@ -57,6 +56,5 @@ Feel free to open issues and send PRs.
 
 ## Building
 1. Visual Studio 2022 with support for .NET Desktop App UI development (and optionally .NET Universal App development)
-2. Clone [XMLClients](https://github.com/torum/XMLClients) repository
-3. Open solution in Visual Studio
-4. Select FeedDesk project, then compile and run.
+2. Clone ［XMLClients］（https：//github.com/torum/XMLClients）this repository
+3. Open solution in Visual Studio, then compile and run.
