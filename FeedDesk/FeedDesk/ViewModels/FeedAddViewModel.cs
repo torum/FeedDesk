@@ -13,8 +13,6 @@ namespace FeedDesk.ViewModels;
 
 public partial class FeedAddViewModel : ObservableRecipient
 {
-    //private readonly INavigationService _navigationService;
-
     private readonly IAutoDiscoveryService _serviceDiscovery;
 
     #region == Properties ==
@@ -157,7 +155,7 @@ public partial class FeedAddViewModel : ObservableRecipient
         set => SetProperty(ref _selectedTabIndex, value);
     }
 
-    private ObservableCollection<LinkItem> _linkItems = new();
+    private ObservableCollection<LinkItem> _linkItems = [];
     public ObservableCollection<LinkItem> LinkItems
     {
         get => _linkItems;
@@ -227,9 +225,7 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery)
     {
-        //_navigationService = navigationService;
-
-        _serviceDiscovery = serviceDiscovery;//new ServiceDiscovery();
+        _serviceDiscovery = serviceDiscovery;
         _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
 
         GoBackCommand = new RelayCommand(OnGoBack);
@@ -243,25 +239,10 @@ public partial class FeedAddViewModel : ObservableRecipient
         GoToFourthTabCommand = new RelayCommand(OnGoToFourthTab);
     }
 
-    public void OnNavigatedTo(object parameter)
-    {
-
-    }
-
-    public void OnNavigatedFrom()
-    {
-    }
-
     private void OnGoBack()
     {
         var shell = App.GetService<ShellPage>();
         _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
-        /*
-        if (_navigationService.CanGoBack)
-        {
-            _navigationService.GoBack();
-        }
-        */
     }
 
     private void OnGoToFirstTab()
@@ -682,8 +663,9 @@ public partial class FeedAddViewModel : ObservableRecipient
 
             var vm = App.GetService<MainViewModel>();
             vm.AddFeed(fli.FeedLinkData);
-            
-            // TODO:!
+
+            var shell = App.GetService<ShellPage>();
+            _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
             //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
         }
         else if (SelectedLinkItem is ServiceDocumentLinkItem sdli)

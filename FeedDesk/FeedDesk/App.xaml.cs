@@ -44,12 +44,15 @@ public partial class App : Application
     public static Microsoft.UI.Dispatching.DispatcherQueue CurrentDispatcherQueue => _currentDispatcherQueue;
 
     // ErrorLog
+#if DEBUG
     public bool IsSaveErrorLog = true;
+#else
+    public bool IsSaveErrorLog = false;
+#endif
     public string LogFilePath = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + System.IO.Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
     private readonly StringBuilder Errortxt = new();
 
-
-    public const string BackdropSettingsKey = "AppSystemBackdropOption";
+    //public const string BackdropSettingsKey = "AppSystemBackdropOption";
 
     public static UIElement? AppTitlebar
     {
@@ -106,7 +109,7 @@ public partial class App : Application
             // Services
             //services.AddSingleton<IAppNotificationService, AppNotificationService>();
             //services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
-            services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
+            //services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
             //services.AddTransient<IWebViewService, WebViewService>();
             //services.AddSingleton<IActivationService, ActivationService>();
             //services.AddSingleton<IPageService, PageService>();
@@ -114,7 +117,6 @@ public partial class App : Application
             //services.AddTransient<INavigationViewService, NavigationViewService>();
 
             // Core Services
-            //services.AddSingleton<IFileService, FileService>();
             services.AddTransient<IFileDialogService, FileDialogService>();
             services.AddSingleton<IDataAccessService, DataAccessService>();
             services.AddSingleton<IFeedClientService, FeedClientService>();
@@ -124,13 +126,10 @@ public partial class App : Application
             // Views and ViewModels
             //services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<SettingsPage>();
-            services.AddSingleton<FeedAddViewModel>();
-            services.AddSingleton<FeedAddPage>();
-            services.AddSingleton<FeedEditViewModel>();
+            services.AddTransient<FeedAddViewModel>();
+            services.AddTransient<FeedAddPage>();
             services.AddSingleton<FeedEditPage>();
-            services.AddSingleton<FolderEditViewModel>();
             services.AddSingleton<FolderEditPage>();
-            services.AddSingleton<FolderAddViewModel>();
             services.AddSingleton<FolderAddPage>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<MainViewModel>();
@@ -172,34 +171,14 @@ public partial class App : Application
             Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().Activated += App_Activated;
         }
 
-        /*
-        // WinUIEx Storage option.
-        if (!RuntimeHelper.IsMSIX)
-        {
-            // Create if not exists.
-            if (!Directory.Exists(AppDataFolder))
-            {
-                Directory.CreateDirectory(AppDataFolder);
-            }
-
-            WinUIEx.WindowManager.PersistenceStorage = new FilePersistence(Path.Combine(AppDataFolder, "WinUIExPersistence.json"));
-        }
-        */
-        // Nortification example.
-        //App.GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
-
-
-        // Testing
-        //await App.GetService<IActivationService>().ActivateAsync(args);
-        
-        //MainWnd = new();
+        //MainWnd = new(); // < No
         MainWnd = App.GetService<MainWindow>();
-        //(MainWindow.Content as ShellPage)!.NavFrame.Content = App.GetService<MainPage>();
-        MainWnd.Content = App.GetService<ShellPage>();
-        //MainWindow?.Activate();
-        MainWnd.AppWindow.Show();
 
-        //(MainWnd.Content as ShellPage)!.NavFrame?.Navigate(typeof(Views.MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+        // Too late here. In order to set themes, sets content in MainWindow constructor.
+        //MainWnd.Content = App.GetService<ShellPage>();
+
+        //MainWindow?.Activate(); // Activate won't work..
+        MainWnd.AppWindow.Show();
     }
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)

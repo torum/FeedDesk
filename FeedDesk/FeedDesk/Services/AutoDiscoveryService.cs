@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using Windows.Media.Protection.PlayReady;
 
 namespace FeedDesk.Services;
 
@@ -273,8 +274,10 @@ public class AutoDiscoveryService : IAutoDiscoveryService
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rss+xml"));
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rdf+xml"));
 
-        // This is a little hack for wordpress.com. Without this, wordpress.com returns HTTP status Forbidden. @GetAndParseRsdAsync
+        // This is a little hack for wordpress.com and some other gov sites. Without this, they return HTTP status Forbidden or not found. @GetAndParseRsdAsync
         //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0");
+        //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
     }
 
     #region == Methods ==

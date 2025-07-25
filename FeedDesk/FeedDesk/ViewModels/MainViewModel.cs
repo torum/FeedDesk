@@ -9,6 +9,7 @@ using FeedDesk.Views;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
@@ -20,8 +21,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Input;
 using System.Xml;
+using System.Xml.Linq;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Media.Core;
@@ -30,15 +33,164 @@ using WinRT.Interop;
 
 namespace FeedDesk.ViewModels;
 
-public partial class MainViewModel : ObservableRecipient//, INavigationAware
+public partial class MainViewModel : ObservableRecipient
 {
+
+    #region == Moved from FeedEdit ==
+
+    private NodeFeed? _feedToEdit;
+    public NodeFeed? FeedToEDit
+    {
+        get => _feedToEdit;
+        set 
+        { 
+            if (SetProperty(ref _feedToEdit, value))
+            {
+                NameToEditFeed = _feedToEdit?.Name;
+            }
+        }
+    }
+
+    private string? _nameToEditFeed = string.Empty;
+    public string? NameToEditFeed
+    {
+        get => _nameToEditFeed;
+        set => SetProperty(ref _nameToEditFeed, value);
+    }
+
+    [RelayCommand]
+    private void CheckIfFeedIsValidUsingValidator()
+    {
+        if (FeedToEDit is null)
+            return;
+
+        if (FeedToEDit.EndPoint is not null)
+        {
+            var hoge = new Uri("https://validator.w3.org/feed/check.cgi?url=" + HttpUtility.UrlEncode(FeedToEDit.EndPoint.AbsoluteUri));
+
+            Task.Run(() => Windows.System.Launcher.LaunchUriAsync(hoge));
+        }
+    }
+
+    [RelayCommand]
+    private void UpdateFeedItemProperty()
+    {
+        if (string.IsNullOrEmpty(NameToEditFeed))
+        {
+            return;
+            //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+        }
+
+        if (FeedToEDit != null)
+        {
+            /* Not good when navigate go back.
+            var hoge = new NodeTreePropertyChangedArgs();
+            hoge.Name = Name;
+            hoge.Node = Feed;
+            _navigationService.NavigateTo(typeof(MainViewModel).FullName!, hoge);
+            */
+
+            Task.Run(async () =>
+            {
+                await UpdateFeedAsync(FeedToEDit, NameToEditFeed);
+            });
+
+        }
+
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+    }
+
+    #endregion
+
+    #region == Moved from FolderEdit ==
+
+    private NodeFolder? _folderToEdit;
+    public NodeFolder? FolderToEdit
+    {
+        get => _folderToEdit;
+        set {
+            
+            if (SetProperty(ref _folderToEdit, value)) 
+            {
+                NameToEditFolder = _folderToEdit?.Name;
+            }
+        }
+    }
+
+    private string? _nameToEditFolder = string.Empty;
+    public string? NameToEditFolder
+    {
+        get => _nameToEditFolder;
+        set => SetProperty(ref _nameToEditFolder, value);
+    }
+
+    [RelayCommand]
+    private void UpdateFolderItemProperty()
+    {
+        if (!string.IsNullOrEmpty(NameToEditFolder))
+        {
+            if (FolderToEdit != null)
+            {
+                FolderToEdit.Name = NameToEditFolder;
+            }
+
+            var shell = App.GetService<ShellPage>();
+            _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+            //_navigationService.NavigateTo(typeof(MainViewModel).FullName!, null);
+        }
+    }
+
+    #endregion
+
+    #region == Moved from FolderAdd ==
+
+    private NodeTree? _targetNodeToAddFolder;
+
+    private string? _nameToAddFolder = string.Empty;
+    public string? NameToAddFolder
+    {
+        get => _nameToAddFolder;
+        set => SetProperty(ref _nameToAddFolder, value);
+    }
+
+    [RelayCommand]
+    private void AddFolderItemProperty()
+    {
+        if (string.IsNullOrEmpty(NameToAddFolder))
+        {
+            return;
+        }
+
+        if (_targetNodeToAddFolder is null)
+        {
+            return;
+        }
+
+        NodeFolder folder = new(NameToAddFolder)
+        {
+            Parent = _targetNodeToAddFolder
+        };
+
+        _targetNodeToAddFolder.IsExpanded = true;
+        _targetNodeToAddFolder.Children.Insert(0, folder);
+
+        folder.IsSelected = true;
+
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+    }
+
+
+    #endregion
+
     #region == Moved from setting ==
 
-    private ElementTheme _elementTheme = ElementTheme.Default;
-    public ElementTheme EleTheme
+    private ElementTheme _theme = ElementTheme.Default;
+    public ElementTheme Theme
     {
-        get => _elementTheme;
-        set => SetProperty(ref _elementTheme, value);
+        get => _theme;
+        set => SetProperty(ref _theme, value);
     }
 
     private SystemBackdropOption _material = SystemBackdropOption.Mica;
@@ -48,18 +200,25 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
         set => SetProperty(ref _material, value);
     }
 
-    private bool _isAcrylicSupported;
+    private bool _isAcrylicSupported = false;
     public bool IsAcrylicSupported
     {
         get => _isAcrylicSupported;
         set => SetProperty(ref _isAcrylicSupported, value);
     }
 
-    private bool _isSystemBackdropSupported = true;
-    public bool IsSystemBackdropSupported
+    private bool _isBackdropEnabled = false;
+    public bool IsBackdropEnabled
     {
-        get => _isSystemBackdropSupported;
-        set => SetProperty(ref _isSystemBackdropSupported, value);
+        get => _isBackdropEnabled;
+        set => SetProperty(ref _isBackdropEnabled, value);
+    }
+
+    private bool _isMicaSupported = false;
+    public bool IsMicaSupported
+    {
+        get => _isMicaSupported;
+        set => SetProperty(ref _isMicaSupported, value);
     }
 
 #pragma warning disable IDE0079
@@ -81,80 +240,61 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
             else
             {
                 version = Assembly.GetExecutingAssembly().GetName().Version!;
-                //Debug.WriteLine("asdf" + Assembly.GetExecutingAssembly().GetName().Version.ToString());
             }
 
             return $"{"Version".GetLocalized()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
         }
     }
 
-
     [RelayCommand]
-    private async Task SwitchTheme(ElementTheme? param)
+    private void SwitchTheme(ElementTheme? param)
     {
         if (param is null)
         {
             return;
         }
 
-        if (EleTheme != param)
+        if (Theme == param)
         {
-            EleTheme = (ElementTheme)param;
-            await _themeSelectorService.SetThemeAsync((ElementTheme)param);
+            return;
+        }
+
+        if (App.MainWnd == null)
+        {
+            return;
+        }
+        //var mainWin = App.GetService<MainWindow>();
+
+        Theme = (ElementTheme)param;
+
+        if (App.MainWnd?.Content is FrameworkElement rootElement)
+        {
+            rootElement.RequestedTheme = Theme;
+
+            TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
+            App.MainWnd.SetCapitionButtonColorForWin11();
         }
     }
 
     [RelayCommand]
-    private void SwitchSystemBackdrop(string? backdrop)
+    private static void SwitchSystemBackdrop(string? backdrop)
     {
-        if (backdrop != null)
+        if (backdrop == null)
         {
-            if (App.MainWnd is not null)
-            {
-                if (backdrop == "Mica")
-                {
-                    if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported() || Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
-                    {
-                        App.MainWnd.SystemBackdrop = new MicaBackdrop()
-                        {
-                            Kind = MicaKind.Base
-                        };
-                        if (RuntimeHelper.IsMSIX)
-                        {
-                            ApplicationData.Current.LocalSettings.Values[App.BackdropSettingsKey] = SystemBackdropOption.Mica.ToString();
-                        }
-                        Material = SystemBackdropOption.Mica;
-                    }
-                }
-                else if (backdrop == "Acrylic")
-                {
-                    if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
-                    {
-                        App.MainWnd.SystemBackdrop = new DesktopAcrylicBackdrop();
-                        if (RuntimeHelper.IsMSIX)
-                        {
-                            ApplicationData.Current.LocalSettings.Values[App.BackdropSettingsKey] = SystemBackdropOption.Acrylic.ToString();
-                        }
-                        Material = SystemBackdropOption.Acrylic;
-                    }
-                }
-            }
+            return;
+        }
+
+        if (Enum.TryParse(backdrop, out SystemBackdropOption cacheBackdrop))
+        {
+            var mainWin = App.GetService<MainWindow>();
+            mainWin.SwitchBackdrop(cacheBackdrop);
         }
     }
 
     #endregion
 
-
     #region == Moved from shell ==
 
-    /*
-    private bool _isBackEnabled;
-    public bool IsBackEnabled
-    {
-        get => _isBackEnabled;
-        set => SetProperty(ref _isBackEnabled, value);
-    }
-    */
     [RelayCommand]
     private static void MenuFileExit() => App.Current.Exit();
 
@@ -171,15 +311,6 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
         var shell = App.GetService<ShellPage>();
         _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
     }
-
-    /*
-    [RelayCommand]
-    private static void MenuGoToMain()
-    {
-        var shell = App.GetService<ShellPage>();
-        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
-    } //=> NavigationService.NavigateTo(typeof(MainViewModel).FullName!);
-    */
 
     [RelayCommand]
     private static async Task MenuHelpProjectPage()
@@ -231,9 +362,6 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
                 _selectedTreeViewItem = value;
 
                 OnPropertyChanged(nameof(SelectedTreeViewItem));
-                /*
-
-                */
 
                 // Clear Listview selected Item.
                 SelectedListViewItem = null;
@@ -318,16 +446,8 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
 
         }
     }
-    /*
-    private TreeViewNode? _selectedTreeViewNode;
-    public TreeViewNode? SelectedTreeViewNode
-    {
-        get => _selectedTreeViewNode;
-        set => SetProperty(ref _selectedTreeViewNode, value);
-    }
-    */
 
-    private string _selectedServiceName = "";
+    private string _selectedServiceName = string.Empty;
     public string SelectedServiceName
     {
         get => _selectedServiceName;
@@ -859,57 +979,35 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
 
     private readonly IOpmlService _opmlService;
 
-    private readonly IThemeSelectorService _themeSelectorService;
-
     #endregion
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService, IThemeSelectorService themeSelectorService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService)
     {
-
-
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
         _feedClientService = feedClientService;
         _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
         _opmlService = opmlService;
-        _themeSelectorService = themeSelectorService;
-        _elementTheme = _themeSelectorService.Theme;
 
         InitializeFeedTree();
         InitializeDatabase();
         InitializeFeedClient();
 
-        if (App.MainWnd?.SystemBackdrop is DesktopAcrylicBackdrop)
-        {
-            Material = SystemBackdropOption.Acrylic;
-        }
-        else if (App.MainWnd?.SystemBackdrop is MicaBackdrop)
-        {
-            Material = SystemBackdropOption.Mica;
-        }
-
         if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
         {
             IsAcrylicSupported = true;
+            IsBackdropEnabled = true;
         }
-        else
+        if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
         {
-            IsAcrylicSupported = false;
-
-            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
-            {
-                //
-            }
-            else
-            {
-                IsSystemBackdropSupported = false;
-            }
+            IsMicaSupported = true;
+            IsBackdropEnabled = true;
         }
+
 
 
 #if DEBUG
         //IsDebugWindowEnabled = true;
-
 #else
         IsDebugWindowEnabled = false;
 #endif
@@ -2366,14 +2464,17 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
 
         if (SelectedTreeViewItem is NodeFeed)
         {
-            Debug.WriteLine("NodeEdit()");
+            FeedToEDit = SelectedTreeViewItem as NodeFeed;
+
             //_navigationService.NavigateTo(typeof(FeedEditViewModel).FullName!, SelectedTreeViewItem);
             shell.NavFrame.Navigate(typeof(FeedEditPage), SelectedTreeViewItem, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
         }
         else if (SelectedTreeViewItem is NodeFolder)
         {
+            FolderToEdit = SelectedTreeViewItem as NodeFolder;
+
             //_navigationService.NavigateTo(typeof(FolderEditViewModel).FullName!, SelectedTreeViewItem);
-            shell.NavFrame.Navigate(typeof(FolderEditPage), SelectedTreeViewItem, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
+            shell.NavFrame.Navigate(typeof(FolderEditPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
         }
     }
 
@@ -2448,6 +2549,7 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
     private void FolderAdd()
     {
         NodeTree? targetNode = null;
+        NameToAddFolder = string.Empty;
 
         if (SelectedTreeViewItem is null) 
         {
@@ -2470,9 +2572,11 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
 
         if (targetNode is not null)
         {
+            _targetNodeToAddFolder = targetNode;
+
             _isFeedTreeLoaded = true;
             var shell = App.GetService<ShellPage>();
-            shell.NavFrame.Navigate(typeof(FolderAddPage), targetNode, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
+            shell.NavFrame.Navigate(typeof(FolderAddPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
             //_navigationService.NavigateTo(typeof(FolderAddViewModel).FullName!, targetNode);
         }
     }
@@ -2545,11 +2649,14 @@ public partial class MainViewModel : ObservableRecipient//, INavigationAware
                         MinusAllParentEntryCount(parentFolder, hoge.EntryNewCount);
                     }
 
+                    SelectedTreeViewItem = null;
                     hoge.Parent.Children.Remove(hoge);
                 }
                 else
                 {
                     //Debug.WriteLine("DeleteNodeTree: (hoge.Parent is null)");
+
+                    SelectedTreeViewItem = null;
                     _services.Children.Remove(hoge);
                 }
             }

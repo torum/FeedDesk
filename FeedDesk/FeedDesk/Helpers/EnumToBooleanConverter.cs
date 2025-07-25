@@ -41,7 +41,7 @@ public partial class ElementThemeEnumToBooleanConverter : IValueConverter
 
 public enum SystemBackdropOption
 {
-    Mica, Acrylic
+    Mica, MicaAlt, Acrylic, None
 }
 
 public partial class SystemBackdropEnumToBooleanConverter : IValueConverter

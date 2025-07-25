@@ -4,7 +4,7 @@ using static FeedDesk.Models.ErrorObject;
 
 namespace FeedDesk.Models;
 
-public class FeedTreeBuilder : NodeRoot
+public partial class FeedTreeBuilder : NodeRoot
 {
     public FeedTreeBuilder() {
         Name = "NodeRoot";
@@ -281,7 +281,6 @@ public class FeedTreeBuilder : NodeRoot
                 }
                 else if (s.LocalName.Equals("Folder"))
                 {
-
                     NodeFolder? folder = LoadXmlChildFolder(s);
                     if (folder == null)
                         continue;
@@ -342,6 +341,8 @@ public class FeedTreeBuilder : NodeRoot
             }
             folder.ViewType = vt;
 
+            // This is going to "Sort" folder and feed unintentionally.
+            /*
             XmlNodeList? folderList = node.SelectNodes("Folder");
             if (folderList != null)
             {
@@ -371,6 +372,33 @@ public class FeedTreeBuilder : NodeRoot
 
                     if (feed != null)
                         folder.Children.Add(feed);
+                }
+            }
+            */
+            // Re-write.
+            foreach (XmlNode hoge in node.ChildNodes)
+            {
+                if (hoge.LocalName.Equals("Folder"))
+                {
+                    NodeFolder? fuga = LoadXmlChildFolder(hoge);
+                    if (fuga == null)
+                        continue;
+
+                    fuga.Parent = folder;
+
+                    if (fuga != null)
+                        folder.Children.Add(fuga);
+                }
+                else if (hoge.LocalName.Equals("Feed"))
+                {
+                    NodeFeed? fuga = LoadXmlChildFeed(hoge);
+                    if (fuga == null)
+                        continue;
+
+                    fuga.Parent = folder;
+
+                    if (fuga != null)
+                        folder.Children.Add(fuga);
                 }
             }
 

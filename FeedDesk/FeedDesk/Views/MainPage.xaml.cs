@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Windows.Storage;
 
 namespace FeedDesk.Views;
@@ -88,27 +89,6 @@ public sealed partial class MainPage : Page
         DebugTextBox.Text = string.Empty;    
     }
 
-    private void TreeView_ItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args)
-    {
-        /*
-        if (args.InvokedItem is NodeTree nt)
-        {
-            if (nt.Children.Count > 0)
-                nt.IsExpanded = !nt.IsExpanded;
-        }
-        */
-        /*
-        if (args.InvokedItem is NodeTree nt)
-        {
-            if (nt.Children.Count > 0)
-            {
-                if (!nt.IsExpanded)
-                    nt.IsExpanded = true;
-            }
-        }
-        */
-    }
-
     private void TreeViewItem_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (sender is TreeViewItem tvi)
@@ -138,14 +118,15 @@ public sealed partial class MainPage : Page
     private void ListViewEntryItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
         // right click select.
-        if (e.OriginalSource is FrameworkElement)
+        if (e.OriginalSource is not FrameworkElement element)
         {
-            if (((FrameworkElement)e.OriginalSource).DataContext is FeedEntryItem item)
+            return;
+        }
+        if (element.DataContext is FeedEntryItem item)
+        {
+            if (ListViewEntryItem.SelectedItem != item)
             {
-                if (ListViewEntryItem.SelectedItem != item)
-                {
-                    ListViewEntryItem.SelectedItem = item;
-                }
+                ListViewEntryItem.SelectedItem = item;
             }
         }
     }
@@ -154,7 +135,7 @@ public sealed partial class MainPage : Page
     {
         get; set;
     }=
-    new List<NodeTree>();
+    [];
 
     private void TreeView_DragItemsStarting(TreeView sender, TreeViewDragItemsStartingEventArgs args)
     {
@@ -214,8 +195,7 @@ public sealed partial class MainPage : Page
 
     private void TreeView_DragItemsCompleted(TreeView sender, TreeViewDragItemsCompletedEventArgs args)
     {
-        // TODO: cast
-        foreach (NodeTree item in args.Items)
+        foreach (NodeTree item in args.Items.Cast<NodeTree>())
         {
 
             /*

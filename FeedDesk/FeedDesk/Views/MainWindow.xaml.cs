@@ -1,17 +1,25 @@
-using System.Xml;
-using System.Xml.Linq;
+using CommunityToolkit.WinUI.Helpers;
+using FeedDesk.Helpers;
+using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
+using FeedDesk.Views;
+using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
-using Windows.Storage;
-using Windows.UI.ViewManagement;
-using FeedDesk.Helpers;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using Windows.Storage;
+using Windows.UI.ViewManagement;
+using Windows.UI.WindowManagement;
 
 namespace FeedDesk;
 
@@ -24,222 +32,248 @@ public partial class MainWindow : Window
     private int winRestoreTop = 100;
     private int winRestoreleft = 100;
 
-    private readonly UISettings settings;
+    //private readonly UISettings settings;
+    private ElementTheme theme = ElementTheme.Default;
 
-    public MainWindow()
+
+    public MainWindow() 
     {
         InitializeComponent();
 
+        this.Title = "AppDisplayName".GetLocalized();
         this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "FeedDesk3.ico"));
-        //Content = null;
-        Title = "AppDisplayName".GetLocalized();
 
-        settings = new UISettings();
-        settings.ColorValuesChanged += Settings_ColorValuesChanged;
+        this.ExtendsContentIntoTitleBar = true;
 
-        // SystemBackdrop
-        if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+        //settings = new UISettings();
+        //settings.ColorValuesChanged += Settings_ColorValuesChanged;
+        
+        LoadSettings();
+
+        // It's important to set content as early as here in order to set theme.
+        // But make sure to call LoadSettings() before in order to apply settings value for contents.
+        this.Content = App.GetService<ShellPage>();
+
+        // It is necessary to set theme here after the content is set.
+        if (this.Content is ShellPage root)
         {
-            if (RuntimeHelper.IsMSIX)
-            {
-                // Load preference from localsetting.
-                if (ApplicationData.Current.LocalSettings.Values.TryGetValue(App.BackdropSettingsKey, out var obj))
-                {
-                    var s = (string)obj;
-                    if (s == SystemBackdropOption.Acrylic.ToString())
-                    {
-                        SystemBackdrop = new DesktopAcrylicBackdrop();
-                    }
-                    else if (s == SystemBackdropOption.Mica.ToString())
-                    {
-                        SystemBackdrop = new MicaBackdrop()
-                        {
-                            Kind = MicaKind.Base
-                        };
-                    }
-                    else
-                    {
-                        SystemBackdrop = new DesktopAcrylicBackdrop();
-                    }
-                }
-                else
-                {
-                    // default acrylic.
-                    SystemBackdrop = new DesktopAcrylicBackdrop();
-                }
-            }
-            else
-            {
-                // just for me.
-                SystemBackdrop = new DesktopAcrylicBackdrop();
-            }
+            root.RequestedTheme = theme;
 
+            TitleBarHelper.UpdateTitleBar(theme, this);
+            SetCapitionButtonColorForWin11();
+
+            root.InitWhenMainWindowIsReady(this);
         }
-        else if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+    }
+
+    public void SetCapitionButtonColorForWin11()
+    {
+        var currentTheme = ((FrameworkElement)Content).ActualTheme;
+        if (currentTheme == ElementTheme.Dark)
         {
-            SystemBackdrop = new MicaBackdrop()
-            {
-                Kind = MicaKind.Base
-            };
+            this.AppWindow.TitleBar.ButtonForegroundColor = Colors.White;
+            this.AppWindow.TitleBar.ButtonInactiveForegroundColor = Colors.White;
+        }
+        else if (currentTheme == ElementTheme.Light)
+        {
+            this.AppWindow.TitleBar.ButtonForegroundColor = Colors.Black;
+            this.AppWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Black;
         }
         else
         {
-            // Memo: Without Backdrop, theme setting's theme is not gonna have any effect( "system default" will be used). So the setting is disabled.
+            if (App.Current.RequestedTheme == ApplicationTheme.Dark)
+            {
+                this.AppWindow.TitleBar.ButtonForegroundColor = Colors.White;
+                this.AppWindow.TitleBar.ButtonInactiveForegroundColor = Colors.White;
+            }
+            else
+            {
+                this.AppWindow.TitleBar.ButtonForegroundColor = Colors.Black;
+                this.AppWindow.TitleBar.ButtonInactiveForegroundColor = Colors.Black;
+            }
         }
-
-        LoadSettings();
-    }
-
-    private void Settings_ColorValuesChanged(UISettings sender, object args)
-    {
-        var frame = App.AppTitlebar as FrameworkElement;
-
-        // This calls comes off-thread, hence we will need to dispatch it to current app's thread
-        App.CurrentDispatcherQueue.TryEnqueue(() =>
-        {
-            TitleBarHelper.ApplySystemThemeToCaptionButtons(frame, this);
-        });
     }
 
     private void LoadSettings()
     {
-        var vm = App.GetService<MainViewModel>();
-
-        var winState = OverlappedPresenterState.Restored;
-
-        #region == Load settings ==
-
-        // Ignore window size and position. Let WinEx do the Window resize. It handles save and restore perfectly including RestoreBound.
-
-        double top = 100;
-        double left = 100;
-        double height = 768;
-        double width = 1024;
-
         var filePath = App.AppConfigFilePath;
         if (RuntimeHelper.IsMSIX)
         {
             filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
         }
 
-        if (System.IO.File.Exists(filePath))
+        var vm = App.GetService<MainViewModel>();
+
+        if (!System.IO.File.Exists(filePath)) 
         {
-            var xdoc = XDocument.Load(filePath);
+            // Sets default.
 
-            // Main window
-            if (xdoc.Root != null)
+            if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
             {
-                // Main Window element
-                var mainWindow = xdoc.Root.Element("MainWindow");
-                if (mainWindow != null)
-                {
-                    var hoge = mainWindow.Attribute("top");
-                    if (hoge != null)
-                    {
-                        top = double.Parse(hoge.Value);
-                    }
+                SystemBackdrop = new DesktopAcrylicBackdrop();
+                vm.Material = SystemBackdropOption.Acrylic;
 
-                    hoge = mainWindow.Attribute("left");
-                    if (hoge != null)
-                    {
-                        left = double.Parse(hoge.Value);
-                    }
-
-                    hoge = mainWindow.Attribute("height");
-                    if (hoge != null)
-                    {
-                        height = double.Parse(hoge.Value);
-                    }
-
-                    hoge = mainWindow.Attribute("width");
-                    if (hoge != null)
-                    {
-                        width = double.Parse(hoge.Value);
-                    }
-
-                    hoge = mainWindow.Attribute("state");
-                    if (hoge != null)
-                    {
-                        if (hoge.Value == "Maximized")
-                        {
-                            //(sender as Window).WindowState = WindowState.Maximized;
-                            winState = OverlappedPresenterState.Maximized;
-                        }
-                        else if (hoge.Value == "Normal")
-                        {
-                            //(sender as Window).WindowState = WindowState.Normal;
-                            winState = OverlappedPresenterState.Restored;
-                        }
-                        else if (hoge.Value == "Minimized")
-                        {
-                            //(sender as Window).WindowState = WindowState.Normal;
-                            winState = OverlappedPresenterState.Restored;
-                        }
-                    }
-
-                    var xLeftPane = mainWindow.Element("LeftPane");
-                    if (xLeftPane != null)
-                    {
-                        if (xLeftPane.Attribute("width") != null)
-                        {
-                            var xvalue = xLeftPane.Attribute("width")?.Value;
-                            if (!string.IsNullOrEmpty(xvalue))
-                            {
-                                var w = double.Parse(xvalue);
-                                if (w > 256)
-                                {
-                                    vm.WidthLeftPane = w;
-                                }
-                            }
-                        }
-                    }
-
-                    var xDetailPane = mainWindow.Element("DetailPane");
-                    if (xDetailPane != null)
-                    {
-                        if (xDetailPane.Attribute("width") != null)
-                        {
-                            var xvalue = xDetailPane.Attribute("width")?.Value;
-                            if (!string.IsNullOrEmpty(xvalue))
-                            {
-                                var w = double.Parse(xvalue);
-                                if (w > 256)
-                                {
-                                    vm.WidthDetailPane = w;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Options
-                var opts = xdoc.Root.Element("Opts");
-                if (opts != null)
-                {
-                    /*
-                    var xvalue = opts.Attribute("IsChartTooltipVisible");
-                    if (xvalue != null)
-                    {
-                        if (!string.IsNullOrEmpty(xvalue.Value))
-                        {
-                            //MainViewModel.IsChartTooltipVisible = xvalue.Value == "True";
-                        }
-                    }
-
-                    xvalue = opts.Attribute("IsDebugSaveLog");
-                    if (xvalue != null)
-                    {
-                        if (!string.IsNullOrEmpty(xvalue.Value))
-                        {
-                            //MainViewModel.IsDebugSaveLog = xvalue.Value == "True";
-                        }
-                    }
-                    */
-                }
-
+                vm.IsBackdropEnabled = true;
             }
+            else if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            {
+                SystemBackdrop = new MicaBackdrop()
+                {
+                    Kind = MicaKind.Base
+                };
+                vm.Material = SystemBackdropOption.Mica;
+
+                vm.IsBackdropEnabled = true;
+            }
+
+            theme = ElementTheme.Default;
+
+            return;
         }
 
+        var winState = OverlappedPresenterState.Restored;
+
+        ElementTheme eleThme = ElementTheme.Default;
+        SystemBackdropOption bd = SystemBackdropOption.None;
+        bool isFoundNewThemeSetting = false;
+
+        double top = 100;
+        double left = 100;
+        double height = 768;
+        double width = 1024;
+
+        var xdoc = XDocument.Load(filePath);
+
+        // Main window
+        if (xdoc.Root != null)
+        {
+            // Main Window element
+            var mainWindow = xdoc.Root.Element("MainWindow");
+            if (mainWindow != null)
+            {
+                var hoge = mainWindow.Attribute("top");
+                if (hoge != null)
+                {
+                    top = double.Parse(hoge.Value);
+                }
+
+                hoge = mainWindow.Attribute("left");
+                if (hoge != null)
+                {
+                    left = double.Parse(hoge.Value);
+                }
+
+                hoge = mainWindow.Attribute("height");
+                if (hoge != null)
+                {
+                    height = double.Parse(hoge.Value);
+                }
+
+                hoge = mainWindow.Attribute("width");
+                if (hoge != null)
+                {
+                    width = double.Parse(hoge.Value);
+                }
+
+                hoge = mainWindow.Attribute("state");
+                if (hoge != null)
+                {
+                    if (hoge.Value == "Maximized")
+                    {
+                        winState = OverlappedPresenterState.Maximized;
+                    }
+                    else if (hoge.Value == "Normal")
+                    {
+                        winState = OverlappedPresenterState.Restored;
+                    }
+                    else if (hoge.Value == "Minimized")
+                    {
+                        // Ignore minimized.
+                        winState = OverlappedPresenterState.Restored;
+                    }
+                }
+
+                var xLeftPane = mainWindow.Element("LeftPane");
+                if (xLeftPane != null)
+                {
+                    if (xLeftPane.Attribute("width") != null)
+                    {
+                        var xvalue = xLeftPane.Attribute("width")?.Value;
+                        if (!string.IsNullOrEmpty(xvalue))
+                        {
+                            var w = double.Parse(xvalue);
+                            if (w > 256)
+                            {
+                                vm.WidthLeftPane = w;
+                            }
+                        }
+                    }
+                }
+
+                var xDetailPane = mainWindow.Element("DetailPane");
+                if (xDetailPane != null)
+                {
+                    if (xDetailPane.Attribute("width") != null)
+                    {
+                        var xvalue = xDetailPane.Attribute("width")?.Value;
+                        if (!string.IsNullOrEmpty(xvalue))
+                        {
+                            var w = double.Parse(xvalue);
+                            if (w > 256)
+                            {
+                                vm.WidthDetailPane = w;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Themes
+            var opts = xdoc.Root.Element("Theme");
+            if (opts != null)
+            {
+                var xvalue = opts.Attribute("current");
+                if (xvalue != null)
+                {
+                    if (!string.IsNullOrEmpty(xvalue.Value))
+                    {
+                        if (Enum.TryParse(xvalue.Value, out ElementTheme cacheTheme))
+                        {
+                            eleThme = cacheTheme;
+                            isFoundNewThemeSetting = true;
+                        }
+                    }
+                }
+                xvalue = opts.Attribute("backdrop");
+                if (xvalue != null)
+                {
+                    if (!string.IsNullOrEmpty(xvalue.Value))
+                    {
+                        if (Enum.TryParse(xvalue.Value, out SystemBackdropOption cacheBackdrop))
+                        {
+                            bd = cacheBackdrop;
+                            isFoundNewThemeSetting = true;
+                        }
+                    }
+                }
+            }
+
+            // Options
+            opts = xdoc.Root.Element("Opts");
+            if (opts != null)
+            {
+                /*
+                xvalue = opts.Attribute("IsDebugSaveLog");
+                if (xvalue != null)
+                {
+                    if (!string.IsNullOrEmpty(xvalue.Value))
+                    {
+                        //MainViewModel.IsDebugSaveLog = xvalue.Value == "True";
+                    }
+                }
+                */
+            }
+        }
 
         winRestoreWidth = (int)width;
         winRestoreHeight = (int)height;
@@ -259,11 +293,6 @@ public partial class MainWindow : Window
                     appWindow.MoveAndResize(new Windows.Graphics.RectInt32(winRestoreleft, winRestoreTop, winRestoreWidth, winRestoreHeight));
                     // Maximize the window.
                     presenter.Maximize();
-                    /*
-                    // TODO: TEMP
-                    appWindow.Move(new Windows.Graphics.PointInt32(winRestoreleft, winRestoreTop));
-                    appWindow.Resize(new Windows.Graphics.SizeInt32(1920, 1080));
-                    */
                 }
                 else if (winState == OverlappedPresenterState.Minimized)
                 {
@@ -282,12 +311,118 @@ public partial class MainWindow : Window
             //
             appWindow.Closing += (s, a) =>
             {
-                // TODO: Currently, WinUI3 does not have "App.Current?.Windows". So, we cannot loop through all windows.
+                //
             };
         }
 
-        #endregion
+        // For the strictly backward compatibility reason, load preference from localsetting.
+        if (RuntimeHelper.IsMSIX && (!isFoundNewThemeSetting))
+        {
+            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("AppSystemBackdropOption", out var obj))
+            {
+                if (obj is not null)
+                {
+                    if (obj is string s)
+                    {
+                        if (s == SystemBackdropOption.Acrylic.ToString())
+                        {
+                            bd = SystemBackdropOption.Acrylic;
+                        }
+                        else if (s == SystemBackdropOption.Mica.ToString())
+                        {
+                            bd = SystemBackdropOption.Mica;
+                        }
+                    }
+                }
+            }
 
+            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("AppBackgroundRequestedTheme", out var obj2))
+            {
+                if (obj2 is not null)
+                {
+                    if (obj2 is string themeName)
+                    {
+                        if (Enum.TryParse(themeName, out ElementTheme cacheTheme))
+                        {
+                            eleThme = cacheTheme;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Apply theme and backdrop
+        if (bd != SystemBackdropOption.None)
+        {
+            theme = eleThme;
+            vm.Theme = eleThme;
+        }
+        vm.Material = bd;
+        SwitchBackdrop(bd);
+    }
+
+    public void SwitchBackdrop(SystemBackdropOption backdrop)
+    {
+        var vm = App.GetService<MainViewModel>();
+
+        if (backdrop == SystemBackdropOption.Mica)
+        {
+            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            {
+                this.SystemBackdrop = new MicaBackdrop()
+                {
+                    Kind = MicaKind.Base
+                };
+                vm.Material = SystemBackdropOption.Mica;
+                //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
+
+                vm.IsBackdropEnabled = true;
+            }
+        }
+        else if (backdrop == SystemBackdropOption.MicaAlt)
+        {
+            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            {
+                this.SystemBackdrop = new MicaBackdrop()
+                {
+                    Kind = MicaKind.BaseAlt
+                };
+                vm.Material = SystemBackdropOption.MicaAlt;
+                //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
+
+                vm.IsBackdropEnabled = true;
+            }
+        }
+        else if (backdrop == SystemBackdropOption.Acrylic)
+        {
+            if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+            {
+                this.SystemBackdrop = new DesktopAcrylicBackdrop();
+
+                vm.Material = SystemBackdropOption.Acrylic;
+                //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
+
+                vm.IsBackdropEnabled = true;
+            }
+        }
+        else if (backdrop == SystemBackdropOption.None)
+        {
+            this.SystemBackdrop = null;
+
+            vm.Material = SystemBackdropOption.None;
+            vm.IsBackdropEnabled = false;
+            vm.Theme = ElementTheme.Default;
+            theme = ElementTheme.Default;
+            if (this.Content is ShellPage root)
+            {
+                root.RequestedTheme = theme;
+
+                //TitleBarHelper.UpdateTitleBar(theme, this);
+                //SetCapitionButtonColorForWin11();
+            }
+
+            this.SystemBackdrop = null;
+        }
     }
 
     private void WindowEx_SizeChanged(object sender, WindowSizeChangedEventArgs args)
@@ -316,11 +451,12 @@ public partial class MainWindow : Window
 
     private void WindowEx_Closed(object sender, WindowEventArgs args)
     {
+        SaveSettings();
+    }
+
+    private void SaveSettings()
+    {
         var vm = App.GetService<MainViewModel>();
-
-        #region == Save setting ==
-
-        // Ignore window size and position. Let WinEx do the Window resize. It handles save and restore perfectly including RestoreBound.
 
         XmlDocument doc = new();
         var xmlDeclaration = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -342,6 +478,7 @@ public partial class MainWindow : Window
             var mainWindow = doc.CreateElement(string.Empty, "MainWindow", string.Empty);
 
             var winState = OverlappedPresenterState.Restored;
+
             Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
             if (appWindow != null)
             {
@@ -412,7 +549,7 @@ public partial class MainWindow : Window
             mainWindow.SetAttributeNode(attrs);
 
             attrs = doc.CreateAttribute("state");
-            if (winState == OverlappedPresenterState.Maximized)  
+            if (winState == OverlappedPresenterState.Maximized)
             {
                 attrs.Value = "Maximized";
             }
@@ -447,6 +584,19 @@ public partial class MainWindow : Window
 
         }
 
+        // Themes
+        var xTheme = doc.CreateElement(string.Empty, "Theme", string.Empty);
+
+        attrs = doc.CreateAttribute("current");
+        attrs.Value = vm.Theme.ToString();
+        xTheme.SetAttributeNode(attrs);
+
+        attrs = doc.CreateAttribute("backdrop");
+        attrs.Value = vm.Material.ToString();
+        xTheme.SetAttributeNode(attrs);
+
+        root.AppendChild(xTheme);
+
         // Options
         var xOpts = doc.CreateElement(string.Empty, "Opts", string.Empty);
 
@@ -476,6 +626,5 @@ public partial class MainWindow : Window
             Debug.WriteLine("MainWindow_Closed: " + ex + " while saving : " + filePath);
         }
 
-        #endregion
     }
 }

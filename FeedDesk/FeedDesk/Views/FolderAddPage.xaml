@@ -22,7 +22,10 @@
 
                 <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
 
-                    <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackCommand}">
+                    <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackToMainCommand}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Left" Modifiers="Control" />
+                        </Button.KeyboardAccelerators>
                         <!-- <SymbolIcon Symbol="Back" /> -->
                         <Viewbox Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center">
                             <PathIcon Margin="-2,-2,0,0" Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></PathIcon>
@@ -43,7 +46,7 @@
 
                             <StackPanel Margin="12,6,0,0">
                                 <TextBlock x:Uid="FolderAddPage_Folder_Name" Style="{ThemeResource BodyTextBlockStyle}" Margin="{StaticResource XSmallTopMargin}"/>
-                                <TextBox Text="{x:Bind ViewModel.Name, Mode=TwoWay}" Margin="{StaticResource XSmallTopMargin}" Width="300" MaxWidth="800" HorizontalAlignment="Left"></TextBox>
+                                <TextBox Text="{x:Bind ViewModel.NameToAddFolder, Mode=TwoWay}" Margin="{StaticResource XSmallTopMargin}" Width="300" MaxWidth="800" HorizontalAlignment="Left"></TextBox>
                             </StackPanel>
 
                             <StackPanel Margin="12,6,0,0">

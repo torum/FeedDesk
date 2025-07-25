@@ -22,11 +22,16 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         Client.DefaultRequestHeaders.Clear();
         //Client.DefaultRequestHeaders.ConnectionClose = false;
         Client.DefaultRequestHeaders.ConnectionClose = true;
-        //Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
+        Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rss+xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rdf+xml"));
+
+        // This is a little hack for wordpress.com and some other gov sites. Without this, they return HTTP status Forbidden or not found. @GetAndParseRsdAsync
+        //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0");
+        //Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
+        Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
     }
 
     public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId)
@@ -112,7 +117,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     // RSS 2.0
                     if (xdoc.DocumentElement.LocalName.Equals("rss"))
                     {
-                        XmlNamespaceManager NsMgr = new XmlNamespaceManager(xdoc.NameTable);
+                        XmlNamespaceManager NsMgr = new(xdoc.NameTable);
                         NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
                         NsMgr.AddNamespace("itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd");
                         NsMgr.AddNamespace("content", "http://purl.org/rss/1.0/modules/content/");
@@ -165,8 +170,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                     // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
                                     try
                                     {
-                                        DateTime tmp;
-                                        if (DateTime.TryParse(s, out tmp))
+                                        if (DateTime.TryParse(s, out DateTime tmp))
                                         {
                                             res.Published = tmp.ToUniversalTime();
                                         }
@@ -200,8 +204,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                     // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
                                     try
                                     {
-                                        DateTime tmp;
-                                        if (DateTime.TryParse(s, out tmp))
+                                        if (DateTime.TryParse(s, out DateTime tmp))
                                         {
                                             res.Updated = tmp.ToUniversalTime();
                                         }
@@ -226,7 +229,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                 continue;
                             i++;
 
-                            FeedEntryItem ent = new FeedEntryItem("", feedId, this);
+                            FeedEntryItem ent = new("", feedId, this);
 
                             FillEntryItemFromXmlRss(ent, l, NsMgr, entriesUrl);
 
@@ -240,7 +243,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     // RSS 1.0
                     else if (xdoc.DocumentElement.LocalName.Equals("RDF"))
                     {
-                        XmlNamespaceManager NsMgr = new XmlNamespaceManager(xdoc.NameTable);
+                        XmlNamespaceManager NsMgr = new(xdoc.NameTable);
                         NsMgr.AddNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
                         NsMgr.AddNamespace("rss", "http://purl.org/rss/1.0/");
                         NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
@@ -300,7 +303,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                             if (i >= 1000)
                                 continue;
                             i++;
-                            FeedEntryItem ent = new FeedEntryItem("", feedId, this);
+                            FeedEntryItem ent = new("", feedId, this);
 
                             FillEntryItemFromXmlRdf(ent, l, NsMgr, entriesUrl);
 
@@ -317,7 +320,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                         // Atom 1.0
                         if (xdoc.DocumentElement.NamespaceURI.Equals("http://www.w3.org/2005/Atom"))
                         {
-                            XmlNamespaceManager atomNsMgr = new XmlNamespaceManager(xdoc.NameTable);
+                            XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
                             atomNsMgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
                             atomNsMgr.AddNamespace("app", "http://www.w3.org/2007/app");
                             atomNsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
@@ -417,7 +420,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                     continue;
                                 i++;
 
-                                FeedEntryItem ent = new FeedEntryItem("", feedId, this);
+                                FeedEntryItem ent = new("", feedId, this);
                                 //ent.Status = EditEntryItem.EditStatus.esNormal;
 
                                 FillEntryItemFromXmlAtom10(ent, l, atomNsMgr, entriesUrl);
@@ -432,7 +435,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                         // Old Atom 0.3
                         else if (xdoc.DocumentElement.NamespaceURI.Equals("http://purl.org/atom/ns#"))
                         {
-                            XmlNamespaceManager atomNsMgr = new XmlNamespaceManager(xdoc.NameTable);
+                            XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
                             atomNsMgr.AddNamespace("atom", "http://purl.org/atom/ns#");
                             atomNsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
 
@@ -531,7 +534,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                     continue;
                                 i++;
 
-                                FeedEntryItem ent = new FeedEntryItem("", feedId, this);
+                                FeedEntryItem ent = new("", feedId, this);
                                 //ent.Status = EditEntryItem.EditStatus.esNormal;
 
                                 FillEntryItemFromXmlAtom03(ent, l, atomNsMgr, entriesUrl);
@@ -750,8 +753,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
                     try
                     {
-                        DateTime tmp;
-                        if (DateTime.TryParse(s, out tmp))
+                        if (DateTime.TryParse(s, out DateTime tmp))
                         {
                             entItem.Published = tmp.ToUniversalTime();
                         }
@@ -1469,33 +1471,17 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     {
                         //entItem.ContentTypeString = contype;
 
-                        switch (contype)
+                        entItem.ContentType = contype switch
                         {
-                            case "text":
-                                entItem.ContentType = EntryItem.ContentTypes.text;
-                                break;
-                            case "html":
-                                entItem.ContentType = EntryItem.ContentTypes.textHtml;
-                                break;
-                            case "xhtml":
-                                entItem.ContentType = EntryItem.ContentTypes.textHtml;
-                                break;
-                            case "text/plain":
-                                entItem.ContentType = EntryItem.ContentTypes.text;
-                                break;
-                            case "text/html":
-                                entItem.ContentType = EntryItem.ContentTypes.textHtml;
-                                break;
-                            case "text/x-markdown":
-                                entItem.ContentType = EntryItem.ContentTypes.markdown;
-                                break;
-                            case "text/x-hatena-syntax":
-                                entItem.ContentType = EntryItem.ContentTypes.hatena;
-                                break;
-                            default:
-                                entItem.ContentType = EntryItem.ContentTypes.unknown;
-                                break;
-                        }
+                            "text" => EntryItem.ContentTypes.text,
+                            "html" => EntryItem.ContentTypes.textHtml,
+                            "xhtml" => EntryItem.ContentTypes.textHtml,
+                            "text/plain" => EntryItem.ContentTypes.text,
+                            "text/html" => EntryItem.ContentTypes.textHtml,
+                            "text/x-markdown" => EntryItem.ContentTypes.markdown,
+                            "text/x-hatena-syntax" => EntryItem.ContentTypes.hatena,
+                            _ => EntryItem.ContentTypes.unknown,
+                        };
                     }
                 }
                 else
@@ -1957,33 +1943,17 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     {
                         //entry.ContentTypeString = contype;
 
-                        switch (contype)
+                        entItem.ContentType = contype switch
                         {
-                            case "text":
-                                entItem.ContentType = EntryItem.ContentTypes.text;
-                                break;
-                            case "html":
-                                entItem.ContentType = EntryItem.ContentTypes.textHtml;
-                                break;
-                            case "xhtml":
-                                entItem.ContentType = EntryItem.ContentTypes.textHtml;
-                                break;
-                            case "text/plain":
-                                entItem.ContentType = EntryItem.ContentTypes.text;
-                                break;
-                            case "text/html":
-                                entItem.ContentType = EntryItem.ContentTypes.textHtml;
-                                break;
-                            case "text/x-markdown":
-                                entItem.ContentType = EntryItem.ContentTypes.markdown;
-                                break;
-                            case "text/x-hatena-syntax":
-                                entItem.ContentType = EntryItem.ContentTypes.hatena;
-                                break;
-                            default:
-                                entItem.ContentType = EntryItem.ContentTypes.unknown;
-                                break;
-                        }
+                            "text" => EntryItem.ContentTypes.text,
+                            "html" => EntryItem.ContentTypes.textHtml,
+                            "xhtml" => EntryItem.ContentTypes.textHtml,
+                            "text/plain" => EntryItem.ContentTypes.text,
+                            "text/html" => EntryItem.ContentTypes.textHtml,
+                            "text/x-markdown" => EntryItem.ContentTypes.markdown,
+                            "text/x-hatena-syntax" => EntryItem.ContentTypes.hatena,
+                            _ => EntryItem.ContentTypes.unknown,
+                        };
                     }
                 }
                 else

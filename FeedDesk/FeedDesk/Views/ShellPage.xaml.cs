@@ -42,13 +42,10 @@ public sealed partial class ShellPage : Page
     // For uses of Navigation in other pages.
     public Frame NavFrame => NavigationFrame;
 
-    private readonly IThemeSelectorService _themeSelectorService;
     
-    public ShellPage(IThemeSelectorService themeSelectorService)
+    public ShellPage()
     {
         ViewModel = App.GetService<MainViewModel>(); ;
-
-        _themeSelectorService = themeSelectorService;
 
         InitializeComponent();
 
@@ -56,6 +53,11 @@ public sealed partial class ShellPage : Page
 
         NavigationFrame.Content = App.GetService<MainPage>();
 
+        //App.AppTitlebar = AppTitleBarText as UIElement;
+        App.AppTitlebar = AppTitleBar as UIElement;
+
+        // MainWindow is null, because changed the order of creation. Instead, InitWhenMainWindowIsReady() is called.
+        /*
         if (App.MainWnd is not null)
         {
             App.MainWnd.ExtendsContentIntoTitleBar = true;
@@ -68,17 +70,28 @@ public sealed partial class ShellPage : Page
         {
             Debug.WriteLine("MainWindow is null @ShellPage::Constructor");
         }
+        */
 
-        InitThemeService();
-
-        //NavigationFrame.Content = App.GetService<MainPage>();
-        //NavigationFrame?.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+        this.ActualThemeChanged += this.This_ActualThemeChanged;
     }
 
-    private async void InitThemeService()
+    public void InitWhenMainWindowIsReady(MainWindow wnd)
     {
-        await _themeSelectorService.InitializeAsync();//.ConfigureAwait(false)
-        await _themeSelectorService.SetRequestedThemeAsync();
+        //App.MainWnd.ExtendsContentIntoTitleBar = true;
+        wnd.SetTitleBar(AppTitleBar);
+
+        wnd.Activated += MainWindow_Activated;
+        wnd.Closed += MainWindow_Closed;
+    }
+
+    private void This_ActualThemeChanged(FrameworkElement sender, object args)
+    {
+        if (App.MainWnd is null)
+        {
+            return;
+        }
+
+        App.MainWnd.SetCapitionButtonColorForWin11();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -103,7 +116,7 @@ public sealed partial class ShellPage : Page
 
     private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
-        App.AppTitlebar = AppTitleBarText as UIElement;
+        //App.AppTitlebar = AppTitleBarText as UIElement;
 
         var resource = args.WindowActivationState == WindowActivationState.Deactivated ? "WindowCaptionForegroundDisabled" : "WindowCaptionForeground";
 
@@ -124,6 +137,7 @@ public sealed partial class ShellPage : Page
     {
         //ShellMenuBarSettingsButton.RemoveHandler(UIElement.PointerPressedEvent, (PointerEventHandler)ShellMenuBarSettingsButton_PointerPressed);
         //ShellMenuBarSettingsButton.RemoveHandler(UIElement.PointerReleasedEvent, (PointerEventHandler)ShellMenuBarSettingsButton_PointerReleased);
+
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)

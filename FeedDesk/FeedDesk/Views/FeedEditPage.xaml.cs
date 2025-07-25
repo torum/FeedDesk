@@ -5,14 +5,14 @@ namespace FeedDesk.Views;
 
 public sealed partial class FeedEditPage : Page
 {
-    public FeedEditViewModel ViewModel
+    public MainViewModel ViewModel
     {
         get;
     }
 
     public FeedEditPage()
     {
-        ViewModel = App.GetService<FeedEditViewModel>();
+        ViewModel = App.GetService<MainViewModel>();
         this.InitializeComponent();
     }
 }

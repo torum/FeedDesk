@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FeedDesk.Models.Clients;
 
 public abstract class BaseClient : IDisposable
 {
-    private static readonly object _locker = new();
+    private static readonly Lock _locker = new();
     private static volatile HttpClient? _client;
 
     protected static HttpClient Client
@@ -90,7 +91,7 @@ public abstract class BaseClient : IDisposable
 
     #region == Fill ErrorObject ==
 
-    protected ErrorObject InvalidUriScheme(ErrorObject err, string scheme, string errPlaceParent)
+    protected static ErrorObject InvalidUriScheme(ErrorObject err, string scheme, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.HTTP;
@@ -102,7 +103,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject InvalidContentType(ErrorObject err, string errText, string errPlace, string errPlaceParent)
+    protected static ErrorObject InvalidContentType(ErrorObject err, string errText, string errPlace, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.HTTP;
@@ -115,7 +116,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject InvalidXml(ErrorObject err, string eMessage, string errPlace, string errPlaceParent)
+    protected static ErrorObject InvalidXml(ErrorObject err, string eMessage, string errPlace, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.XML;
@@ -128,7 +129,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject FormatUndetermined(ErrorObject err, string errPlaceParent)
+    protected static ErrorObject FormatUndetermined(ErrorObject err, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.API;
@@ -141,7 +142,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject NonSuccessStatusCode(ErrorObject err, string statusCode, string errPlace, string errPlaceParent)
+    protected static ErrorObject NonSuccessStatusCode(ErrorObject err, string statusCode, string errPlace, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.HTTP;
@@ -154,7 +155,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject HttpReqException(ErrorObject err, string eMessage, string errPlace, string errPlaceParent)
+    protected static ErrorObject HttpReqException(ErrorObject err, string eMessage, string errPlace, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.HTTP;
@@ -167,7 +168,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject HttpTimeoutException(ErrorObject err, string errText, string errPlace, string errPlaceParent)
+    protected static ErrorObject HttpTimeoutException(ErrorObject err, string errText, string errPlace, string errPlaceParent)
     {
         err.ErrCode = "";
         err.ErrType = ErrorObject.ErrTypes.HTTP; ;
@@ -180,7 +181,7 @@ public abstract class BaseClient : IDisposable
         return err;
     }
 
-    protected ErrorObject GenericException(ErrorObject err, string errCode, ErrorObject.ErrTypes errType, string errText, string errDescription, string errPlace, string errPlaceParent)
+    protected static ErrorObject GenericException(ErrorObject err, string errCode, ErrorObject.ErrTypes errType, string errText, string errDescription, string errPlace, string errPlaceParent)
     {
         err.ErrCode = errCode;
         err.ErrType = errType;

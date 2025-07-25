@@ -23,6 +23,9 @@
         <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
 
             <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackToMainCommand}" >
+                <Button.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="Left" Modifiers="Control" />
+                </Button.KeyboardAccelerators>
                 <!--   -->
                 <!-- <SymbolIcon Symbol="Back" /> -->
                 <Viewbox Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -54,17 +57,17 @@
 
                                             <TextBlock x:Uid="Settings_Theme" Margin="0,0,0,12" />
 
-                                            <RadioButton x:Uid="Settings_Theme_Light" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.EleTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
+                                            <RadioButton x:Uid="Settings_Theme_Light" IsEnabled="{x:Bind ViewModel.IsBackdropEnabled, Mode=OneWay}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.Theme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
                                                 <RadioButton.CommandParameter>
                                                     <xaml:ElementTheme>Light</xaml:ElementTheme>
                                                 </RadioButton.CommandParameter>
                                             </RadioButton>
-                                            <RadioButton x:Uid="Settings_Theme_Dark" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.EleTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
+                                            <RadioButton x:Uid="Settings_Theme_Dark" IsEnabled="{x:Bind ViewModel.IsBackdropEnabled, Mode=OneWay}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.Theme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
                                                 <RadioButton.CommandParameter>
                                                     <xaml:ElementTheme>Dark</xaml:ElementTheme>
                                                 </RadioButton.CommandParameter>
                                             </RadioButton>
-                                            <RadioButton x:Uid="Settings_Theme_Default" IsEnabled="{x:Bind ViewModel.IsSystemBackdropSupported}" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.EleTheme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Default, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
+                                            <RadioButton x:Uid="Settings_Theme_Default" IsEnabled="True" Command="{x:Bind ViewModel.SwitchThemeCommand}" IsChecked="{x:Bind ViewModel.Theme, Converter={StaticResource ElementThemeEnumToBooleanConverter}, ConverterParameter=Default, Mode=OneWay}" FontSize="15" GroupName="AppTheme">
                                                 <RadioButton.CommandParameter>
                                                     <xaml:ElementTheme>Default</xaml:ElementTheme>
                                                 </RadioButton.CommandParameter>
@@ -80,7 +83,9 @@
                                         <StackPanel Margin="{StaticResource XSmallTopMargin}">
 
                                             <RadioButton x:Uid="Settings_SystemBackdrop_Acrylic" IsEnabled="{x:Bind ViewModel.IsAcrylicSupported,Mode=OneWay}" Command="{x:Bind ViewModel.SwitchSystemBackdropCommand}" CommandParameter="Acrylic" IsChecked="{x:Bind ViewModel.Material, Converter={StaticResource SystemBackdropEnumToBooleanConverter}, ConverterParameter=Acrylic, Mode=OneWay}" FontSize="15" GroupName="AppMaterial"/>
-                                            <RadioButton x:Uid="Settings_SystemBackdrop_Mica" IsEnabled="{x:Bind ViewModel.IsAcrylicSupported,Mode=OneWay}" Command="{x:Bind ViewModel.SwitchSystemBackdropCommand}" CommandParameter="Mica" IsChecked="{x:Bind ViewModel.Material, Converter={StaticResource SystemBackdropEnumToBooleanConverter}, ConverterParameter=Mica, Mode=OneWay}" FontSize="15" GroupName="AppMaterial"/>
+                                            <RadioButton x:Uid="Settings_SystemBackdrop_Mica" IsEnabled="{x:Bind ViewModel.IsMicaSupported,Mode=OneWay}" Command="{x:Bind ViewModel.SwitchSystemBackdropCommand}" CommandParameter="Mica" IsChecked="{x:Bind ViewModel.Material, Converter={StaticResource SystemBackdropEnumToBooleanConverter}, ConverterParameter=Mica, Mode=OneWay}" FontSize="15" GroupName="AppMaterial"/>
+                                            <RadioButton x:Uid="Settings_SystemBackdrop_MicaAlt" IsEnabled="{x:Bind ViewModel.IsMicaSupported,Mode=OneWay}" Command="{x:Bind ViewModel.SwitchSystemBackdropCommand}" CommandParameter="MicaAlt" IsChecked="{x:Bind ViewModel.Material, Converter={StaticResource SystemBackdropEnumToBooleanConverter}, ConverterParameter=MicaAlt, Mode=OneWay}" FontSize="15" GroupName="AppMaterial"/>
+                                            <RadioButton x:Uid="Settings_SystemBackdrop_None" IsEnabled="True" Command="{x:Bind ViewModel.SwitchSystemBackdropCommand}" CommandParameter="None" IsChecked="{x:Bind ViewModel.Material, Converter={StaticResource SystemBackdropEnumToBooleanConverter}, ConverterParameter=None, Mode=OneWay}" FontSize="15" GroupName="AppMaterial"/>
 
                                         </StackPanel>
 
@@ -128,7 +133,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
                                         <TextBlock x:Uid="Settings_About_ThirdPartyComponents" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,0" HorizontalAlignment="Left" />
 
-
                                         <RichTextBlock MaxWidth="650" Margin="0,10,0,0" IsTextSelectionEnabled="True" HorizontalAlignment="Left">
                                             <Paragraph FontWeight="Bold" FontSize="16" Margin="0,6,6,6">System.Data.SQLite</Paragraph>
                                             <Paragraph>
@@ -136,23 +140,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
                                             </Paragraph>
                                             <Paragraph Margin="0,10,0,0">Public Domain</Paragraph>
                                             <Paragraph>SQLite Development Team</Paragraph>
-                                        </RichTextBlock>
-
-                                        <RichTextBlock MaxWidth="650" Margin="0,10,0,0" IsTextSelectionEnabled="True" HorizontalAlignment="Left">
-                                            <Paragraph FontWeight="Bold" FontSize="16" Margin="0,6,6,6">WinUIEx</Paragraph>
-                                            <Paragraph>
-                                                <Hyperlink NavigateUri="https://github.com/dotMorten/WinUIEx">https://github.com/dotMorten/WinUIEx</Hyperlink>
-                                            </Paragraph>
-                                            <Paragraph Margin="0,10,0,0">The MIT License</Paragraph>
-                                            <Paragraph>Copyright (c) 2021 Morten Nielsen</Paragraph>
-
-                                            <Paragraph Margin="0,10,0,0">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-                                            </Paragraph>
-                                            <Paragraph Margin="0,10,0,0">The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-                                            </Paragraph>
-                                            <Paragraph Margin="0,10,0,0">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                                            </Paragraph>
                                         </RichTextBlock>
 
                                         <RichTextBlock MaxWidth="650" Margin="0,10,0,0" IsTextSelectionEnabled="True" HorizontalAlignment="Left">

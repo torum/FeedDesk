@@ -2,31 +2,30 @@
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap rescap">
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  IgnorableNamespaces="uap rescap mp">
 
   <Identity
-    Name="16ca0938-8609-4bf3-94f4-fa1c954ce691"
-    Publisher="CN=torum"
-    Version="1.0.0.0" />
-
-  <mp:PhoneIdentity PhoneProductId="16ca0938-8609-4bf3-94f4-fa1c954ce691" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+    Name="60132torumyax.FeedDesk"
+    Publisher="CN=F3079A96-760D-4F53-9E00-374C09B6D4B1"
+    Version="1.0.22.0" />
 
   <Properties>
     <DisplayName>FeedDesk</DisplayName>
-    <PublisherDisplayName>torum</PublisherDisplayName>
+    <PublisherDisplayName>toru_m</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
   </Dependencies>
 
   <Resources>
     <Resource Language="x-generate"/>
+	  <Resource Language="en-US"/>
+	  <Resource Language="ja-JP"/>
   </Resources>
 
   <Applications>
@@ -39,13 +38,16 @@
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"  Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png"/>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        <uap:LockScreen BadgeLogo="Assets\BadgeLogo.png"  Notification="badgeAndTileText"/>
       </uap:VisualElements>
     </Application>
   </Applications>
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
+    <Capability Name="internetClient"/>
   </Capabilities>
+
 </Package>

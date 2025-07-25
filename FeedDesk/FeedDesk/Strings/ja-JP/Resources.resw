@@ -421,10 +421,10 @@
     <value>ビジュアル効果</value>
   </data>
   <data name="Settings_SystemBackdrop_Acrylic.Content" xml:space="preserve">
-    <value>Acrylic</value>
+    <value>アクリル</value>
   </data>
   <data name="Settings_SystemBackdrop_Mica.Content" xml:space="preserve">
-    <value>Mica</value>
+    <value>マイカ</value>
   </data>
   <data name="WaitDialog_Title" xml:space="preserve">
     <value>お待ちください・・・</value>
@@ -446,5 +446,11 @@
   </data>
   <data name="ShellMenuBarItem_Entry_View_All.ToolTipService.ToolTip" xml:space="preserve">
     <value>全て</value>
+  </data>
+  <data name="Settings_SystemBackdrop_MicaAlt.Content" xml:space="preserve">
+    <value>マイカ (Alt)</value>
+  </data>
+  <data name="Settings_SystemBackdrop_None.Content" xml:space="preserve">
+    <value>なし</value>
   </data>
 </root>

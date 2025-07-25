@@ -192,7 +192,6 @@
                           DragItemsCompleted="TreeView_DragItemsCompleted" 
                           IsRightTapEnabled="True"
                           IsDoubleTapEnabled="True" 
-                          ItemInvoked="TreeView_ItemInvoked" 
                           ItemsSource="{x:Bind ViewModel.Services, Mode=OneWay}" 
                           ItemTemplateSelector="{StaticResource ExplorerItemTemplateSelector}" 
                           SelectedItem="{x:Bind ViewModel.SelectedTreeViewItem, Mode=TwoWay}" 
@@ -562,7 +561,7 @@
                                 </Border>
                             </StackPanel>
 
-                            <StackPanel Margin="12,12,12,12">
+                            <StackPanel Margin="12,9,12,12">
 
                                 <!-- Title -->
                                 <TextBlock Visibility="{x:Bind ViewModel.IsNoAltLinkExists, Mode=OneWay}" Text="{x:Bind ViewModel.SelectedListViewItem.Name, Mode=OneWay}" Margin="0" Style="{ThemeResource DetailTitleStyle}" FontSize="{StaticResource LargeFontSize}" Opacity="0.9"/>

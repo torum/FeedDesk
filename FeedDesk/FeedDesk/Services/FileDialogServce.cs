@@ -15,12 +15,12 @@ public class FileDialogService : IFileDialogService
     {
         FileOpenPicker picker = new();
         picker.SuggestedStartLocation = PickerLocationId.Desktop;
+        //picker.FileTypeFilter.Add("*");
         picker.FileTypeFilter.Add(".opml");
         picker.FileTypeFilter.Add(".xml");
         picker.FileTypeFilter.Add(".txt");
-        picker.FileTypeFilter.Add("*");
         picker.SettingsIdentifier = "OpmlFileIdentifier";
-
+        
         //var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         InitializeWithWindow.Initialize(picker, hwnd);
 

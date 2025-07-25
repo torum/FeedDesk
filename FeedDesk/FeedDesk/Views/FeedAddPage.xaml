@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:FeedDesk.Models"
-    NavigationCacheMode="Required"
+    NavigationCacheMode="Disabled"
     mc:Ignorable="d"
      Background="{ThemeResource NavigationViewContentBackground}">
     <Grid x:Name="ContentArea">
@@ -24,6 +24,9 @@
                 <Border Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
 
                     <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackCommand}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Left" Modifiers="Control" />
+                        </Button.KeyboardAccelerators>
                         <!-- <SymbolIcon Symbol="Back" /> -->
                         <Viewbox Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center">
                             <PathIcon Margin="-2,-2,0,0" Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></PathIcon>

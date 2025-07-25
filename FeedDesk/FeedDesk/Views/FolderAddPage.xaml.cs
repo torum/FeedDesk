@@ -8,14 +8,14 @@ namespace FeedDesk.Views;
 
 public sealed partial class FolderAddPage : Page
 {
-    public FolderAddViewModel ViewModel
+    public MainViewModel ViewModel
     {
         get;
     }
 
     public FolderAddPage()
     {
-        ViewModel = App.GetService<FolderAddViewModel>();
+        ViewModel = App.GetService<MainViewModel>();
         this.InitializeComponent();
     }
 
