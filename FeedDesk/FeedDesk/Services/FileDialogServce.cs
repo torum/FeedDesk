@@ -11,39 +11,44 @@ namespace FeedDesk.Services;
 
 public class FileDialogService : IFileDialogService
 {
+    FileOpenPicker? _fileOpenPicker;
+    FileSavePicker? _fileSavePicker;
+
     public async Task<StorageFile?> GetOpenOpmlFileDialog(IntPtr hwnd)
     {
-        FileOpenPicker picker = new();
-        picker.SuggestedStartLocation = PickerLocationId.Desktop;
-        //picker.FileTypeFilter.Add("*");
-        picker.FileTypeFilter.Add(".opml");
-        picker.FileTypeFilter.Add(".xml");
-        picker.FileTypeFilter.Add(".txt");
-        picker.SettingsIdentifier = "OpmlFileIdentifier";
+        _fileOpenPicker ??= new FileOpenPicker();
+
+        _fileOpenPicker.SuggestedStartLocation = PickerLocationId.Desktop;
+        //_fileOpenPicker.FileTypeFilter.Add("*");
+        _fileOpenPicker.FileTypeFilter.Add(".opml");
+        _fileOpenPicker.FileTypeFilter.Add(".xml");
+        _fileOpenPicker.FileTypeFilter.Add(".txt");
+        _fileOpenPicker.SettingsIdentifier = "OpmlFileIdentifier";
         
         //var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-        InitializeWithWindow.Initialize(picker, hwnd);
+        InitializeWithWindow.Initialize(_fileOpenPicker, hwnd);
 
-        var file = await picker.PickSingleFileAsync();
+        var file = await _fileOpenPicker.PickSingleFileAsync();
 
         return file;
     }
 
     public async Task<StorageFile?> GetSaveOpmlFileDialog(IntPtr hwnd)
     {
-        FileSavePicker picker = new();
-        picker.SuggestedStartLocation = PickerLocationId.Desktop;
-        picker.FileTypeChoices.Add("Opml", new List<string>() { ".opml" });
-        picker.FileTypeChoices.Add("Plain xml", new List<string>() { ".xml" });
-        picker.FileTypeChoices.Add("Plain Text", new List<string>() { ".txt" });
-        picker.SuggestedFileName = "Feeds";
-        picker.SettingsIdentifier = "OpmlFileIdentifier";
-        picker.DefaultFileExtension = ".opml";
+        _fileSavePicker ??= new FileSavePicker();
+
+        _fileSavePicker.SuggestedStartLocation = PickerLocationId.Desktop;
+        _fileSavePicker.FileTypeChoices.Add("Opml", [".opml"]);
+        _fileSavePicker.FileTypeChoices.Add("Plain xml", [".xml"]);
+        _fileSavePicker.FileTypeChoices.Add("Plain Text", [".txt"]);
+        _fileSavePicker.SuggestedFileName = "Feeds";
+        _fileSavePicker.SettingsIdentifier = "OpmlFileIdentifier";
+        _fileSavePicker.DefaultFileExtension = ".opml";
 
         //var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-        InitializeWithWindow.Initialize(picker, hwnd);
+        InitializeWithWindow.Initialize(_fileSavePicker, hwnd);
 
-        var file = await picker.PickSaveFileAsync();
+        var file = await _fileSavePicker.PickSaveFileAsync();
 
         return file;
     }

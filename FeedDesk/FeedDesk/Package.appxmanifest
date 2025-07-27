@@ -10,7 +10,7 @@
   <Identity
     Name="60132torumyax.FeedDesk"
     Publisher="CN=F3079A96-760D-4F53-9E00-374C09B6D4B1"
-    Version="1.0.22.0" />
+    Version="1.0.23.0" />
 
   <Properties>
     <DisplayName>FeedDesk</DisplayName>

@@ -117,7 +117,7 @@ public partial class App : Application
             //services.AddTransient<INavigationViewService, NavigationViewService>();
 
             // Core Services
-            services.AddTransient<IFileDialogService, FileDialogService>();
+            services.AddSingleton<IFileDialogService, FileDialogService>();
             services.AddSingleton<IDataAccessService, DataAccessService>();
             services.AddSingleton<IFeedClientService, FeedClientService>();
             services.AddSingleton<IAutoDiscoveryService, AutoDiscoveryService>();

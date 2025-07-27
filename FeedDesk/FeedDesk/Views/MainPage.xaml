@@ -546,7 +546,7 @@
                 <Border x:Name="DetailsPane" Grid.Row="0" Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" Margin="0" CornerRadius="{ThemeResource NavigationViewContentChildGridCornerRadius}" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
                     <ScrollViewer x:Name="DetailsPaneScrollViewer" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
-                        <StackPanel Margin="12,12,12,12" MaxWidth="1024" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                        <StackPanel Margin="12,12,12,12" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
                             <!-- ImageLink -->
                             <StackPanel Visibility="{x:Bind ViewModel.IsImageLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" Margin="0,0,0,0">

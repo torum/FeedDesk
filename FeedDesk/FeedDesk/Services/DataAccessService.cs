@@ -14,7 +14,7 @@ namespace FeedDesk.Services;
 
 public class DataAccessService : IDataAccessService
 {
-    private readonly SQLiteConnectionStringBuilder connectionStringBuilder = new();
+    private readonly SQLiteConnectionStringBuilder connectionStringBuilder = [];
 
     private readonly ReaderWriterLockSlim _readerWriterLock = new();
 
