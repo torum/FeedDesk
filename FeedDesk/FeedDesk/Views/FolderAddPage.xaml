@@ -24,7 +24,7 @@
 
                     <Button Margin="12,12,0,0" Padding="12" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.GoBackToMainCommand}">
                         <Button.KeyboardAccelerators>
-                            <KeyboardAccelerator Key="Left" Modifiers="Control" />
+                            <KeyboardAccelerator Key="Left" Modifiers="Menu" />
                         </Button.KeyboardAccelerators>
                         <!-- <SymbolIcon Symbol="Back" /> -->
                         <Viewbox Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Center">

@@ -99,8 +99,8 @@ public sealed partial class ShellPage : Page
         // Needed to be here. (don't put this in constructor.. messes up when theme changed.)
         //TitleBarHelper.UpdateTitleBar(RequestedTheme, App.MainWindow);
 
-        KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));
-        KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.GoBack));
+        //KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));
+        //KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.GoBack));
 
         //ShellMenuBarSettingsButton.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(ShellMenuBarSettingsButton_PointerPressed), true);
         //ShellMenuBarSettingsButton.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(ShellMenuBarSettingsButton_PointerReleased), true);

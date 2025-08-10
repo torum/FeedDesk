@@ -543,13 +543,13 @@
 
                 <!-- Details pane --> 
                    <!-- SolidBackgroundFillColorQuarternaryBrush SolidBackgroundFillColorTertiaryBrush -->
-                <Border x:Name="DetailsPane" Grid.Row="0" Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" Margin="0" CornerRadius="{ThemeResource NavigationViewContentChildGridCornerRadius}" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
+                <Border x:Name="DetailsPane" Grid.Row="0" Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" Margin="0" CornerRadius="{ThemeResource NavigationViewContentChildGridCornerRadius}" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}" SizeChanged="DetailsPane_SizeChanged">
                     <ScrollViewer x:Name="DetailsPaneScrollViewer" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
-                        <StackPanel Margin="12,12,12,12" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-
+                        <StackPanel x:Name="DetailsContentStackPanel" Margin="0" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <!-- adaptive procedure on code behind > MaxWidth="1000" HorizontalAlignment="Center"  -->
                             <!-- ImageLink -->
-                            <StackPanel Visibility="{x:Bind ViewModel.IsImageLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" Margin="0,0,0,0">
+                            <StackPanel Visibility="{x:Bind ViewModel.IsImageLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" Margin="12,12,12,0">
                                 <TextBlock Text="{x:Bind ViewModel.SelectedListViewItem.ImageUri.AbsoluteUri, Mode=OneWay}" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource BodyTextBlockStyle}" Visibility="Collapsed"/>
                                 <Border CornerRadius="6" HorizontalAlignment="Stretch" Margin="0" Height="270" MaxHeight="270">
                                     <Border.Background>
