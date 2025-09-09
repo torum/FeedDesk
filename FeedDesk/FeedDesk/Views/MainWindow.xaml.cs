@@ -104,6 +104,19 @@ public partial class MainWindow : Window
 
         var vm = App.GetService<MainViewModel>();
 
+        if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+        {
+            vm.IsAcrylicSupported = true;
+
+            vm.IsBackdropEnabled = true;
+        }
+        if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+        {
+            vm.IsMicaSupported = true;
+
+            vm.IsBackdropEnabled = true;
+        }
+
         if (!System.IO.File.Exists(filePath)) 
         {
             // Sets default.
@@ -615,6 +628,10 @@ public partial class MainWindow : Window
         if (RuntimeHelper.IsMSIX)
         {
             filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
+        }
+        else
+        {
+            System.IO.Directory.CreateDirectory(App.AppDataFolder);
         }
 
         try

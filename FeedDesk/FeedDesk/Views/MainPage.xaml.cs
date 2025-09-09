@@ -4,6 +4,7 @@ using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -259,9 +260,26 @@ public sealed partial class MainPage : Page
         DetailsPaneScrollViewer.ChangeView(0, 0, 1);
     }
 
-    private async void ListViewEntryItem_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    private async void ListViewEntryItem_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
-        if (ListViewEntryItem.SelectedItem is EntryItem item)
+        if (sender is not ListView listView)
+        {
+            return;
+        }
+
+        if (e.OriginalSource is not Microsoft.UI.Xaml.Controls.ListViewItem)
+        {
+            return;
+        }
+
+        Windows.System.VirtualKey releasedKey = e.OriginalKey;
+
+        if (releasedKey != Windows.System.VirtualKey.Enter)
+        {
+            return;
+        }
+
+        if (listView.SelectedItem is EntryItem item)
         {
             if (item != null)
             {
@@ -270,6 +288,59 @@ public sealed partial class MainPage : Page
                     await Windows.System.Launcher.LaunchUriAsync(item.AltHtmlUri);
                 }
             }
+        }
+    }
+
+    private async void ListViewEntryItem_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    {
+        //ListView listView = (ListView)sender;
+        if (sender is not ListView listView)
+        {
+            return;
+        }
+
+        // UI element that was right-clicked
+        FrameworkElement element = (FrameworkElement)e.OriginalSource;
+
+        var container = FindParent<ListViewItem>(element);
+
+        if (container is null)
+        {
+            return;
+        }
+
+        if (listView.SelectedItem != container.Content)
+        {
+            return;
+        }
+
+        if (listView.SelectedItem is EntryItem item)
+        {
+            if (item != null)
+            {
+                if (item.AltHtmlUri != null)
+                {
+                    await Windows.System.Launcher.LaunchUriAsync(item.AltHtmlUri);
+                }
+            }
+        }
+    }
+
+    private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        DependencyObject parent = VisualTreeHelper.GetParent(child);
+        while (parent != null && parent is not T)
+        {
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+
+        if (parent is not null)
+        {
+            return parent as T;
+        }
+        else
+        {
+            return null;
         }
     }
 
