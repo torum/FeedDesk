@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 using FeedDesk.Services.Contracts;
 using FeedDesk.Models;
 using static FeedDesk.Models.FeedEntryItem;
@@ -14,7 +14,7 @@ namespace FeedDesk.Services;
 
 public class DataAccessService : IDataAccessService
 {
-    private readonly SQLiteConnectionStringBuilder connectionStringBuilder = [];
+    private readonly SqliteConnectionStringBuilder connectionStringBuilder = [];
 
     private readonly ReaderWriterLockSlim _readerWriterLock = new();
 
@@ -24,16 +24,19 @@ public class DataAccessService : IDataAccessService
 
         connectionStringBuilder.DataSource = dataBaseFilePath;
         connectionStringBuilder.ForeignKeys = true;
-        connectionStringBuilder.Version = 3; // Default is 3.
+        //connectionStringBuilder.Version = 3; // Default is 3.
 
         // Sync Mode
-        connectionStringBuilder.SyncMode = SynchronizationModes.Normal;
+        //connectionStringBuilder.SyncMode = SynchronizationModes.Normal;
 
         // Journal Mode
-        connectionStringBuilder.JournalMode = SQLiteJournalModeEnum.Persist; // faster than Truncate?
+        //connectionStringBuilder.JournalMode = SQLiteJournalModeEnum.Persist; // faster than Truncate?
         //connectionStringBuilder.JournalMode = SQLiteJournalModeEnum.Wal;// Testing WAL.
 
-        using (var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString))
+        // System.Data.SQLite
+        //using (var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString))
+        // Microsoft.Data.Sqlite
+        using (var connection = new SqliteConnection(connectionStringBuilder.ConnectionString))
         {
             try
             {
@@ -43,6 +46,9 @@ public class DataAccessService : IDataAccessService
                 tableCmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    tableCmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    tableCmd.ExecuteNonQuery();
+
                     tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS feeds (" +
                         "feed_id TEXT NOT NULL PRIMARY KEY," +
                         "url TEXT NOT NULL," +
@@ -205,13 +211,16 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
                     cmd.CommandText = "INSERT OR IGNORE INTO feeds (feed_id, url, name, title, description, updated, html_url) VALUES (@FeedId, @Uri, @Name, @Title, @Description, @Updated, @HtmlUri)";
                     cmd.CommandType = CommandType.Text;
 
@@ -342,15 +351,17 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
-                cmd.CommandText = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedId);
-
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
+                    cmd.CommandText = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedId);
                     res.AffectedCount = cmd.ExecuteNonQuery();
 
                     cmd.Transaction.Commit();
@@ -460,13 +471,16 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
                     var sql = "UPDATE feeds SET ";
                     sql += String.Format("name = '{0}', ", EscapeSingleQuote(feedName));
                     sql += String.Format("title = '{0}', ", EscapeSingleQuote(feedTitle));
@@ -587,13 +601,16 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
                     // update feed info.
                     var sql = "UPDATE feeds SET ";
                     sql += string.Format("name = '{0}', ", EscapeSingleQuote(feedName));
@@ -941,10 +958,14 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.EnterReadLock();
 
-            using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
             connection.Open();
 
             using var cmd = connection.CreateCommand();
+            
+            cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+            cmd.ExecuteNonQuery();
+
             if (IsUnarchivedOnly)
             {
                 //cmd.CommandText = String.Format("SELECT * FROM entries INNER JOIN feeds USING (feed_id) WHERE feed_id = '{0}' AND archived = '{1}' ORDER BY published DESC LIMIT 1000", feedId, bool.FalseString);
@@ -1228,9 +1249,13 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.EnterReadLock();
 
-            using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
             connection.Open();
             using var cmd = connection.CreateCommand();
+
+            cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+            cmd.ExecuteNonQuery();
+
             cmd.CommandText = before + middle + after;
 
             using var reader = cmd.ExecuteReader();
@@ -1481,7 +1506,7 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
@@ -1489,6 +1514,9 @@ public class DataAccessService : IDataAccessService
 
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
                     cmd.CommandText = before + middle + after;
 
                     cmd.CommandType = CommandType.Text;
@@ -1591,13 +1619,16 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
                     cmd.CommandText = sql;
 
                     res.AffectedCount = cmd.ExecuteNonQuery();
@@ -1723,13 +1754,16 @@ public class DataAccessService : IDataAccessService
             }
             else
             {
-                using var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString);
+                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
                 connection.Open();
 
                 using var cmd = connection.CreateCommand();
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
+                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    cmd.ExecuteNonQuery();
+
                     cmd.CommandText = sqlDelEntries;
 
                     res.AffectedCount = cmd.ExecuteNonQuery();

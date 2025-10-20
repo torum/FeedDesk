@@ -625,9 +625,9 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                 expMessage = e.Message + " (" + e.InnerException.Message + ")";
             }
 
-            Debug.WriteLine("<< HttpRequestException: " + expMessage);
+            Debug.WriteLine("<< HttpRequestException @GetEntries: " + expMessage);
 
-            ToDebugWindow(" << HttpRequestException: "
+            ToDebugWindow(" << HttpRequestException @GetEntries: "
                 + Environment.NewLine
                 + expMessage
                 + Environment.NewLine);

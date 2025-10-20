@@ -271,7 +271,7 @@ public partial class MainViewModel : ObservableRecipient
         {
             rootElement.RequestedTheme = Theme;
 
-            TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
+            //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
             App.MainWnd.SetCapitionButtonColorForWin11();
         }
     }
@@ -1101,6 +1101,7 @@ public partial class MainViewModel : ObservableRecipient
     #endregion
 
     #region == Finalization ==
+
     public void CleanUp()
     {
         try

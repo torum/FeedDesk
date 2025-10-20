@@ -59,8 +59,8 @@ public partial class MainWindow : Window
         {
             root.RequestedTheme = theme;
 
-            TitleBarHelper.UpdateTitleBar(theme, this);
-            SetCapitionButtonColorForWin11();
+            // Don't do this. This right here interfear the color change in active state change.
+            //SetCapitionButtonColorForWin11();
 
             root.InitWhenMainWindowIsReady(this);
         }

@@ -447,7 +447,7 @@ public abstract class EntryItem : Node
 }
 
 // Feed Entry Item
-public class FeedEntryItem : EntryItem
+public partial class FeedEntryItem : EntryItem
 {
     // Icon Path
     private static readonly string _rsNew = "M12 5C15.87 5 19 8.13 19 12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12C5 8.13 8.13 5 12 5M12 2C17.5 2 22 6.5 22 12C22 17.5 17.5 22 12 22C6.5 22 2 17.5 2 12C2 6.5 6.5 2 12 2M12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C16.42 20 20 16.42 20 12C20 7.58 16.42 4 12 4Z";
@@ -586,7 +586,7 @@ public class FeedEntryItem : EntryItem
 }
 
 // Edit Entry Item
-public class EditEntryItem : EntryItem
+public partial class EditEntryItem : EntryItem
 {
     // Icon Path
     private static readonly string _esNew = "M13,9V3.5L18.5,9M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z";
@@ -674,7 +674,7 @@ public abstract class EntryFull : EditEntryItem
 }
 
 // Atom Blog Entry class, which represents Atom Entry.
-public class AtomEntry : EntryFull
+public partial class AtomEntry : EntryFull
 {
     public string? ContentTypeString { get; set; }
     public string? ETag { get; set; }
@@ -815,7 +815,7 @@ public class AtomEntryHatena : AtomEntry
 }
 */
 
-public class MTEntry : EntryFull
+public partial class MTEntry : EntryFull
 {
     public MTEntry(string title, string serviceId, BaseClient bc) : base(title, serviceId, bc)
     {
@@ -823,7 +823,7 @@ public class MTEntry : EntryFull
     }
 }
 
-public class WPEntry : EntryFull
+public partial class WPEntry : EntryFull
 {
     public WPEntry(string title, string serviceId, BaseClient bc) : base(title, serviceId, bc)
     {
@@ -832,7 +832,7 @@ public class WPEntry : EntryFull
 }
 
 // StringWriter With Encoding.
-public class StringWriterWithEncoding : StringWriter
+public partial class StringWriterWithEncoding : StringWriter
 {
     public StringWriterWithEncoding(StringBuilder sb, Encoding encoding)
         : base(sb)

@@ -42,7 +42,7 @@ public class OpmlService : IOpmlService
         return dummyFolder;
     }
 
-    private void ProcessOutlineChild(XmlNodeList childs, NodeFolder parent)
+    private static void ProcessOutlineChild(XmlNodeList childs, NodeFolder parent)
     {
         foreach (XmlNode outline in childs)
         {
@@ -99,11 +99,13 @@ public class OpmlService : IOpmlService
 
             if (outline.ChildNodes.Count > 0)
             {
-                NodeFolder folder = new NodeFolder(title);
-                folder.IsSelected = true;
-                folder.IsExpanded = true;
+                NodeFolder folder = new(title)
+                {
+                    IsSelected = true,
+                    IsExpanded = true,
 
-                folder.Parent = parent;
+                    Parent = parent
+                };
 
                 parent.Children.Add(folder);
 
@@ -146,7 +148,7 @@ public class OpmlService : IOpmlService
         return xdoc;
     }
 
-    private void ProcessNodeChild(NodeTree nt, XmlDocument xdoc, XmlElement parent)
+    private static void ProcessNodeChild(NodeTree nt, XmlDocument xdoc, XmlElement parent)
     {
         if (nt is NodeFeed feed)
         {

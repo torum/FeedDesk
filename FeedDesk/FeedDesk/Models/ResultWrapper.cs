@@ -59,14 +59,14 @@ public class SqliteDataAccessResultWrapper: ResultWrapper
 
 public class SqliteDataAccessInsertResultWrapper: SqliteDataAccessResultWrapper
 {
-    public List<EntryItem> InsertedEntries = new();
+    public List<EntryItem> InsertedEntries = [];
 }
 
 public class SqliteDataAccessSelectResultWrapper: SqliteDataAccessResultWrapper
 {
     public int UnreadCount = 0;
 
-    public List<EntryItem> SelectedEntries = new();
+    public List<EntryItem> SelectedEntries = [];
 }
 
 /*
@@ -113,7 +113,7 @@ public class HttpClientEntryItemCollectionResultWrapper : ResultWrapper
     
     // category (s)
 
-    public List<EntryItem> Entries = new();
+    public List<EntryItem> Entries = [];
 
     public HttpClientEntryItemCollectionResultWrapper()
     {

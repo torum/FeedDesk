@@ -14,7 +14,7 @@ public static class DateTimeParser
 {
     public static DateTimeOffset ParseDateTimeRFC822(string dateTimeString)
     {
-        StringBuilder dateTimeStringBuilder = new StringBuilder(dateTimeString.Trim());
+        StringBuilder dateTimeStringBuilder = new(dateTimeString.Trim());
         if (dateTimeStringBuilder.Length < 18)
         {
             throw new FormatException("Invalid date format. Expected date in RFC 822 format");
@@ -49,13 +49,11 @@ public static class DateTimeParser
         {
             timeZoneStartIndex = 18;
         }
-        string timeZoneSuffix = dateTimeStringBuilder.ToString().Substring(timeZoneStartIndex);
+        string timeZoneSuffix = dateTimeStringBuilder.ToString()[timeZoneStartIndex..];
         dateTimeStringBuilder.Remove(timeZoneStartIndex, dateTimeStringBuilder.Length - timeZoneStartIndex);
-        bool isUtc;
-        dateTimeStringBuilder.Append(NormalizeTimeZone(timeZoneSuffix, out isUtc));
+        dateTimeStringBuilder.Append(NormalizeTimeZone(timeZoneSuffix, out bool isUtc));
         string wellFormattedString = dateTimeStringBuilder.ToString();
 
-        DateTimeOffset theTime;
         string parseFormat;
         if (thereAreSeconds)
         {
@@ -67,7 +65,7 @@ public static class DateTimeParser
         }
         if (DateTimeOffset.TryParseExact(wellFormattedString, parseFormat,
             CultureInfo.InvariantCulture.DateTimeFormat,
-            (isUtc ? DateTimeStyles.AdjustToUniversal : DateTimeStyles.None), out theTime))
+            (isUtc ? DateTimeStyles.AdjustToUniversal : DateTimeStyles.None), out DateTimeOffset theTime))
         {
             return theTime;
         }
@@ -81,7 +79,7 @@ public static class DateTimeParser
         if (rfc822TimeZone[0] == '+' || rfc822TimeZone[0] == '-')
         {
             // the time zone is supposed to be 4 digits but some feeds omit the initial 0
-            StringBuilder result = new StringBuilder(rfc822TimeZone);
+            StringBuilder result = new(rfc822TimeZone);
             if (result.Length == 4)
             {
                 // the timezone is +/-HMM. Convert to +/-HHMM

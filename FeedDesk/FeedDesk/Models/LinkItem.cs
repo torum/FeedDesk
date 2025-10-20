@@ -155,7 +155,7 @@ public partial class ServiceDocumentLinkItem : LinkItem
             // TODO: 
             IsSupported = false;
         }
-        else if (searviceDocumentLink is SearviceDocumentLinkErr sde)
+        else if (searviceDocumentLink is SearviceDocumentLinkErr) // sde
         {
             // TODO:
         }

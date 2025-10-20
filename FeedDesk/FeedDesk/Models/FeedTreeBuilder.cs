@@ -43,90 +43,51 @@ public partial class FeedTreeBuilder : NodeRoot
 
                     var selecteds = string.IsNullOrEmpty(s.Attributes?["Selected"]?.Value) ? "" : s.Attributes?["Selected"]?.Value;
                     var expandeds = string.IsNullOrEmpty(s.Attributes?["Expanded"]?.Value) ? "" : s.Attributes?["Expanded"]?.Value;
-                    var isSelecteds = (selecteds == "true") ? true : false;
-                    var isExpandeds = (expandeds == "true") ? true : false;
-
-                    ServiceTypes stp;
-                    switch (tp)
+                    var isSelecteds = (selecteds == "true");
+                    var isExpandeds = (expandeds == "true");
+                    var stp = tp switch
                     {
-                        case "AtomPub":
-                            stp = ServiceTypes.AtomPub;
-                            break;
-                        case "Feed":
-                            stp = ServiceTypes.Feed;
-                            break;
-                        case "XML-RPC":
-                            stp = ServiceTypes.XmlRpc;
-                            break;
-                        case "AtomAPI":
-                            stp = ServiceTypes.AtomApi;
-                            break;
-                        default:
-                            stp = ServiceTypes.Unknown;
-                            break;
-                    }
-
-                    ApiTypes at;
-                    switch (api)
+                        "AtomPub" => ServiceTypes.AtomPub,
+                        "Feed" => ServiceTypes.Feed,
+                        "XML-RPC" => ServiceTypes.XmlRpc,
+                        "AtomAPI" => ServiceTypes.AtomApi,
+                        _ => ServiceTypes.Unknown,
+                    };
+                    var at = api switch
                     {
-                        case "AtomPub":
-                            at = ApiTypes.atAtomPub;
-                            break;
-                        case "AtomFeed":
-                            at = ApiTypes.atFeed;
-                            break;
-                        case "RssFeed":
-                            at = ApiTypes.atFeed;
-                            break;
-                        case "Feed":
-                            at = ApiTypes.atFeed;
-                            break;
-                        case "XML-RPC_MovableType":
-                            at = ApiTypes.atXMLRPC_MovableType;
-                            break;
-                        case "XML-RPC_WordPress":
-                            at = ApiTypes.atXMLRPC_WordPress;
-                            break;
-                        case "AtomAPI":
-                            at = ApiTypes.atAtomApi;
-                            break;
-                        default:
-                            at = ApiTypes.atUnknown;
-                            break;
-                    }
-
+                        "AtomPub" => ApiTypes.atAtomPub,
+                        "AtomFeed" => ApiTypes.atFeed,
+                        "RssFeed" => ApiTypes.atFeed,
+                        "Feed" => ApiTypes.atFeed,
+                        "XML-RPC_MovableType" => ApiTypes.atXMLRPC_MovableType,
+                        "XML-RPC_WordPress" => ApiTypes.atXMLRPC_WordPress,
+                        "AtomAPI" => ApiTypes.atAtomApi,
+                        _ => ApiTypes.atUnknown,
+                    };
                     var viewType = (s.Attributes?["ViewType"] != null) ? s.Attributes?["ViewType"]?.Value : "Cards";
-                    ViewTypes vt;
-                    switch (viewType)
+                    var vt = viewType switch
                     {
-                        case "Cards":
-                            vt = ViewTypes.vtCards;
-                            break;
-                        case "Magazine":
-                            vt = ViewTypes.vtMagazine;
-                            break;
-                        case "ThreePanes":
-                            vt = ViewTypes.vtThreePanes;
-                            break;
-                        default:
-                            vt = ViewTypes.vtCards;
-                            break;
-                    }
-
+                        "Cards" => ViewTypes.vtCards,
+                        "Magazine" => ViewTypes.vtMagazine,
+                        "ThreePanes" => ViewTypes.vtThreePanes,
+                        _ => ViewTypes.vtCards,
+                    };
                     if (stp == ServiceTypes.Feed)
                         continue;
 
                     if ((!string.IsNullOrEmpty(accountName)) && (!string.IsNullOrEmpty(userName)) && (!string.IsNullOrEmpty(userPassword)) && (!string.IsNullOrEmpty(endpoint)))
                     {
-                        NodeService account = new NodeService(accountName, userName, userPassword, new Uri(endpoint), at, stp);
-                        account.IsSelected = isSelecteds;
-                        account.IsExpanded = isExpandeds;
-                        account.Parent = this;
+                        NodeService account = new(accountName, userName, userPassword, new Uri(endpoint), at, stp)
+                        {
+                            IsSelected = isSelecteds,
+                            IsExpanded = isExpandeds,
+                            Parent = this,
 
-                        account.ServiceType = stp;
-                        account.Api = at;
+                            ServiceType = stp,
+                            Api = at,
 
-                        account.ViewType = vt;
+                            ViewType = vt
+                        };
 
                         var collectionList = s.SelectNodes("Collection");
                         if (collectionList != null)
@@ -136,8 +97,8 @@ public partial class FeedTreeBuilder : NodeRoot
                                 var collectionName = c.Attributes?["Name"]?.Value;
                                 var selectedc = string.IsNullOrEmpty(c.Attributes?["Selected"]?.Value) ? "" : c.Attributes["Selected"]?.Value;
                                 var expandedc = string.IsNullOrEmpty(c.Attributes?["Expanded"]?.Value) ? "" : c.Attributes["Expanded"]?.Value;
-                                var isSelectedc = (selectedc == "true") ? true : false;
-                                var isExpandedc = (expandedc == "true") ? true : false;
+                                var isSelectedc = (selectedc == "true");
+                                var isExpandedc = (expandedc == "true");
 
                                 var collectionHref = (c.Attributes?["Href"] != null) ? c.Attributes["Href"]?.Value : "";
 
@@ -211,8 +172,8 @@ public partial class FeedTreeBuilder : NodeRoot
                                             var categoryName = t.Attributes?["Name"]?.Value;
                                             var selectedt = string.IsNullOrEmpty(t.Attributes?["Selected"]?.Value) ? "" : t.Attributes["Selected"]?.Value;
                                             var expandedt = string.IsNullOrEmpty(t.Attributes?["Expanded"]?.Value) ? "" : t.Attributes["Expanded"]?.Value;
-                                            var isSelectedt = (selectedc == "true") ? true : false;
-                                            var isExpandedt = (expandedc == "true") ? true : false;
+                                            var isSelectedt = (selectedc == "true");
+                                            var isExpandedt = (expandedc == "true");
 
                                             if (!string.IsNullOrEmpty(categoryName))
                                             {
@@ -323,22 +284,13 @@ public partial class FeedTreeBuilder : NodeRoot
             folder.EntryNewCount = unreadCount;
 
             var viewType = (node.Attributes?["ViewType"] != null) ? node.Attributes["ViewType"]?.Value : "Cards";
-            ViewTypes vt;
-            switch (viewType)
+            var vt = viewType switch
             {
-                case "Cards":
-                    vt = ViewTypes.vtCards;
-                    break;
-                case "Magazine":
-                    vt = ViewTypes.vtMagazine;
-                    break;
-                case "ThreePanes":
-                    vt = ViewTypes.vtThreePanes;
-                    break;
-                default:
-                    vt = ViewTypes.vtCards;
-                    break;
-            }
+                "Cards" => ViewTypes.vtCards,
+                "Magazine" => ViewTypes.vtMagazine,
+                "ThreePanes" => ViewTypes.vtThreePanes,
+                _ => ViewTypes.vtCards,
+            };
             folder.ViewType = vt;
 
             // This is going to "Sort" folder and feed unintentionally.
@@ -414,41 +366,24 @@ public partial class FeedTreeBuilder : NodeRoot
 
         var selecteds = string.IsNullOrEmpty(node.Attributes?["Selected"]?.Value) ? "" : node.Attributes?["Selected"]?.Value;
         //var expandeds = string.IsNullOrEmpty(node.Attributes["Expanded"].Value) ? "" : node.Attributes["Expanded"].Value;
-        var isSelectedf = (selecteds == "true") ? true : false;
+        var isSelectedf = (selecteds == "true");
         //bool isExpandedf = (expandeds == "true") ? true : false;
 
         var endpoint = node.Attributes?["EndPoint"]?.Value;
         var api = (node.Attributes?["Api"] != null) ? node.Attributes?["Api"]?.Value : "Unknown";
-
-        ApiTypes at;
-        switch (api)
+        var at = api switch
         {
-            case "Feed":
-                at = ApiTypes.atFeed;
-                break;
-            default:
-                at = ApiTypes.atUnknown;
-                break;
-        }
-
+            "Feed" => ApiTypes.atFeed,
+            _ => ApiTypes.atUnknown,
+        };
         var viewType = (node.Attributes?["ViewType"] != null) ? node.Attributes?["ViewType"]?.Value : "Cards";
-        ViewTypes vt;
-        switch (viewType)
+        var vt = viewType switch
         {
-            case "Cards":
-                vt = ViewTypes.vtCards;
-                break;
-            case "Magazine":
-                vt = ViewTypes.vtMagazine;
-                break;
-            case "ThreePanes":
-                vt = ViewTypes.vtThreePanes;
-                break;
-            default:
-                vt = ViewTypes.vtCards;
-                break;
-        }
-
+            "Cards" => ViewTypes.vtCards,
+            "Magazine" => ViewTypes.vtMagazine,
+            "ThreePanes" => ViewTypes.vtThreePanes,
+            _ => ViewTypes.vtCards,
+        };
         var siteTitle = "";
         var attr = node.Attributes?["SiteTitle"];
         if (attr != null)
@@ -822,7 +757,7 @@ public partial class FeedTreeBuilder : NodeRoot
 
                     foreach (var c in s.Children)
                     {
-                        if (!(c is NodeEntryCollection)) continue;
+                        if (c is not NodeEntryCollection) continue;
 
                         XmlElement collection = doc.CreateElement(string.Empty, "Collection", string.Empty);
 
@@ -873,7 +808,7 @@ public partial class FeedTreeBuilder : NodeRoot
 
                         foreach (var t in ((NodeEntryCollection)c).Children)
                         {
-                            if (!(t is NodeCategory)) continue;
+                            if (t is not NodeCategory) continue;
 
                             XmlElement category = doc.CreateElement(string.Empty, "Category", string.Empty);
 
@@ -932,7 +867,7 @@ public partial class FeedTreeBuilder : NodeRoot
         return doc;
     }
 
-    private XmlElement AsXmlFolderElement(XmlDocument doc, NodeFolder fd)
+    private static XmlElement AsXmlFolderElement(XmlDocument doc, NodeFolder fd)
     {
         XmlElement folder = doc.CreateElement(string.Empty, "Folder", string.Empty);
 
@@ -988,7 +923,7 @@ public partial class FeedTreeBuilder : NodeRoot
         return folder;
     }
 
-    private XmlElement AsXmlFeedElement(XmlDocument doc, NodeFeed fd)
+    private static XmlElement AsXmlFeedElement(XmlDocument doc, NodeFeed fd)
     {
         XmlElement feed = doc.CreateElement(string.Empty, "Feed", string.Empty);
 

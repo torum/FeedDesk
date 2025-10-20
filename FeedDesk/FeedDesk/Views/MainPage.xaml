@@ -428,7 +428,8 @@
 
                         <!-- Entries listView
                          Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}" -->
-                        <ListView Grid.Row="1" x:Name="ListViewEntryItem" Background="{ThemeResource NavigationViewContentBackground}" IsItemClickEnabled="True" RightTapped="ListViewEntryItem_RightTapped" KeyUp="ListViewEntryItem_KeyUp" DoubleTapped="ListViewEntryItem_DoubleTapped" ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}" SelectionChanged="ListViewEntryItem_SelectionChanged" SelectedItem="{x:Bind ViewModel.SelectedListViewItem, Mode=TwoWay}" IsDoubleTapEnabled="True" IsRightTapEnabled="True" SelectionMode="Single" Margin="0,0,0,0" Padding="0,2,0,0">
+                        <!--   KeyUp="ListViewEntryItem_KeyUp"  -->
+                        <ListView Grid.Row="1" x:Name="ListViewEntryItem" Background="{ThemeResource NavigationViewContentBackground}" IsItemClickEnabled="True" RightTapped="ListViewEntryItem_RightTapped" DoubleTapped="ListViewEntryItem_DoubleTapped" ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}" SelectionChanged="ListViewEntryItem_SelectionChanged" SelectedItem="{x:Bind ViewModel.SelectedListViewItem, Mode=TwoWay}" IsDoubleTapEnabled="True" IsRightTapEnabled="True" SelectionMode="Single" Margin="0,0,0,0" Padding="0,2,0,0">
                             <ListView.Resources>
                             </ListView.Resources>
                             <ListView.ContextFlyout>
@@ -442,6 +443,9 @@
                                                 </PathIcon.Data>
                                             </PathIcon>
                                         </MenuFlyoutItem.Icon>
+                                        <MenuFlyoutItem.KeyboardAccelerators>
+                                            <KeyboardAccelerator Key="Enter" />
+                                        </MenuFlyoutItem.KeyboardAccelerators>
                                     </MenuFlyoutItem>
 
                                     <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_SlectedEntry_CopyURL" Command="{x:Bind ViewModel.EntryCopyUrlCommand}">
