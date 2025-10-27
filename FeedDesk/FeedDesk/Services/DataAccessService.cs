@@ -46,8 +46,8 @@ public class DataAccessService : IDataAccessService
                 tableCmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    tableCmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    tableCmd.ExecuteNonQuery();
+                    //tableCmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //tableCmd.ExecuteNonQuery();
 
                     tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS feeds (" +
                         "feed_id TEXT NOT NULL PRIMARY KEY," +
@@ -218,8 +218,8 @@ public class DataAccessService : IDataAccessService
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     cmd.CommandText = "INSERT OR IGNORE INTO feeds (feed_id, url, name, title, description, updated, html_url) VALUES (@FeedId, @Uri, @Name, @Title, @Description, @Updated, @HtmlUri)";
                     cmd.CommandType = CommandType.Text;
@@ -358,8 +358,8 @@ public class DataAccessService : IDataAccessService
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     cmd.CommandText = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedId);
                     res.AffectedCount = cmd.ExecuteNonQuery();
@@ -478,8 +478,8 @@ public class DataAccessService : IDataAccessService
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     var sql = "UPDATE feeds SET ";
                     sql += String.Format("name = '{0}', ", EscapeSingleQuote(feedName));
@@ -608,8 +608,8 @@ public class DataAccessService : IDataAccessService
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     // update feed info.
                     var sql = "UPDATE feeds SET ";
@@ -963,8 +963,8 @@ public class DataAccessService : IDataAccessService
 
             using var cmd = connection.CreateCommand();
             
-            cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-            cmd.ExecuteNonQuery();
+            //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+            //cmd.ExecuteNonQuery();
 
             if (IsUnarchivedOnly)
             {
@@ -985,9 +985,10 @@ public class DataAccessService : IDataAccessService
                 {
                     s = "-";
                 }
-                var entry = new FeedEntryItem(s, feedId, null);
-
-                entry.EntryId = Convert.ToString(reader["entryId"]);
+                var entry = new FeedEntryItem(s, feedId, null)
+                {
+                    EntryId = Convert.ToString(reader["entryId"])
+                };
 
                 s = Convert.ToString(reader["entryUrl"]);
                 if (!string.IsNullOrEmpty(s))
@@ -1253,8 +1254,8 @@ public class DataAccessService : IDataAccessService
             connection.Open();
             using var cmd = connection.CreateCommand();
 
-            cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-            cmd.ExecuteNonQuery();
+            //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+            //cmd.ExecuteNonQuery();
 
             cmd.CommandText = before + middle + after;
 
@@ -1265,11 +1266,12 @@ public class DataAccessService : IDataAccessService
                 if (string.IsNullOrEmpty(fid))
                     continue;
 
-                FeedEntryItem entry = new FeedEntryItem(Convert.ToString(reader["entryTitle"]) ?? "no title", fid, null);
+                var entry = new FeedEntryItem(Convert.ToString(reader["entryTitle"]) ?? "no title", fid, null)
+                {
+                    //entry.MyNodeFeed = ndf;
 
-                //entry.MyNodeFeed = ndf;
-
-                entry.EntryId = Convert.ToString(reader["entryId"]);
+                    EntryId = Convert.ToString(reader["entryId"])
+                };
 
                 //if (!string.IsNullOrEmpty(Convert.ToString(reader["entryUrl"])))
                 //    entry.AltHtmlUri = new Uri(Convert.ToString(reader["entryUrl"]));
@@ -1514,8 +1516,8 @@ public class DataAccessService : IDataAccessService
 
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     cmd.CommandText = before + middle + after;
 
@@ -1626,8 +1628,8 @@ public class DataAccessService : IDataAccessService
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     cmd.CommandText = sql;
 
@@ -1761,8 +1763,8 @@ public class DataAccessService : IDataAccessService
                 cmd.Transaction = connection.BeginTransaction();
                 try
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    //cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                    //cmd.ExecuteNonQuery();
 
                     cmd.CommandText = sqlDelEntries;
 

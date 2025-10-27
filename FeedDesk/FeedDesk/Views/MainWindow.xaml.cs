@@ -1,3 +1,4 @@
+using CommunityToolkit.WinUI;
 using CommunityToolkit.WinUI.Helpers;
 using FeedDesk.Helpers;
 using FeedDesk.Services.Contracts;
@@ -35,9 +36,15 @@ public partial class MainWindow : Window
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
 
+    // DispatcherQueue
+    private Microsoft.UI.Dispatching.DispatcherQueue? _currentDispatcherQueue;// = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+    public Microsoft.UI.Dispatching.DispatcherQueue? CurrentDispatcherQueue => _currentDispatcherQueue;
 
     public MainWindow() 
     {
+        // This DispatcherQueue should be alive as long as MainWindow is alive. Make sure to clear when the window is closed.
+        _currentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+
         InitializeComponent();
 
         this.Title = "AppDisplayName".GetLocalized();
@@ -464,6 +471,9 @@ public partial class MainWindow : Window
 
     private void WindowEx_Closed(object sender, WindowEventArgs args)
     {
+        // For some stupid reason, we needed this, otherwise we get COM error.
+        _currentDispatcherQueue = null;
+
         SaveSettings();
     }
 

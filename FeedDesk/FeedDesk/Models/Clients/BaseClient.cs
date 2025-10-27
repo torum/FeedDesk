@@ -43,7 +43,7 @@ public abstract class BaseClient : IDisposable
         }
     }
 
-    public abstract Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId);
+    public abstract Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token);
 
     #region == Events ==
 

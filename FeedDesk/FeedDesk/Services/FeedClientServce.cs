@@ -1,14 +1,15 @@
-﻿using System;
+﻿using FeedDesk.Helpers;
+using FeedDesk.Models;
+using FeedDesk.Models.Clients;
+using FeedDesk.Services.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using FeedDesk.Services.Contracts;
-using FeedDesk.Helpers;
-using FeedDesk.Models;
-using FeedDesk.Models.Clients;
 
 namespace FeedDesk.Services;
 
@@ -20,8 +21,8 @@ public partial class FeedClientService : BaseClient, IFeedClientService
     {
         //Client.BaseAddress = ;
         Client.DefaultRequestHeaders.Clear();
-        //Client.DefaultRequestHeaders.ConnectionClose = false;
-        Client.DefaultRequestHeaders.ConnectionClose = true;
+        //Client.DefaultRequestHeaders.ConnectionClose = false; // false is the default behavior.
+        //Client.DefaultRequestHeaders.ConnectionClose = true; // no longer needed.
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
@@ -34,7 +35,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
     }
 
-    public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId)
+    public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token)
     {
         var res = new HttpClientEntryItemCollectionResultWrapper();
 
@@ -55,7 +56,9 @@ public partial class FeedClientService : BaseClient, IFeedClientService
 
         try
         {
-            var HTTPResponseMessage = await Client.GetAsync(entriesUrl);
+            Debug.WriteLine("GetEntries");
+            var HTTPResponseMessage = await Client.GetAsync(entriesUrl, token);
+            Debug.WriteLine("GetEntries done");
 
             if (HTTPResponseMessage.IsSuccessStatusCode)
             {
@@ -81,7 +84,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
 
                 try
                 {
-                    var source = await HTTPResponseMessage.Content.ReadAsStreamAsync();
+                    var source = await HTTPResponseMessage.Content.ReadAsStreamAsync(token);
 
                     // Load XML
                     var xdoc = new XmlDocument();
@@ -588,7 +591,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
             // HTTP non 200 status code.
             else
             {
-                var contents = await HTTPResponseMessage.Content.ReadAsStringAsync();
+                var contents = await HTTPResponseMessage.Content.ReadAsStringAsync(token);
 
                 if (contents != null)
                 {

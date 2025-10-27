@@ -39,9 +39,6 @@ public partial class App : Application
     public static string AppDataFolder { get; } = _envDataFolder + System.IO.Path.DirectorySeparatorChar + _appDeveloper + System.IO.Path.DirectorySeparatorChar + _appName;
     public static string AppConfigFilePath { get; } = System.IO.Path.Combine(AppDataFolder, _appName + ".config");
 
-    // DispatcherQueue
-    private static readonly Microsoft.UI.Dispatching.DispatcherQueue _currentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-    public static Microsoft.UI.Dispatching.DispatcherQueue CurrentDispatcherQueue => _currentDispatcherQueue;
 
     // ErrorLog
 #if DEBUG
@@ -172,7 +169,7 @@ public partial class App : Application
         }
 
         //MainWnd = new(); // < No
-        MainWnd = App.GetService<MainWindow>();
+        MainWnd = GetService<MainWindow>();
 
         // Too late here. In order to set themes, sets content in MainWindow constructor.
         //MainWnd.Content = App.GetService<ShellPage>();
@@ -183,7 +180,7 @@ public partial class App : Application
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)
     {
-        CurrentDispatcherQueue?.TryEnqueue(() =>
+        MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
         {
             MainWnd?.Activate();
             // TODO:

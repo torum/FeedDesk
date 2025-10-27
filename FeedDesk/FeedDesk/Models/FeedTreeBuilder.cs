@@ -265,13 +265,15 @@ public partial class FeedTreeBuilder : NodeRoot
         {
             var selecteds = string.IsNullOrEmpty(node.Attributes?["Selected"]?.Value) ? "" : node.Attributes["Selected"]?.Value;
             var expandeds = string.IsNullOrEmpty(node.Attributes?["Expanded"]?.Value) ? "" : node.Attributes["Expanded"]?.Value;
-            var isSelecteds = (selecteds == "true") ? true : false;
-            var isExpandeds = (expandeds == "true") ? true : false;
+            var isSelecteds = (selecteds == "true");
+            var isExpandeds = (expandeds == "true");
 
-            NodeFolder folder = new NodeFolder(folderName);
-            folder.IsSelected = isSelecteds;
-            folder.IsExpanded = isExpandeds;
-            folder.Parent = this;
+            var folder = new NodeFolder(folderName)
+            {
+                IsSelected = isSelecteds,
+                IsExpanded = isExpandeds,
+                Parent = this
+            };
 
             var unreadCount = 0;
             var attr = node.Attributes?["UnreadCount"];
@@ -598,21 +600,23 @@ public partial class FeedTreeBuilder : NodeRoot
         if (!string.IsNullOrEmpty(endpoint))
         {
             feedName ??= "no name";
-            NodeFeed feed = new NodeFeed(feedName, new Uri(endpoint));
-            feed.IsSelected = isSelectedf;
-            //feed.IsExpanded = isExpandedf;
-            feed.Parent = this;
+            var feed = new NodeFeed(feedName, new Uri(endpoint))
+            {
+                IsSelected = isSelectedf,
+                //feed.IsExpanded = isExpandedf;
+                Parent = this,
 
-            feed.Title = siteTitle ?? "no title";
-            feed.Description = siteSubTitle ?? ""; ;
-            feed.HtmlUri = siteUri;
-            feed.Updated = Updated;
+                Title = siteTitle ?? "no title",
+                Description = siteSubTitle ?? "",
+                HtmlUri = siteUri,
+                Updated = Updated,
 
-            feed.EntryNewCount = unreadCount;
-            feed.ViewType = vt;
-            feed.LastFetched = lastUpdate;
+                EntryNewCount = unreadCount,
+                ViewType = vt,
+                LastFetched = lastUpdate,
 
-            feed.Api = at;
+                Api = at
+            };
 
             if (errHttpObj != null)
             {

@@ -301,7 +301,7 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     private void OnStatusUpdate(AutoDiscoveryService sender, string data)
     {
-        var uithread = App.CurrentDispatcherQueue?.HasThreadAccess;
+        var uithread = App.MainWnd?.CurrentDispatcherQueue?.HasThreadAccess;
 
         if (uithread != null)
         {
@@ -311,7 +311,7 @@ public partial class FeedAddViewModel : ObservableRecipient
             }
             else
             {
-                App.CurrentDispatcherQueue?.TryEnqueue(() =>
+                App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
                 {
                     StatusLogText = StatusLogText + data + Environment.NewLine;
                 });

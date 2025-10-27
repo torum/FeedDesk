@@ -539,10 +539,12 @@ public partial class NodeService : NodeTree
 
     public ServiceTypes ServiceType { get; set; }
 
+    /*
     public BaseClient? Client
     {
         get; set;
     }
+    */
 
     public ErrorObject? ErrorHttp { get; set; }
 
@@ -841,6 +843,7 @@ public abstract class NodeEntryCollection : NodeTree
     // TODO:
     public ObservableCollection<EntryItem> List { get; } = [];
 
+    /*
     public BaseClient? Client
     {
         get
@@ -868,6 +871,7 @@ public abstract class NodeEntryCollection : NodeTree
             return ndsp.Client;
         }
     }
+    */
 }
 
 // AtomPub Entry Collection (Node/NodeTree/NodeEntryCollection) 
