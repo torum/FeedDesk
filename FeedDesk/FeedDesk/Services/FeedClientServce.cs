@@ -22,7 +22,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         //Client.BaseAddress = ;
         Client.DefaultRequestHeaders.Clear();
         //Client.DefaultRequestHeaders.ConnectionClose = false; // false is the default behavior.
-        //Client.DefaultRequestHeaders.ConnectionClose = true; // no longer needed.
+        //Client.DefaultRequestHeaders.ConnectionClose = true; 
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
@@ -33,6 +33,8 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         //_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0");
         //Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
+
+        Client.Timeout = TimeSpan.FromSeconds(10);
     }
 
     public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token)
@@ -54,12 +56,14 @@ public partial class FeedClientService : BaseClient, IFeedClientService
             return res;
         }
 
+        var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
         try
         {
-            Debug.WriteLine("GetEntries");
-            var HTTPResponseMessage = await Client.GetAsync(entriesUrl, token);
-            Debug.WriteLine("GetEntries done");
-
+            await Task.Delay(10, CancellationToken.None);
+            //Debug.WriteLine("GetAsync @GetEntries in FeedClientService ");
+            var HTTPResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false);
+            
             if (HTTPResponseMessage.IsSuccessStatusCode)
             {
                 /*
@@ -71,20 +75,24 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     + Environment.NewLine + s + Environment.NewLine
                     + Environment.NewLine);
                 */
+                
                 /*
                 var str = await HTTPResponseMessage.Content.ReadAsStringAsync();
                 Debug.WriteLine(str);
                 */
 
+                /*
                 ToDebugWindow(">> HTTP Request: GET "
                     + entriesUrl.AbsoluteUri
                     + Environment.NewLine
                     + "<< HTTP Response " + HTTPResponseMessage.StatusCode.ToString()
                     + Environment.NewLine);
+                */
 
                 try
                 {
-                    var source = await HTTPResponseMessage.Content.ReadAsStreamAsync(token);
+                    //Debug.WriteLine("ReadAsStreamAsync @GetEntries in FeedClientService ");
+                    var source = await HTTPResponseMessage.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
 
                     // Load XML
                     var xdoc = new XmlDocument();
@@ -101,6 +109,8 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     }
                     catch (Exception e)
                     {
+                        Debug.WriteLine($"<< Exception xdoc.Load GetEntries FeedHttpClient ({entriesUrl.AbsoluteUri}): {e.Message}");
+
                         ToDebugWindow("<< Invalid XML document returned from: " + entriesUrl.AbsoluteUri
                             + Environment.NewLine
                             + e.Message
@@ -591,6 +601,8 @@ public partial class FeedClientService : BaseClient, IFeedClientService
             // HTTP non 200 status code.
             else
             {
+                Debug.WriteLine($"{HTTPResponseMessage.StatusCode} @GetEntries in FeedClientService ");
+
                 var contents = await HTTPResponseMessage.Content.ReadAsStringAsync(token);
 
                 if (contents != null)
@@ -632,7 +644,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
 
             ToDebugWindow(" << HttpRequestException @GetEntries: "
                 + Environment.NewLine
-                + expMessage
+                + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
             HttpReqException(res.Error, expMessage, "Client.GetAsync", "FeedHttpClient:GetEntries");
@@ -647,39 +659,57 @@ public partial class FeedClientService : BaseClient, IFeedClientService
 
             ToDebugWindow(" << CookieException: "
                 + Environment.NewLine
-                + e.Message
+                + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
             HttpReqException(res.Error, e.Message, "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
+        catch (TaskCanceledException e)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
+        {
+            //throw new TimeoutException("HTTP request timed out. ");
+
+            Debug.WriteLine($"<< TaskCanceledException ({entriesUrl}) : {e.Message}");
+
+            ToDebugWindow(" << TaskCanceledException: "
+                + Environment.NewLine
+                + entriesUrl.AbsoluteUri + " - " + e.Message
+                + Environment.NewLine);
+
+            HttpReqException(res.Error, e.Message + " (Timeout 5 sec)", "Client.GetAsync", "FeedHttpClient:GetEntries");
+            res.IsError = true;
+        }
         catch (Exception e) when (e.InnerException is TimeoutException)
         {
-            Debug.WriteLine("TimeoutException: " + e.Message);
+            Debug.WriteLine("<< TimeoutException: " + e.Message);
 
             ToDebugWindow("<< TimeoutException:"
                 + Environment.NewLine
-                + e.Message
+                + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
-            HttpTimeoutException(res.Error, e.Message, "Client.GetAsync", "FeedHttpClient.GetEntries");
+            HttpTimeoutException(res.Error, e.Message + " (Timeout 10 sec)", "Client.GetAsync", "FeedHttpClient.GetEntries");
             res.IsError = true;
 
             return res;
         }
         catch (Exception e)
         {
-            Debug.WriteLine("HTTP error: " + e.Message);
+            Debug.WriteLine("<< HTTP error: " + e.Message);
 
             ToDebugWindow("<< HTTP error:"
                 + Environment.NewLine
-                + e.Message
+                + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
             GenericException(res.Error, "", ErrorObject.ErrTypes.HTTP, "HTTP request error (Exception)", e.Message, "Client.GetAsync", "FeedHttpClient.GetEntries");
             res.IsError = true;
 
             return res;
+        }
+        finally
+        {
+            timoutCts.Dispose();
         }
 
         return res;

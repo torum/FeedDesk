@@ -115,6 +115,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="256" MinWidth="256" MaxWidth="380" x:Name="LeftPaneGridColumn"/>
@@ -711,7 +712,7 @@
         <!-- Debug pane -->
         <Grid Grid.Row="3" Margin="0" Grid.ColumnSpan="2" Visibility="{x:Bind ViewModel.IsDebugWindowEnabled, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
             <Border Grid.Row="0" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}">
-                <TextBox x:Name="DebugTextBox" Text="{x:Bind ViewModel.DebugEventLog, Mode=OneWay}" TextWrapping="NoWrap" AcceptsReturn="True" IsSpellCheckEnabled="False" CornerRadius="0,0,0,0" HorizontalAlignment="Stretch" Padding="6 6 24 6" VerticalAlignment="Stretch" Margin="0" MinHeight="150" MaxHeight="150" Height="150" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                <TextBox x:Name="DebugTextBox" Text="{x:Bind ViewModel.DebugEventLog, Mode=OneWay}" TextWrapping="NoWrap" AcceptsReturn="True" IsSpellCheckEnabled="False" CornerRadius="0,0,0,0" HorizontalAlignment="Stretch" Padding="6 6 24 6" VerticalAlignment="Stretch" Margin="0" MinHeight="150" Height="200" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
             </Border>
         </Grid>
     </Grid>

@@ -1,6 +1,7 @@
 ﻿using FeedDesk.Services.Contracts;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -33,14 +34,21 @@ public class FileDialogService : IFileDialogService
         return file;
     }
 
-    public async Task<StorageFile?> GetSaveOpmlFileDialog(IntPtr hwnd)
+    public async Task<StorageFile?> GetSaveOpmlFileDialog(nint hwnd)
     {
         _fileSavePicker ??= new FileSavePicker();
 
         _fileSavePicker.SuggestedStartLocation = PickerLocationId.Desktop;
-        _fileSavePicker.FileTypeChoices.Add("Opml", [".opml"]);
-        _fileSavePicker.FileTypeChoices.Add("Plain xml", [".xml"]);
-        _fileSavePicker.FileTypeChoices.Add("Plain Text", [".txt"]);
+
+        // AOT bad
+        //_fileSavePicker.FileTypeChoices.Add("OPML", [".opml"]);
+        //_fileSavePicker.FileTypeChoices.Add("Plain xml", [".xml"]);
+        //_fileSavePicker.FileTypeChoices.Add("Plain Text", [".txt"]);
+        // For AOT compat
+        _fileSavePicker.FileTypeChoices.Add("OPML", new List<string> { ".opml" });
+        _fileSavePicker.FileTypeChoices.Add("XML", new List<string> { ".xml" });
+        _fileSavePicker.FileTypeChoices.Add("Plain Text", new List<string> { ".txt" });
+
         _fileSavePicker.SuggestedFileName = "Feeds";
         _fileSavePicker.SettingsIdentifier = "OpmlFileIdentifier";
         _fileSavePicker.DefaultFileExtension = ".opml";

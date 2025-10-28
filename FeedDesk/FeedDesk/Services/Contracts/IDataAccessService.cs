@@ -1,6 +1,7 @@
 ﻿using FeedDesk.Models;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using static FeedDesk.Models.FeedEntryItem;
 
 namespace FeedDesk.Services.Contracts;
@@ -22,7 +23,7 @@ public interface IDataAccessService
 
     //SqliteDataAccessSelectImageResultWrapper SelectImageByImageId(string imageId);
 
-    SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri htmlUri);
+    SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri htmlUri, int retryCount);
 
 
     //SqliteDataAccessInsertResultWrapper InsertImages(List<EntryItem> entries);

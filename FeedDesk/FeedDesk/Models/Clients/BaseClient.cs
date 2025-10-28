@@ -10,9 +10,11 @@ public abstract class BaseClient : IDisposable
 {
     private static readonly Lock _locker = new();
     private static volatile HttpClient? _client;
+    //private static readonly HttpClient _client = new();
 
     protected static HttpClient Client
     {
+        //get => _client;
         get
         {
             if (_client == null)
@@ -56,7 +58,8 @@ public abstract class BaseClient : IDisposable
     // Writes to Debug (raises event)
     protected void ToDebugWindow(string data)
     {
-        var nowait = Task.Run(() => { DebugOutput?.Invoke(this, data); });
+        //var nowait = Task.Run(() => { });
+        DebugOutput?.Invoke(this, data);
     }
 
     private async Task<byte[]> GetImage(Uri imageUri)

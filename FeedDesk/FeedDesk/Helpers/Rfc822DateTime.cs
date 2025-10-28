@@ -17,6 +17,7 @@ public static class DateTimeParser
         StringBuilder dateTimeStringBuilder = new(dateTimeString.Trim());
         if (dateTimeStringBuilder.Length < 18)
         {
+            Debug.WriteLine("Invalid date format. Expected date in RFC 822 format (dateTimeStringBuilder.Length < 18) @ParseDateTimeRFC822");
             throw new FormatException("Invalid date format. Expected date in RFC 822 format");
         }
         if (dateTimeStringBuilder[3] == ',')
@@ -37,6 +38,7 @@ public static class DateTimeParser
         }
         if (dateTimeStringBuilder.Length < 19)
         {
+            Debug.WriteLine("Invalid date format. Expected date in RFC 822 format. (dateTimeStringBuilder.Length < 19) @ParseDateTimeRFC822");
             throw new FormatException("Invalid date format. Expected date in RFC 822 format");
         }
         bool thereAreSeconds = (dateTimeStringBuilder[17] == ':');
@@ -69,6 +71,8 @@ public static class DateTimeParser
         {
             return theTime;
         }
+
+        Debug.WriteLine("Invalid date format. Expected date in RFC 822 format. @ParseDateTimeRFC822");
         throw new FormatException("Invalid date format. Expected date in RFC 822 format");
     }
 
