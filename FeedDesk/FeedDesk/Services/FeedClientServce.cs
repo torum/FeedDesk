@@ -80,7 +80,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                     + Environment.NewLine + s + Environment.NewLine
                     + Environment.NewLine);
                 */
-                
+
                 /*
                 var str = await HTTPResponseMessage.Content.ReadAsStringAsync();
                 Debug.WriteLine(str);
@@ -304,7 +304,10 @@ public partial class FeedClientService : BaseClient, IFeedClientService
 
                                     res.Updated = date.UtcDateTime;
                                 }
-                                catch { }
+                                catch 
+                                {
+                                    Debug.WriteLine(">> Exception @RSS 1.0 Parse rss:channel/dc:date");
+                                }
                             }
                         }
 
@@ -413,7 +416,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                     }
                                     catch (Exception e)
                                     {
-                                        //Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + "(" + entry.Name + ")" + " : " + e.Message);
+                                        Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + " : " + e.Message);
 
                                         ToDebugWindow(">> Exception @FeedClient@ XmlConvert.ToDateTime()"
                                             + Environment.NewLine +
@@ -606,7 +609,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
             // HTTP non 200 status code.
             else
             {
-                Debug.WriteLine($"{HTTPResponseMessage.StatusCode} @GetEntries in FeedClientService ");
+                Debug.WriteLine($"{HTTPResponseMessage.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
 
                 var contents = await HTTPResponseMessage.Content.ReadAsStringAsync(token);
 
@@ -645,7 +648,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                 expMessage = e.Message + " (" + e.InnerException.Message + ")";
             }
 
-            Debug.WriteLine("<< HttpRequestException @GetEntries: " + expMessage);
+            Debug.WriteLine("<< HttpRequestException @GetEntries: " + entriesUrl.AbsoluteUri + " - " + expMessage);
 
             ToDebugWindow(" << HttpRequestException @GetEntries: "
                 + Environment.NewLine
@@ -660,7 +663,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         // The 'Domain'='.cnet.com' part of the cookie is invalid.
         catch (System.Net.CookieException e)
         {
-            Debug.WriteLine("<< CookieException: " + e.Message);
+            Debug.WriteLine("<< CookieException: " + entriesUrl.AbsoluteUri + " - " + e.Message);
 
             ToDebugWindow(" << CookieException: "
                 + Environment.NewLine
@@ -670,7 +673,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
             HttpReqException(res.Error, e.Message, "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
-        catch (TaskCanceledException e) when (e.InnerException is TimeoutException)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
+        catch (TaskCanceledException e) // when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
         {
             //throw new TimeoutException("HTTP request timed out. ");
 
@@ -686,7 +689,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         }
         catch (Exception e) when (e.InnerException is TimeoutException)
         {
-            Debug.WriteLine("<< TimeoutException: " + e.Message);
+            Debug.WriteLine("<< TimeoutException: " + entriesUrl.AbsoluteUri + " - " + e.Message);
 
             ToDebugWindow("<< TimeoutException:"
                 + Environment.NewLine
@@ -700,7 +703,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         }
         catch (Exception e)
         {
-            Debug.WriteLine("<< HTTP error: " + e.Message);
+            Debug.WriteLine("<< HTTP error: " + entriesUrl.AbsoluteUri + " - " + e.Message);
 
             ToDebugWindow("<< HTTP error:"
                 + Environment.NewLine
@@ -886,7 +889,10 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                         {
                             entItem.SourceUri = new Uri(urlSource);
                         }
-                        catch { }
+                        catch 
+                        {
+                            Debug.WriteLine(">> Exception entItem.SourceUri = new Uri(urlSource);");
+                        }
                     }
                 }
             }
@@ -1011,7 +1017,10 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                             {
                                 entItem.ImageUri = new Uri(url);
                             }
-                            catch { }
+                            catch 
+                            {
+                                Debug.WriteLine(">> Exception entItem.ImageUri = new Uri(url);");
+                            }
                         }
                     }
                 }
@@ -1029,7 +1038,10 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                 {
                     entItem.CommentUri = new Uri(s);
                 }
-                catch { }
+                catch
+                {
+                    Debug.WriteLine(">> Exception entItem.CommentUri = new Uri(s);");
+                }
             }
         }
 
@@ -1209,7 +1221,10 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                         {
                             entItem.ImageUri = new Uri(url);
                         }
-                        catch { }
+                        catch
+                        {
+                            Debug.WriteLine(">> Exception entItem.ImageUri = new Uri(url);");
+                        }
                     }
                 }
             }
@@ -1726,6 +1741,8 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                                         }
                                         catch (Exception e)
                                         {
+                                            Debug.WriteLine("Exception @new Uri(hrefAttr) @ FeedClient Atom1.0" + "(" + entItem.Name + ")" + " : " + e.Message);
+
                                             ToDebugWindow(">> Exception @FeedClient@CreateAtomEntryFromXmlAtom:new Uri()"
                                                 + Environment.NewLine +
                                                 "Atom feed entry (" + entItem.Name + ") contain invalid entry > enclosure@link Uri: " + e.Message +
@@ -1857,7 +1874,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                 }
                 catch (Exception e)
                 {
-                    //Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + "(" + entry.Name + ")" + " : " + e.Message);
+                    Debug.WriteLine($"Exception @XmlConvert.ToDateTime published {entryPublished.InnerText} in the Atom 1.0 feed " + e.Message);
 
                     ToDebugWindow(">> Exception @FeedClient@CreateAtomEntryFromXmlAtom: XmlConvert.ToDateTime()"
                         + Environment.NewLine +
@@ -1879,7 +1896,7 @@ public partial class FeedClientService : BaseClient, IFeedClientService
                 }
                 catch (Exception e)
                 {
-                    //Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + "(" + entry.Name + ")" + " : " + e.Message);
+                    Debug.WriteLine($"Exception @XmlConvert.ToDateTime updated {entryUpdated.InnerText} in the Atom 1.0 feed " + e.Message);
 
                     ToDebugWindow(">> Exception @FeedClient@CreateAtomEntryFromXmlAtom: XmlConvert.ToDateTime()"
                         + Environment.NewLine +

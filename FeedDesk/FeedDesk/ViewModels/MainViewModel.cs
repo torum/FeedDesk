@@ -1817,6 +1817,7 @@ public partial class MainViewModel : ObservableRecipient
                     }
                 }
 
+                // TODO: should I ?
                 feed.EntryNewCount = 0;
 
                 // Update Node Downloading Status
@@ -1919,7 +1920,7 @@ public partial class MainViewModel : ObservableRecipient
         await Task.Delay(100);
 
         //var resInsert = await Task.FromResult(InsertEntriesLock(list));
-        var resInsert = await Task.Run(()=>_dataAccessService.InsertEntries(list, feed.Id, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!, 0),_cts.Token);
+        var resInsert = await Task.Run(()=>_dataAccessService.InsertEntries(list, feed.Id, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!),_cts.Token);
 
         // Result is DB Error
         if (resInsert.IsError)

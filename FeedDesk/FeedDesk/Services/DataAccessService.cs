@@ -195,7 +195,6 @@ public class DataAccessService : IDataAccessService
     public SqliteDataAccessResultWrapper InsertFeed(string feedId, Uri feedUri, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri)
     {
         var res = new SqliteDataAccessResultWrapper();
-        var isBreaked = false;
 
         if (string.IsNullOrEmpty(feedId) || (feedUri == null))
         {
@@ -207,62 +206,55 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+            try
             {
-                isBreaked = true;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "INSERT OR IGNORE INTO feeds (feed_id, url, name, title, description, updated, html_url) VALUES (@FeedId, @Uri, @Name, @Title, @Description, @Updated, @HtmlUri)";
+                cmd.CommandType = CommandType.Text;
+
+                cmd.Parameters.AddWithValue("@FeedId", feedId);
+                cmd.Parameters.AddWithValue("@Uri", feedUri.AbsoluteUri);
+                cmd.Parameters.AddWithValue("@Name", feedName);
+                cmd.Parameters.AddWithValue("@Title", feedTitle);
+                cmd.Parameters.AddWithValue("@Description", feedDescription);
+                cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                if (htmlUri != null)
+                {
+                    cmd.Parameters.AddWithValue("@HtmlUri", htmlUri.AbsoluteUri);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@HtmlUri", "");
+                }
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
             }
-            else
+            catch (Exception e)
             {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+                cmd.Transaction.Rollback();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
-                try
-                {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::InsertFeed";
 
-                    cmd.CommandText = "INSERT OR IGNORE INTO feeds (feed_id, url, name, title, description, updated, html_url) VALUES (@FeedId, @Uri, @Name, @Title, @Description, @Updated, @HtmlUri)";
-                    cmd.CommandType = CommandType.Text;
+                // TODO: need to check if this really isn't needed.
+                //_readerWriterLock.ExitWriteLock();
 
-                    cmd.Parameters.AddWithValue("@FeedId", feedId);
-                    cmd.Parameters.AddWithValue("@Uri", feedUri.AbsoluteUri);
-                    cmd.Parameters.AddWithValue("@Name", feedName);
-                    cmd.Parameters.AddWithValue("@Title", feedTitle);
-                    cmd.Parameters.AddWithValue("@Description", feedDescription);
-                    cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss"));
-                    if (htmlUri != null)
-                    {
-                        cmd.Parameters.AddWithValue("@HtmlUri", htmlUri.AbsoluteUri);
-                    }
-                    else
-                    {
-                        cmd.Parameters.AddWithValue("@HtmlUri", "");
-                    }
-
-                    res.AffectedCount = cmd.ExecuteNonQuery();
-
-                    cmd.Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    cmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::InsertFeed";
-
-                    // TODO: need to check if this really isn't needed.
-                    //_readerWriterLock.ExitWriteLock();
-
-                    return res;
-                }
+                return res;
             }
         }
         catch (System.Reflection.TargetInvocationException ex)
@@ -319,15 +311,8 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.ExitWriteLock();
         }
-        //Debug.WriteLine(string.Format("{0} Entries Inserted to DB", res.AffectedCount.ToString()));
-        
-        if (isBreaked)
-        {
-            Thread.Sleep(100);
-            //await Task.Delay(100);
 
-            return InsertFeed(feedId, feedUri, feedName, feedTitle, feedDescription, updated, htmlUri);
-        }
+        //Debug.WriteLine(string.Format("{0} Entries Inserted to DB", res.AffectedCount.ToString()));
 
         return res;
     }
@@ -335,7 +320,6 @@ public class DataAccessService : IDataAccessService
     public SqliteDataAccessResultWrapper DeleteFeed(string feedId)
     {
         var res = new SqliteDataAccessResultWrapper();
-        var isBreaked = false;
 
         if (string.IsNullOrEmpty(feedId))
         {
@@ -347,42 +331,35 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+            try
             {
-                isBreaked = true;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedId);
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
             }
-            else
+            catch (Exception e)
             {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+                cmd.Transaction.Rollback();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
-                try
-                {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "cmd.ExecuteNonQuery(),Transaction.Commit()";
+                res.Error.ErrPlaceParent = "DataAccess::DeleteFeed";
 
-                    cmd.CommandText = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedId);
-                    res.AffectedCount = cmd.ExecuteNonQuery();
-
-                    cmd.Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    cmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "cmd.ExecuteNonQuery(),Transaction.Commit()";
-                    res.Error.ErrPlaceParent = "DataAccess::DeleteFeed";
-
-                    return res;
-                }
+                return res;
             }
         }
         catch (System.Reflection.TargetInvocationException ex)
@@ -438,15 +415,8 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.ExitWriteLock();
         }
-        //Debug.WriteLine(string.Format("{0} feed Deleted from DB", res.AffectedCount));
-        
-        if (isBreaked)
-        {
-            Thread.Sleep(100);
-            //await Task.Delay(100);
 
-            return DeleteFeed(feedId);
-        }
+        //Debug.WriteLine(string.Format("{0} feed Deleted from DB", res.AffectedCount));
 
         return res;
     }
@@ -455,7 +425,6 @@ public class DataAccessService : IDataAccessService
     public SqliteDataAccessResultWrapper UpdateFeed(string feedId, Uri feedUri, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri)
     {
         var res = new SqliteDataAccessResultWrapper();
-        var isBreaked = false;
 
         if (string.IsNullOrEmpty(feedId))
         {
@@ -467,54 +436,47 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+            try
             {
-                isBreaked = true;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                var sql = "UPDATE feeds SET ";
+                sql += String.Format("name = '{0}', ", EscapeSingleQuote(feedName));
+                sql += String.Format("title = '{0}', ", EscapeSingleQuote(feedTitle));
+                sql += String.Format("description = '{0}', ", EscapeSingleQuote(feedDescription));
+                sql += String.Format("updated = '{0}'", updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                if (htmlUri != null)
+                {
+                    sql += String.Format(", html_url = '{0}'", EscapeSingleQuote(htmlUri.AbsoluteUri));
+                }
+                sql += String.Format(" WHERE feed_id = '{0}'; ", feedId);
+
+                cmd.CommandText = sql;
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
             }
-            else
+            catch (Exception e)
             {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+                cmd.Transaction.Rollback();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
-                try
-                {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::UpdateFeed";
 
-                    var sql = "UPDATE feeds SET ";
-                    sql += String.Format("name = '{0}', ", EscapeSingleQuote(feedName));
-                    sql += String.Format("title = '{0}', ", EscapeSingleQuote(feedTitle));
-                    sql += String.Format("description = '{0}', ", EscapeSingleQuote(feedDescription));
-                    sql += String.Format("updated = '{0}'", updated.ToString("yyyy-MM-dd HH:mm:ss"));
-                    if (htmlUri != null)
-                    {
-                        sql += String.Format(", html_url = '{0}'", EscapeSingleQuote(htmlUri.AbsoluteUri));
-                    }
-                    sql += String.Format(" WHERE feed_id = '{0}'; ", feedId);
-
-                    cmd.CommandText = sql;
-
-                    res.AffectedCount = cmd.ExecuteNonQuery();
-
-                    cmd.Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    cmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::UpdateFeed";
-
-                    return res;
-                }
+                return res;
             }
         }
         catch (System.Reflection.TargetInvocationException ex)
@@ -571,30 +533,17 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.ExitWriteLock();
         }
+
         //Debug.WriteLine(string.Format("{0} feed updated", res.AffectedCount.ToString()));
-
-        if (isBreaked)
-        {
-            Thread.Sleep(100);
-            //await Task.Delay(100);
-
-            return UpdateFeed(feedId, feedUri, feedName, feedTitle, feedDescription, updated, htmlUri);
-        }
 
         return res;
     }
 
-    public SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri, int retryCount)
+    public SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri)
     {
         var res = new SqliteDataAccessInsertResultWrapper();
-        var isBreaked = false;
 
         if (entries is null)
-        {
-            return res;
-        }
-
-        if (retryCount >= 10)
         {
             return res;
         }
@@ -602,289 +551,283 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
-            {
-                Debug.WriteLine("isBreaked1");
-                isBreaked = true;
-            }
-            else
-            {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
-                try
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+            try
+            {
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                // update feed info.
+                var sql = "UPDATE feeds SET ";
+                sql += string.Format("name = '{0}', ", EscapeSingleQuote(feedName));
+                sql += string.Format("title = '{0}', ", EscapeSingleQuote(feedTitle));
+                sql += string.Format("description = '{0}', ", EscapeSingleQuote(feedDescription));
+                sql += string.Format("updated = '{0}'", updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                if (htmlUri != null)
                 {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                    sql += string.Format(", html_url = '{0}'", EscapeSingleQuote(htmlUri.AbsoluteUri));
+                }
+                sql += string.Format(" WHERE feed_id = '{0}'; ", feedId);
 
-                    // update feed info.
-                    var sql = "UPDATE feeds SET ";
-                    sql += string.Format("name = '{0}', ", EscapeSingleQuote(feedName));
-                    sql += string.Format("title = '{0}', ", EscapeSingleQuote(feedTitle));
-                    sql += string.Format("description = '{0}', ", EscapeSingleQuote(feedDescription));
-                    sql += string.Format("updated = '{0}'", updated.ToString("yyyy-MM-dd HH:mm:ss"));
-                    if (htmlUri != null)
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+
+                // Experimental 
+                // Delete old entries LIMIT 1000.
+                cmd.CommandText = string.Format("DELETE FROM entries WHERE feed_id = '{0}' AND entry_id NOT IN (SELECT entry_id FROM entries WHERE feed_id = '{0}' ORDER BY updated DESC LIMIT 1000);", feedId);//ASC
+                cmd.ExecuteNonQuery();
+
+                foreach (var entry in entries)
+                {
+                    if (entry is not FeedEntryItem)
                     {
-                        sql += string.Format(", html_url = '{0}'", EscapeSingleQuote(htmlUri.AbsoluteUri));
+                        continue;
                     }
-                    sql += string.Format(" WHERE feed_id = '{0}'; ", feedId);
 
-                    cmd.CommandText = sql;
-                    cmd.ExecuteNonQuery();
-
-                    // Experimental 
-                    // Delete old entries LIMIT 1000.
-                    cmd.CommandText = string.Format("DELETE FROM entries WHERE feed_id = '{0}' AND entry_id NOT IN (SELECT entry_id FROM entries WHERE feed_id = '{0}' ORDER BY updated DESC LIMIT 1000);", feedId);//ASC
-                    cmd.ExecuteNonQuery();
-
-                    foreach (var entry in entries)
+                    //if ((entry.EntryId == null) || (entry.AltHtmlUri == null))
+                    if (entry.EntryId == null)
                     {
-                        if (entry is not FeedEntryItem)
+                        continue;
+                    }
+
+                    // Test Upsert...> no way to know how many are newly inserted...
+                    //var sqlInsert = "INSERT INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived) ON CONFLICT(entry_id) DO UPDATE SET title=excluded.title, updated=excluded.updated, summary=excluded.summary, content=excluded.content, content_type=excluded.content_type";
+                    var sqlInsert = "INSERT OR IGNORE INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived)";
+
+                    cmd.CommandText = sqlInsert;
+
+                    cmd.Parameters.Clear();
+
+                    cmd.Parameters.AddWithValue("@FeedId", entry.ServiceId);// should be same as "feedId"
+
+                    //cmd.Parameters.AddWithValue("@EntryId", entry.EntryId);/ not good.
+                    cmd.Parameters.AddWithValue("@EntryId", entry.Id);// should be "entry.Id" here.
+
+                    if (entry.AltHtmlUri != null)
+                    {
+                        cmd.Parameters.AddWithValue("@AltHtmlUri", entry.AltHtmlUri.AbsoluteUri);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@AltHtmlUri", string.Empty);
+                    }
+
+                    if (entry.Title != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Title", entry.Title);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Title", string.Empty);
+                    }
+
+                    if (entry.Published == default)
+                    {
+                        if (entry.Updated != default)
                         {
-                            continue;
-                        }
-
-                        //if ((entry.EntryId == null) || (entry.AltHtmlUri == null))
-                        if (entry.EntryId == null)
-                        {
-                            continue;
-                        }
-
-                        // Test Upsert...> no way to know how many are newly inserted...
-                        //var sqlInsert = "INSERT INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived) ON CONFLICT(entry_id) DO UPDATE SET title=excluded.title, updated=excluded.updated, summary=excluded.summary, content=excluded.content, content_type=excluded.content_type";
-                        var sqlInsert = "INSERT OR IGNORE INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived)";
-
-                        cmd.CommandText = sqlInsert;
-
-                        cmd.Parameters.Clear();
-
-                        cmd.Parameters.AddWithValue("@FeedId", entry.ServiceId);// should be same as "feedId"
-
-                        //cmd.Parameters.AddWithValue("@EntryId", entry.EntryId);/ not good.
-                        cmd.Parameters.AddWithValue("@EntryId", entry.Id);// should be "entry.Id" here.
-
-                        if (entry.AltHtmlUri != null)
-                        {
-                            cmd.Parameters.AddWithValue("@AltHtmlUri", entry.AltHtmlUri.AbsoluteUri);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@AltHtmlUri", string.Empty);
-                        }
-
-                        if (entry.Title != null)
-                        {
-                            cmd.Parameters.AddWithValue("@Title", entry.Title);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@Title", string.Empty);
-                        }
-
-                        if (entry.Published == default)
-                        {
-                            if (entry.Updated != default)
-                            {
-                                cmd.Parameters.AddWithValue("@Published", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
-                            }
-                            else
-                            {
-                                cmd.Parameters.AddWithValue("@Published", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
-                            }
+                            cmd.Parameters.AddWithValue("@Published", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
                         }
                         else
                         {
-                            cmd.Parameters.AddWithValue("@Published", entry.Published.ToString("yyyy-MM-dd HH:mm:ss"));
+                            cmd.Parameters.AddWithValue("@Published", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                        }
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Published", entry.Published.ToString("yyyy-MM-dd HH:mm:ss"));
+                    }
+
+                    if (entry.Updated == default)
+                    {
+                        cmd.Parameters.AddWithValue("@Updated", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                    }
+                    //cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                    if (entry.Author != null)
+                    {
+
+                        cmd.Parameters.AddWithValue("@Author", entry.Author);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Author", string.Empty);
+                    }
+
+                    if (entry.Category != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Category", entry.Category);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Category", string.Empty);
+                    }
+
+                    if (entry.Summary != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Summary", entry.Summary);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Summary", string.Empty);
+                    }
+
+                    if (entry.Content != null)
+                    {
+                        cmd.Parameters.AddWithValue("@Content", entry.Content);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Content", string.Empty);
+                    }
+
+                    cmd.Parameters.AddWithValue("@ContentType", entry.ContentType.ToString());
+
+                    /*
+                    if (entry.IsImageDownloaded)
+                        cmd.Parameters.AddWithValue("@IsImageDownloaded", bool.TrueString);
+                    else
+                        cmd.Parameters.AddWithValue("@IsImageDownloaded", bool.FalseString);
+                    */
+
+                    if (entry.ImageUri != null)
+                    {
+                        cmd.Parameters.AddWithValue("@ImageUri", entry.ImageUri.AbsoluteUri);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@ImageUri", string.Empty);
+                    }
+
+                    if (entry.AudioUri != null)
+                    {
+                        cmd.Parameters.AddWithValue("@AudioUri", entry.AudioUri.AbsoluteUri);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@AudioUri", string.Empty);
+                    }
+
+                    //
+
+                    if (entry is FeedEntryItem fei)
+                    {
+                        if (fei.Source != null)
+                        {
+                            cmd.Parameters.AddWithValue("@Source", fei.Source);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@Source", string.Empty);
+                        }
+
+                        if (fei.SourceUri != null)
+                        {
+                            cmd.Parameters.AddWithValue("@SourceUri", fei.SourceUri.AbsoluteUri);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@SourceUri", string.Empty);
+                        }
+
+                        if (fei.CommentUri != null)
+                        {
+                            cmd.Parameters.AddWithValue("@CommentUri", fei.CommentUri.AbsoluteUri);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@CommentUri", string.Empty);
+                        }
+
+                        cmd.Parameters.AddWithValue("@Status", fei.Status.ToString());
+                        cmd.Parameters.AddWithValue("@IsArchived", bool.FalseString);//(entry as FeedEntryItem).IsArchived.ToString()
+                    }
+
+                    var r = cmd.ExecuteNonQuery();
+
+                    if (r > 0)
+                    {
+                        //c++;
+                        res.AffectedCount++;
+
+                        res.InsertedEntries.Add(entry);
+                    }
+                    else
+                    {
+                        // Update
+                        var sqlUpdate = "UPDATE entries SET ";
+                        sqlUpdate += string.Format("title = '{0}', ", EscapeSingleQuote(entry.Title ?? ""));
+                        sqlUpdate += string.Format("author = '{0}', ", EscapeSingleQuote(entry.Author ?? "-"));
+                        sqlUpdate += string.Format("category = '{0}', ", EscapeSingleQuote(entry.Category ?? "-"));
+                        sqlUpdate += string.Format("summary = '{0}', ", EscapeSingleQuote(entry.Summary ?? ""));
+                        sqlUpdate += string.Format("content = '{0}', ", EscapeSingleQuote(entry.Content ?? ""));
+                        if (entry.ImageUri != null)
+                        {
+                            sqlUpdate += string.Format("image_url = '{0}', ", EscapeSingleQuote(entry.ImageUri.AbsoluteUri));
+                        }
+                        else
+                        {
+                            sqlUpdate += string.Format("image_url = '{0}', ", "");
+                        }
+                        if (entry.AudioUri != null)
+                        {
+                            sqlUpdate += string.Format("audio_url = '{0}', ", EscapeSingleQuote(entry.AudioUri.AbsoluteUri));
+                        }
+                        else
+                        {
+                            sqlUpdate += string.Format("audio_url = '{0}', ", "");
                         }
 
                         if (entry.Updated == default)
                         {
-                            cmd.Parameters.AddWithValue("@Updated", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                            sqlUpdate += string.Format("updated = '{0}'", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
                         }
                         else
                         {
-                            cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
-                        }
-                        //cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
-
-                        if (entry.Author != null)
-                        {
-
-                            cmd.Parameters.AddWithValue("@Author", entry.Author);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@Author", string.Empty);
+                            sqlUpdate += string.Format("updated = '{0}'", updated.ToString("yyyy-MM-dd HH:mm:ss"));
                         }
 
-                        if (entry.Category != null)
+                        if (entry.AltHtmlUri != null)
                         {
-                            cmd.Parameters.AddWithValue("@Category", entry.Category);
+                            sqlUpdate += string.Format(", url = '{0}'", EscapeSingleQuote(entry.AltHtmlUri.AbsoluteUri));
                         }
-                        else
+                        sqlUpdate += string.Format(" WHERE entry_id = '{0}'; ", entry.Id);
+                        //Debug.WriteLine(sqlUpdate);
+                        cmd.CommandText = sqlUpdate;
+                        var c = cmd.ExecuteNonQuery();
+                        if (c > 0)
                         {
-                            cmd.Parameters.AddWithValue("@Category", string.Empty);
-                        }
-
-                        if (entry.Summary != null)
-                        {
-                            cmd.Parameters.AddWithValue("@Summary", entry.Summary);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@Summary", string.Empty);
-                        }
-
-                        if (entry.Content != null)
-                        {
-                            cmd.Parameters.AddWithValue("@Content", entry.Content);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@Content", string.Empty);
-                        }
-
-                        cmd.Parameters.AddWithValue("@ContentType", entry.ContentType.ToString());
-
-                        /*
-                        if (entry.IsImageDownloaded)
-                            cmd.Parameters.AddWithValue("@IsImageDownloaded", bool.TrueString);
-                        else
-                            cmd.Parameters.AddWithValue("@IsImageDownloaded", bool.FalseString);
-                        */
-
-                        if (entry.ImageUri != null)
-                        {
-                            cmd.Parameters.AddWithValue("@ImageUri", entry.ImageUri.AbsoluteUri);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@ImageUri", string.Empty);
-                        }
-
-                        if (entry.AudioUri != null)
-                        {
-                            cmd.Parameters.AddWithValue("@AudioUri", entry.AudioUri.AbsoluteUri);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@AudioUri", string.Empty);
-                        }
-
-                        //
-
-                        if (entry is FeedEntryItem fei)
-                        {
-                            if (fei.Source != null)
-                            {
-                                cmd.Parameters.AddWithValue("@Source", fei.Source);
-                            }
-                            else
-                            {
-                                cmd.Parameters.AddWithValue("@Source", string.Empty);
-                            }
-
-                            if (fei.SourceUri != null)
-                            {
-                                cmd.Parameters.AddWithValue("@SourceUri", fei.SourceUri.AbsoluteUri);
-                            }
-                            else
-                            {
-                                cmd.Parameters.AddWithValue("@SourceUri", string.Empty);
-                            }
-
-                            if (fei.CommentUri != null)
-                            {
-                                cmd.Parameters.AddWithValue("@CommentUri", fei.CommentUri.AbsoluteUri);
-                            }
-                            else
-                            {
-                                cmd.Parameters.AddWithValue("@CommentUri", string.Empty);
-                            }
-
-                            cmd.Parameters.AddWithValue("@Status", fei.Status.ToString());
-                            cmd.Parameters.AddWithValue("@IsArchived", bool.FalseString);//(entry as FeedEntryItem).IsArchived.ToString()
-                        }
-
-                        var r = cmd.ExecuteNonQuery();
-
-                        if (r > 0)
-                        {
-                            //c++;
-                            res.AffectedCount++;
-
-                            res.InsertedEntries.Add(entry);
-                        }
-                        else
-                        {
-                            // Update
-                            var sqlUpdate = "UPDATE entries SET ";
-                            sqlUpdate += string.Format("title = '{0}', ", EscapeSingleQuote(entry.Title ?? ""));
-                            sqlUpdate += string.Format("author = '{0}', ", EscapeSingleQuote(entry.Author ?? "-"));
-                            sqlUpdate += string.Format("category = '{0}', ", EscapeSingleQuote(entry.Category ?? "-"));
-                            sqlUpdate += string.Format("summary = '{0}', ", EscapeSingleQuote(entry.Summary ?? ""));
-                            sqlUpdate += string.Format("content = '{0}', ", EscapeSingleQuote(entry.Content ?? ""));
-                            if (entry.ImageUri != null)
-                            {
-                                sqlUpdate += string.Format("image_url = '{0}', ", EscapeSingleQuote(entry.ImageUri.AbsoluteUri));
-                            }
-                            else
-                            {
-                                sqlUpdate += string.Format("image_url = '{0}', ", "");
-                            }
-                            if (entry.AudioUri != null)
-                            {
-                                sqlUpdate += string.Format("audio_url = '{0}', ", EscapeSingleQuote(entry.AudioUri.AbsoluteUri));
-                            }
-                            else
-                            {
-                                sqlUpdate += string.Format("audio_url = '{0}', ", "");
-                            }
-
-                            if (entry.Updated == default)
-                            {
-                                sqlUpdate += string.Format("updated = '{0}'", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
-                            }
-                            else
-                            {
-                                sqlUpdate += string.Format("updated = '{0}'", updated.ToString("yyyy-MM-dd HH:mm:ss"));
-                            }
-
-                            if (entry.AltHtmlUri != null)
-                            {
-                                sqlUpdate += string.Format(", url = '{0}'", EscapeSingleQuote(entry.AltHtmlUri.AbsoluteUri));
-                            }
-                            sqlUpdate += string.Format(" WHERE entry_id = '{0}'; ", entry.Id);
-                            //Debug.WriteLine(sqlUpdate);
-                            cmd.CommandText = sqlUpdate;
-                            var c = cmd.ExecuteNonQuery();
-                            if (c > 0)
-                            {
-                                //Debug.WriteLine($"{c} entries updated.");
-                            }
+                            //Debug.WriteLine($"{c} entries updated.");
                         }
                     }
-
-                    cmd.Transaction.Commit();
                 }
-                catch (Exception e)
-                {
-                    cmd.Transaction.Rollback();
 
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::InsertEntries";
-                    
-                    return res;
-                }
+                cmd.Transaction.Commit();
             }
+            catch (Exception e)
+            {
+                cmd.Transaction.Rollback();
+
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::InsertEntries";
+
+                return res;
+            }
+
+
         }
         catch (System.Reflection.TargetInvocationException ex)
         {
@@ -940,16 +883,8 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.ExitWriteLock();
         }
+
         //Debug.WriteLine(string.Format("{0} Entries Inserted to DB", res.AffectedCount.ToString()));
-
-        if (isBreaked)
-        {
-            Debug.WriteLine("isBreaked2");
-            Thread.Sleep(100);
-            //await Task.Delay(100);
-
-            return InsertEntries(entries, feedId, feedName, feedTitle, feedDescription, updated, htmlUri, retryCount++);
-        }
 
         return res;
     }
@@ -1482,7 +1417,6 @@ public class DataAccessService : IDataAccessService
     public SqliteDataAccessResultWrapper UpdateAllEntriesAsArchived(List<string> feedIds)
     {
         var res = new SqliteDataAccessResultWrapper();
-        var isBreaked = false;
 
         if (feedIds is null)
             return res;
@@ -1509,46 +1443,39 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+
+            try
             {
-                isBreaked = true;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = before + middle + after;
+
+                cmd.CommandType = CommandType.Text;
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
             }
-            else
+            catch (Exception e)
             {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+                cmd.Transaction.Rollback();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::UpdateAllEntriesAsRead";
 
-                try
-                {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
-
-                    cmd.CommandText = before + middle + after;
-
-                    cmd.CommandType = CommandType.Text;
-
-                    res.AffectedCount = cmd.ExecuteNonQuery();
-
-                    cmd.Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    cmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::UpdateAllEntriesAsRead";
-
-                    return res;
-                }
+                return res;
             }
         }
         catch (System.InvalidOperationException ex)
@@ -1590,15 +1517,8 @@ public class DataAccessService : IDataAccessService
         {
             _readerWriterLock.ExitWriteLock();
         }
+
         //Debug.WriteLine(string.Format("{0} Entries from {1} Updated as read in the DB", c.ToString(), feedId));
-
-        if (isBreaked)
-        {
-            Thread.Sleep(10);
-            //await Task.Delay(100);
-
-            return UpdateAllEntriesAsArchived(feedIds);
-        }
 
         return res;
     }
@@ -1606,7 +1526,6 @@ public class DataAccessService : IDataAccessService
     public SqliteDataAccessResultWrapper UpdateEntryReadStatus(string? entryId, ReadStatus readStatus)
     {
         var res = new SqliteDataAccessResultWrapper();
-        var isBreaked = false;
 
         if (string.IsNullOrEmpty(entryId))
         {
@@ -1622,43 +1541,36 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+            try
             {
-                isBreaked = true;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = sql;
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
             }
-            else
+            catch (Exception e)
             {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+                cmd.Transaction.Rollback();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
-                try
-                {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::UpdateEntryReadStatus";
 
-                    cmd.CommandText = sql;
-
-                    res.AffectedCount = cmd.ExecuteNonQuery();
-
-                    cmd.Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    cmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::UpdateEntryReadStatus";
-
-                    return res;
-                }
+                return res;
             }
         }
         catch (System.InvalidOperationException ex)
@@ -1703,14 +1615,6 @@ public class DataAccessService : IDataAccessService
 
         //Debug.WriteLine(string.Format("{0} Entries from {1} Updated as read in the DB", c.ToString(), feedId));
 
-        if (isBreaked)
-        {
-            Thread.Sleep(10);
-            //await Task.Delay(100);
-
-            return UpdateEntryReadStatus(entryId, readStatus);
-        }
-
         return res;
     }
 
@@ -1718,7 +1622,6 @@ public class DataAccessService : IDataAccessService
     public SqliteDataAccessResultWrapper DeleteEntriesByFeedIds(List<string> feedIds)
     {
         var res = new SqliteDataAccessResultWrapper();
-        var isBreaked = false;
 
         if (feedIds is null)
             return res;
@@ -1757,43 +1660,36 @@ public class DataAccessService : IDataAccessService
         _readerWriterLock.EnterWriteLock();
         try
         {
-            if (_readerWriterLock.WaitingReadCount > 0)
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+            try
             {
-                isBreaked = true;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = sqlDelEntries;
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
             }
-            else
+            catch (Exception ex)
             {
-                using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-                connection.Open();
+                cmd.Transaction.Rollback();
 
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = connection.BeginTransaction();
-                try
-                {
-                    cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    cmd.ExecuteNonQuery();
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = ex.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::DeleteEntriesByFeedIds";
 
-                    cmd.CommandText = sqlDelEntries;
-
-                    res.AffectedCount = cmd.ExecuteNonQuery();
-
-                    cmd.Transaction.Commit();
-                }
-                catch (Exception ex)
-                {
-                    cmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = ex.Message;
-                    res.Error.ErrDescription = "Exception";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::DeleteEntriesByFeedIds";
-
-                    return res;
-                }
+                return res;
             }
         }
         catch (System.Reflection.TargetInvocationException ex)
@@ -1851,14 +1747,6 @@ public class DataAccessService : IDataAccessService
         }
 
         Debug.WriteLine(string.Format("{0} Entries Deleted from DB", res.AffectedCount));
-
-        if (isBreaked)
-        {
-            Thread.Sleep(10);
-            //await Task.Delay(100);
-
-            return DeleteEntriesByFeedIds(feedIds);
-        }
 
         return res;
     }

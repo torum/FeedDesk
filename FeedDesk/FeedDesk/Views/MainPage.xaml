@@ -13,7 +13,7 @@
     mc:Ignorable="d">
     <Page.Resources>
         <DataTemplate x:Key="FolderTemplate" x:DataType="model:NodeTree">
-            <TreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" Padding="1" Margin="0,0,6,0" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}">
+            <TreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" Padding="3" Margin="0,0,6,0" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}">
                 <StackPanel>
                     <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0">
                         <Grid>
@@ -41,7 +41,7 @@
 
         <DataTemplate x:Key="FileTemplate" x:DataType="model:NodeTree">
 
-            <TreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" Padding="1" Margin="0,0,6,0" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}">
+            <TreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" Padding="3" Margin="0,0,6,0" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}">
                 <StackPanel>
                     <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0">
                         <Grid>
@@ -230,12 +230,13 @@
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="controls:TreeViewItem">
                                 <Setter Property="ContextFlyout" Value="{StaticResource TreeItemContextMenu}"/>
+                                <!--  BasedOn="{StaticResource DefaultTreeViewItemStyle}" -->
                             </Style>
                         </TreeView.ItemContainerStyle>
 
                         <TreeView.ItemTemplate>
                             <DataTemplate x:DataType="model:NodeTree">
-                                <localControls:MyTreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}" RightTapped="TreeViewItem_RightTapped" DoubleTapped="TreeViewItem_DoubleTapped" Padding="0" Margin="0,0,0,0">
+                                <localControls:MyTreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}" RightTapped="TreeViewItem_RightTapped" DoubleTapped="TreeViewItem_DoubleTapped" Padding="3" Margin="0,0,6,0">
                                     <StackPanel>
                                         <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0">
                                             <Grid>
@@ -486,7 +487,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <Viewbox Grid.RowSpan="2" Width ="20" Height="20" VerticalAlignment="Center" Margin="0">
+                                        <Viewbox Grid.RowSpan="2" Width ="24" Height="24" VerticalAlignment="Center" Margin="0">
                                             <PathIcon Data="{x:Bind PathIcon, Mode=OneWay}" Foreground="{ThemeResource SystemAccentColorLight2}" Width ="24" Height="24" Margin="6" VerticalAlignment="Center" HorizontalAlignment="Center"></PathIcon>
                                         </Viewbox>
 

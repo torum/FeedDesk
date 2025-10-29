@@ -23,7 +23,7 @@ public interface IDataAccessService
 
     //SqliteDataAccessSelectImageResultWrapper SelectImageByImageId(string imageId);
 
-    SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri htmlUri, int retryCount);
+    SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri htmlUri);
 
 
     //SqliteDataAccessInsertResultWrapper InsertImages(List<EntryItem> entries);
