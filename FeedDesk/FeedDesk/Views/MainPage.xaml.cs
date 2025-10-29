@@ -347,15 +347,15 @@ public sealed partial class MainPage : Page
 
     private void DetailsPane_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (col2.ActualWidth > 1000)
+        if (col2.ActualWidth >= 1000)
         {
-            DetailsContentStackPanel.MaxWidth = 1000;
-            DetailsContentStackPanel.Width = 1000;
+            //DetailsContentStackPanel.Width = 1000;
             DetailsContentStackPanel.HorizontalAlignment = HorizontalAlignment.Center;
         }
         else
         {
-            DetailsContentStackPanel.Width = col2.ActualWidth;  
+            // Not good.. contents dissapear.
+            //DetailsContentStackPanel.Width = col2.ActualWidth;  
             DetailsContentStackPanel.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
     }

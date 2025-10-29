@@ -70,7 +70,7 @@ public partial class MainViewModel : ObservableRecipient
         {
             var hoge = new Uri("https://validator.w3.org/feed/check.cgi?url=" + HttpUtility.UrlEncode(FeedToEDit.EndPoint.AbsoluteUri));
 
-            _ = Task.Run(() => Windows.System.Launcher.LaunchUriAsync(hoge));
+            _ = Task.Run(() => Windows.System.Launcher.LaunchUriAsync(hoge), _cts.Token);
         }
     }
 
@@ -1064,7 +1064,7 @@ public partial class MainViewModel : ObservableRecipient
             //Debug.WriteLine(Windows.Storage.ApplicationData.Current.LocalFolder.Path);
         }
 
-        var res = await Task.Run(()=>_dataAccessService.InitializeDatabase(filePath));
+        var res = await Task.Run(()=>_dataAccessService.InitializeDatabase(filePath), _cts.Token);
         if (res.IsError)
         {
             ErrorMain = res.Error;
@@ -1185,11 +1185,17 @@ public partial class MainViewModel : ObservableRecipient
             return [];
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return [];
+        }
+
         // don't clear Entries here.
 
         if (nt is NodeFeed feed)
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 feed.IsBusy = true;
                 if (feed == _selectedTreeViewItem)
@@ -1199,11 +1205,11 @@ public partial class MainViewModel : ObservableRecipient
             });
             await Task.Delay(100);
 
-            var res = await Task.Run(()=>_dataAccessService.SelectEntriesByFeedId(feed.Id, feed.IsDisplayUnarchivedOnly));
+            var res = await Task.Run(()=>_dataAccessService.SelectEntriesByFeedId(feed.Id, feed.IsDisplayUnarchivedOnly), _cts.Token);
 
             if (res.IsError)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     // set's error
                     feed.ErrorDatabase = res.Error;
@@ -1227,7 +1233,7 @@ public partial class MainViewModel : ObservableRecipient
             else
             {
                 var tmp = new List<EntryItem>();
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     //Debug.WriteLine("LoadEntries success: " + feed.Name);
 
@@ -1268,7 +1274,7 @@ public partial class MainViewModel : ObservableRecipient
         {
             List<string> tmpList = [];
 
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 folder.IsBusy = true;
                 if (folder == _selectedTreeViewItem)
@@ -1286,18 +1292,18 @@ public partial class MainViewModel : ObservableRecipient
 
             if (tmpList.Count == 0)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     folder.IsBusy = false;
                 });
                 return [];
             }
 
-            var res = await Task.Run(()=>_dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsDisplayUnarchivedOnly));
+            var res = await Task.Run(()=>_dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsDisplayUnarchivedOnly), _cts.Token);
 
             if (res.IsError)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     // show error
                     ErrorObj = res.Error;
@@ -1314,7 +1320,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             else
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     // Clear error
                     //folder.ErrorDatabase = null;
@@ -1388,6 +1394,12 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
         if (nt is NodeFeed feed)
         {
             /*
@@ -1403,7 +1415,7 @@ public partial class MainViewModel : ObservableRecipient
             }
 
             // Update Node Downloading Status
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 feed.IsBusy = true;
                 feed.Status = NodeFeed.DownloadStatus.downloading;
@@ -1434,7 +1446,7 @@ public partial class MainViewModel : ObservableRecipient
             // Result is HTTP Error
             if (resEntries.IsError)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     // Sets Node Error.
                     feed.ErrorHttp = resEntries.Error;
@@ -1464,7 +1476,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             else
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     // Clear Node Error
                     feed.ErrorHttp = null;
@@ -1500,32 +1512,23 @@ public partial class MainViewModel : ObservableRecipient
         }
         else if (nt is NodeFolder folder)
         {
-            //
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(async () =>
             {
                 nt.IsBusy = true;
-            });
-            await Task.Delay(100);
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
-            {
+                await Task.Delay(100);
                 EntryArchiveAllCommand.NotifyCanExecuteChanged();
             });
 
             var tasks = new List<Task>();
             
-            await RefreshAllFeedsRecursiveLoopAsync(tasks, folder); ;
+            await RefreshAllFeedsRecursiveLoopAsync(tasks, folder);
 
             await Task.WhenAll(tasks).ConfigureAwait(true);
 
-            //
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(async () =>
             {
                 nt.IsBusy = false;
-            });
-            await Task.Delay(100);
-
-            App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
-            {
+                await Task.Delay(100);
                 EntryArchiveAllCommand.NotifyCanExecuteChanged();
             });
         }
@@ -1740,6 +1743,12 @@ public partial class MainViewModel : ObservableRecipient
             return res;
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return res;
+        }
+
         // check some conditions.
         if (feed.Api != ApiTypes.atFeed)
         {
@@ -1750,8 +1759,8 @@ public partial class MainViewModel : ObservableRecipient
         if (App.MainWnd?.CurrentDispatcherQueue is null) { return res; }
 
         // Update Node Downloading Status
-#pragma warning disable CS8602 
-        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+
+        await dispatcher.EnqueueAsync(() =>
         {
             feed.IsBusy = true;
 
@@ -1768,7 +1777,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             
         });
-#pragma warning restore CS8602 
+
 
         await Task.Delay(30);
         //Debug.WriteLine("Getting Entries from: " + feed.Name);
@@ -1788,8 +1797,7 @@ public partial class MainViewModel : ObservableRecipient
         // Result is HTTP Error
         if (resEntries.IsError)
         {
-#pragma warning disable CS8602 
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 // Sets Node Error.
                 feed.ErrorHttp = resEntries.Error;
@@ -1816,16 +1824,13 @@ public partial class MainViewModel : ObservableRecipient
 
                 feed.IsBusy = false;
             });
-#pragma warning restore CS8602 
 
             return res;
         }
         else
         {
             // Result is success.
-
-#pragma warning disable CS8602 
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 //Debug.WriteLine("Getting entries success: " + feed.Name);
 
@@ -1849,8 +1854,7 @@ public partial class MainViewModel : ObservableRecipient
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 }
             });
-#pragma warning restore CS8602 
-                              //
+
             await Task.Delay(100);
 
             if (resEntries.Entries.Count > 0)
@@ -1890,9 +1894,14 @@ public partial class MainViewModel : ObservableRecipient
             return res;
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return res;
+        }
+
         // Update Node Downloading Status
-#pragma warning disable CS8602 
-        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+        await dispatcher.EnqueueAsync(() =>
         {
             feed.IsBusy = true;
 
@@ -1907,18 +1916,15 @@ public partial class MainViewModel : ObservableRecipient
                 EntryArchiveAllCommand.NotifyCanExecuteChanged();
             }
         });
-#pragma warning restore CS8602 
-                              //
         await Task.Delay(100);
 
         //var resInsert = await Task.FromResult(InsertEntriesLock(list));
-        var resInsert = await Task.Run(()=>_dataAccessService.InsertEntries(list, feed.Id, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!, 0));
+        var resInsert = await Task.Run(()=>_dataAccessService.InsertEntries(list, feed.Id, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!, 0),_cts.Token);
 
         // Result is DB Error
         if (resInsert.IsError)
         {
-#pragma warning disable CS8602 
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 // Sets Node Error.
                 feed.ErrorDatabase = resInsert.Error;
@@ -1936,7 +1942,7 @@ public partial class MainViewModel : ObservableRecipient
 
                 feed.IsBusy = false;
             });
-#pragma warning restore CS8602 
+
             return res;
         }
         else
@@ -1946,8 +1952,7 @@ public partial class MainViewModel : ObservableRecipient
                 //var newItems = resInsert.InsertedEntries;
 
                 // Update Node Downloading Status
-#pragma warning disable CS8602 
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     //Debug.WriteLine("Saving entries success: " + feed.Name);
 
@@ -1964,8 +1969,7 @@ public partial class MainViewModel : ObservableRecipient
 
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
-#pragma warning restore CS8602 
-                              //
+
                 await Task.Delay(100);
 
                 if (feed == SelectedTreeViewItem)
@@ -1976,8 +1980,7 @@ public partial class MainViewModel : ObservableRecipient
             else
             {
                 // Update Node Downloading Status
-#pragma warning disable CS8602 
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     //feed.EntryCount = newItems.Count;
 
@@ -1995,8 +1998,7 @@ public partial class MainViewModel : ObservableRecipient
                     */
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
-#pragma warning restore CS8602 
-                              //
+
                 await Task.Delay(100);
             }
 
@@ -2061,9 +2063,15 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
         if (nd is NodeFeed feed)
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 feed.IsBusy = true;
 
@@ -2081,13 +2089,13 @@ public partial class MainViewModel : ObservableRecipient
                 feed.Id
             ];
 
-            var res = await Task.Run(() => _dataAccessService.UpdateAllEntriesAsArchived(list));
+            var res = await Task.Run(() => _dataAccessService.UpdateAllEntriesAsArchived(list), _cts.Token);
 
             if (res.IsError)
             {
                 Debug.WriteLine("ArchiveAllAsync(NodeFeed):" + res.Error.ErrText);
 
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     feed.ErrorDatabase = res.Error;
 
@@ -2106,7 +2114,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             else
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     // Clear error
                     feed.ErrorDatabase = null;
@@ -2152,7 +2160,7 @@ public partial class MainViewModel : ObservableRecipient
                     }
                 }
 
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
@@ -2162,7 +2170,7 @@ public partial class MainViewModel : ObservableRecipient
         {
             if (folder.Children.Count > 0)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     folder.IsBusy = true;// test
                     if (folder == SelectedTreeViewItem)
@@ -2176,7 +2184,7 @@ public partial class MainViewModel : ObservableRecipient
 
                 tmpList = GetAllFeedIdsFromChildNodes(folder.Children);
 
-                var res = await Task.Run(() => _dataAccessService.UpdateAllEntriesAsArchived(tmpList));
+                var res = await Task.Run(() => _dataAccessService.UpdateAllEntriesAsArchived(tmpList), _cts.Token);
 
                 if (res.IsError)
                 {
@@ -2187,7 +2195,7 @@ public partial class MainViewModel : ObservableRecipient
                 {
                     if (res.AffectedCount > 0)
                     {
-                        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                        await dispatcher.EnqueueAsync(() =>
                         {
                             if (folder.Parent is NodeFolder parentFolder)
                             {
@@ -2215,7 +2223,7 @@ public partial class MainViewModel : ObservableRecipient
                     }
                 }
 
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
@@ -2277,12 +2285,12 @@ public partial class MainViewModel : ObservableRecipient
             catch (Exception ex)
             {
                 Debug.WriteLine($"UpdateEntryStatusAsReadAwaiter: {ex.Message}");
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
                 {
                     (App.Current as App)?.AppendErrorLog("UpdateEntryStatusAsReadAwaiter", ex.Message);
                 });
             }
-        });
+        }, _cts.Token);
     }
 
     private async Task UpdateEntryStatusAsReadAsync(NodeTree nd, FeedEntryItem entry)
@@ -2293,6 +2301,12 @@ public partial class MainViewModel : ObservableRecipient
         }
 
         if ((nd is not NodeFeed) && (nd is not NodeFolder))
+        {
+            return;
+        }
+        
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
         {
             return;
         }
@@ -2315,11 +2329,11 @@ public partial class MainViewModel : ObservableRecipient
             rs = FeedEntryItem.ReadStatus.rsNormalVisited;
         }
 
-        var res = await Task.Run(() => _dataAccessService.UpdateEntryReadStatus(entry.EntryId, rs));
+        var res = await Task.Run(() => _dataAccessService.UpdateEntryReadStatus(entry.EntryId, rs), _cts.Token);
 
         if (res.IsError)
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 Debug.WriteLine("UpdateEntryStatusAsReadAsync:" + res.Error.ErrText);
 
@@ -2347,7 +2361,7 @@ public partial class MainViewModel : ObservableRecipient
         }
         else
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 if (entry != null)
                 {
@@ -2388,14 +2402,20 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feedlink.FeedUri.AbsoluteUri, feedlink.FeedUri, feedlink.Title, feedlink.SiteTitle, "", new DateTime(), feedlink.SiteUri));
+        var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feedlink.FeedUri.AbsoluteUri, feedlink.FeedUri, feedlink.Title, feedlink.SiteTitle, "", new DateTime(), feedlink.SiteUri), _cts.Token);
+
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
 
         // Result is DB Error
         if (resInsert.IsError)
         {
             Debug.WriteLine("InsertFeed:" + "error");
 
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 ErrorMain = resInsert.Error;
                 IsMainErrorInfoBarVisible = true;
@@ -2403,7 +2423,7 @@ public partial class MainViewModel : ObservableRecipient
         }
         else
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 NodeFeed a = new(feedlink.Title, feedlink.FeedUri)
                 {
@@ -2534,9 +2554,15 @@ public partial class MainViewModel : ObservableRecipient
         {
             return;
         }
+        
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
 
         // update db.
-        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+        await dispatcher.EnqueueAsync(() =>
         {
             feed.Name = name;
 
@@ -2547,12 +2573,12 @@ public partial class MainViewModel : ObservableRecipient
         });
 
         //
-        var resInsert = await Task.Run(() => _dataAccessService.UpdateFeed(feed.Id, feed.EndPoint, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!));
+        var resInsert = await Task.Run(() => _dataAccessService.UpdateFeed(feed.Id, feed.EndPoint, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!), _cts.Token);
 
         // Result is DB Error
         if (resInsert.IsError)
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 // Sets Node Error.
                 feed.ErrorDatabase = resInsert.Error;
@@ -2573,7 +2599,7 @@ public partial class MainViewModel : ObservableRecipient
         }
         else
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 if (feed.Status != NodeFeed.DownloadStatus.error)
                 {
@@ -2641,7 +2667,7 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        _ = Task.Run(() => NodeRemoveAsync());
+        _ = Task.Run(() => NodeRemoveAsync(), _cts.Token);
         //_ = NodeRemoveAsync();
     }
 
@@ -2659,11 +2685,17 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
         var IsShowWaitDialog = false;
         if ((SelectedTreeViewItem is NodeFolder) && (SelectedTreeViewItem.Children.Count > 2))
         {
             // this may take some time, so let us show dialog.
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 IsShowWaitDialog = true;
                 // Show wait dialog.
@@ -2675,7 +2707,7 @@ public partial class MainViewModel : ObservableRecipient
 
         await DeleteNodesAsync(SelectedTreeViewItem, nodeToBeDeleted);
 
-        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+        await dispatcher.EnqueueAsync(() =>
         {
             foreach (var hoge in nodeToBeDeleted)
             {
@@ -2731,9 +2763,15 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
         if (nt is NodeFeed feed)
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 // check status
                 if (!((feed.Status == NodeFeed.DownloadStatus.normal) || (feed.Status == NodeFeed.DownloadStatus.error)))
@@ -2749,11 +2787,11 @@ public partial class MainViewModel : ObservableRecipient
                     feed.Id
                 ];
 
-            var resDelete = await Task.Run(() => _dataAccessService.DeleteFeed(feed.Id));
+            var resDelete = await Task.Run(() => _dataAccessService.DeleteFeed(feed.Id), _cts.Token);
 
             if (resDelete.IsError)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     feed.ErrorDatabase = resDelete.Error;
 
@@ -2770,7 +2808,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             else
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     feed.IsBusy = false;
                 });
@@ -2846,11 +2884,17 @@ public partial class MainViewModel : ObservableRecipient
                     (App.Current as App)?.AppendErrorLog("OpmlImport", ex.Message);
                 });
             }
-        });
+        }, _cts.Token);
     }
 
     public async Task OpmlImportAsync()
     {
+        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
         var hwnd = WindowNative.GetWindowHandle(App.MainWnd);
         var file = await _fileDialogService.GetOpenOpmlFileDialog(hwnd);
         if (file is null)
@@ -2865,7 +2909,7 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+        await dispatcher.EnqueueAsync(() =>
         {
             // Show wait dialog.
             ShowWaitDialog?.Invoke(this, true);
@@ -2880,7 +2924,7 @@ public partial class MainViewModel : ObservableRecipient
         }
         catch (Exception ex)
         {
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 ErrorMain = new ErrorObject
                 {
@@ -2921,7 +2965,7 @@ public partial class MainViewModel : ObservableRecipient
 
             if (dupeFeeds.Count > 0)
             {
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(() =>
                 {
                     var s = "";
                     foreach (var hoge in dupeFeeds)
@@ -2942,7 +2986,7 @@ public partial class MainViewModel : ObservableRecipient
                 });
             }
 
-            await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 Services.Insert(0, dummyFolder);
                 _isFeedTreeLoaded = true;
@@ -2951,7 +2995,7 @@ public partial class MainViewModel : ObservableRecipient
             });
         }
 
-        await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+        await dispatcher.EnqueueAsync(() =>
         {
             SaveServiceXml();
 
@@ -2976,14 +3020,14 @@ public partial class MainViewModel : ObservableRecipient
             else
             {
                 //
-                var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feed.Id, feed.EndPoint, feed.Name, feed.Title, "", new DateTime(), feed.HtmlUri!));
+                var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feed.Id, feed.EndPoint, feed.Name, feed.Title, "", new DateTime(), feed.HtmlUri!), _cts.Token);
                 
                 // Result is DB Error
                 if (resInsert.IsError)
                 {
                     Debug.WriteLine("InsertFeed:" + "error");
 
-                    await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                    App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
                     {
                         feed.ErrorDatabase = resInsert.Error;
                     });
@@ -3084,12 +3128,12 @@ public partial class MainViewModel : ObservableRecipient
             catch (Exception ex)
             {
                 Debug.WriteLine($"EntryArchiveAll: {ex.Message}");
-                await App.MainWnd?.CurrentDispatcherQueue?.EnqueueAsync(() =>
+                App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
                 {
                     (App.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
                 });
             }
-        });
+        }, _cts.Token);
 
     }
 
@@ -3143,7 +3187,7 @@ public partial class MainViewModel : ObservableRecipient
         {
             if (SelectedListViewItem.AltHtmlUri is not null)
             {
-                Task.Run(() => Windows.System.Launcher.LaunchUriAsync(SelectedListViewItem.AltHtmlUri));
+                Task.Run(() => Windows.System.Launcher.LaunchUriAsync(SelectedListViewItem.AltHtmlUri), _cts.Token);
             }
         }
     }
@@ -3205,13 +3249,13 @@ public partial class MainViewModel : ObservableRecipient
         if (SelectedTreeViewItem is NodeFeed feed)
         {
             feed.IsDisplayUnarchivedOnly = !IsShowAllEntries;
-            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem));
+            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
             //await LoadEntriesAsync(SelectedTreeViewItem);
         }
         else if (SelectedTreeViewItem is NodeFolder folder)
         {
             folder.IsDisplayUnarchivedOnly = !IsShowAllEntries;
-            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem));
+            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
             //await LoadEntriesAsync(SelectedTreeViewItem);
         }
     }
@@ -3239,13 +3283,13 @@ public partial class MainViewModel : ObservableRecipient
         if (SelectedTreeViewItem is NodeFeed feed)
         {
             feed.IsDisplayUnarchivedOnly = IsShowInboxEntries;
-            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem));
+            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
             //await LoadEntriesAsync(SelectedTreeViewItem);
         }
         else if (SelectedTreeViewItem is NodeFolder folder)
         {
             folder.IsDisplayUnarchivedOnly = IsShowInboxEntries;
-            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem));
+            Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
             //await LoadEntriesAsync(SelectedTreeViewItem);
         }
     }

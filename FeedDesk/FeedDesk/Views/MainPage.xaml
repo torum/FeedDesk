@@ -431,8 +431,6 @@
                          Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}" -->
                         <!--   KeyUp="ListViewEntryItem_KeyUp"  -->
                         <ListView Grid.Row="1" x:Name="ListViewEntryItem" Background="{ThemeResource NavigationViewContentBackground}" IsItemClickEnabled="True" RightTapped="ListViewEntryItem_RightTapped" DoubleTapped="ListViewEntryItem_DoubleTapped" ItemsSource="{x:Bind ViewModel.Entries, Mode=OneWay}" SelectionChanged="ListViewEntryItem_SelectionChanged" SelectedItem="{x:Bind ViewModel.SelectedListViewItem, Mode=TwoWay}" IsDoubleTapEnabled="True" IsRightTapEnabled="True" SelectionMode="Single" Margin="0,0,0,0" Padding="0,2,0,0">
-                            <ListView.Resources>
-                            </ListView.Resources>
                             <ListView.ContextFlyout>
                                 <!--  x:Key="ListItemContextMenu" -->
                                 <MenuFlyout>
@@ -470,6 +468,11 @@
                                 </Style>
                             </ListView.ItemContainerStyle>
                             -->
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="controls:ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                    <Setter Property="Padding" Value="12,3,12,3"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="model:FeedEntryItem">
                                     <Grid x:Name="itemThumbnail" RightTapped="ListViewEntryItem_RightTapped">
@@ -551,7 +554,7 @@
                 <Border x:Name="DetailsPane" Grid.Row="0" Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" Margin="0" CornerRadius="{ThemeResource NavigationViewContentChildGridCornerRadius}" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}" SizeChanged="DetailsPane_SizeChanged">
                     <ScrollViewer x:Name="DetailsPaneScrollViewer" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
-                        <StackPanel x:Name="DetailsContentStackPanel" Margin="0" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                        <StackPanel x:Name="DetailsContentStackPanel" Margin="0" MaxWidth="1000" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" HorizontalAlignment="Stretch">
                             <!-- adaptive procedure on code behind > MaxWidth="1000" HorizontalAlignment="Center"  -->
                             <!-- ImageLink -->
                             <StackPanel Visibility="{x:Bind ViewModel.IsImageLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" Margin="12,12,12,0">

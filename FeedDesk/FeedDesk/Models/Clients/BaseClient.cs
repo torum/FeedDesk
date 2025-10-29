@@ -21,7 +21,7 @@ public abstract class BaseClient : IDisposable
             {
                 lock (_locker)
                 {
-                    _client ??= new HttpClient();
+                    _client ??= new HttpClient(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(15) });
                 }
             }
 
