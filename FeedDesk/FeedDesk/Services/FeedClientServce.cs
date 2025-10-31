@@ -37,9 +37,9 @@ public partial class FeedClientService : BaseClient, IFeedClientService
         //Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
 
-        Client.Timeout = TimeSpan.FromSeconds(15); // 15 sec timeout here, but also 10 sec cancel timeout.
+        Client.Timeout = TimeSpan.FromSeconds(15); // 15 sec timeout here, but also 16 sec cancel timeout.
 
-        Client.DefaultRequestVersion = new Version(2, 0);
+        //Client.DefaultRequestVersion = new Version(2, 0);
     }
 
     public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token)
