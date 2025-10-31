@@ -44,10 +44,10 @@ from [Microsoft Store](https://www.microsoft.com/store/apps/9PGDGKFSV6L9).
 Feel free to open issues and send PRs. 
 
 # Technologies, Frameworks, Libraries
-* [.NET 8](https://github.com/dotnet/runtime)  
+* [.NET](https://github.com/dotnet/runtime)  
 * [WinUI3 (Windows App SDK)](https://github.com/microsoft/WindowsAppSDK) 
 * [Community Toolkit](https://github.com/CommunityToolkit) 
-* [SQLite](https://github.com/sqlite/sqlite) ([System.Data.SQLite](https://system.data.sqlite.org/index.html/doc/trunk/www/index.wiki))
+* [SQLite](https://github.com/sqlite/sqlite) 
 
 # Getting Started
 
