@@ -11,105 +11,7 @@
     xmlns:communityToolkitControls="using:CommunityToolkit.WinUI.Controls" 
     NavigationCacheMode="Required"
     mc:Ignorable="d">
-    <Page.Resources>
-        <DataTemplate x:Key="FolderTemplate" x:DataType="model:NodeTree">
-            <TreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" Padding="3" Margin="0,0,6,0" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}">
-                <StackPanel>
-                    <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <PathIcon Grid.Row="0" Grid.Column="0" Data="{x:Bind PathIcon, Mode=OneWay}"></PathIcon>
-
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="NodeTextBlock" Text="{x:Bind Name, Mode=OneWay}" Padding="3" IsHitTestVisible="False" Margin="6,0,0,0"/>
-                            <!--
-                            <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="RenameTextBox" Text="{x:Bind Name, Mode=TwoWay}" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="-5 0 3 0" Width="Auto" Visibility="Collapsed" LostFocus="RenameTextBox_LostFocus" KeyUp="RenameTextBox_KeyUp">
-
-                            </TextBox>
-                            -->
-
-                            <TextBlock Grid.Column="2" Text="{x:Bind SubNodeText, Mode=OneWay}" Margin="9 3 3 3" HorizontalAlignment="Right" Visibility="Collapsed"></TextBlock>
-                        </Grid>
-                    </Border>
-                </StackPanel>
-            </TreeViewItem>
-        </DataTemplate>
-
-        <DataTemplate x:Key="FileTemplate" x:DataType="model:NodeTree">
-
-            <TreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" Padding="3" Margin="0,0,6,0" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}">
-                <StackPanel>
-                    <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <PathIcon Grid.Row="0" Grid.Column="0" Data="{x:Bind PathIcon, Mode=OneWay}"></PathIcon>
-
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="NodeTextBlock" Text="{x:Bind Name, Mode=OneWay}" Padding="3" IsHitTestVisible="False" Margin="6,0,0,0"/>
-                            <!--
-                            <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" x:Name="RenameTextBox" Text="{x:Bind Name, Mode=TwoWay}" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="-5 0 3 0" Width="Auto" Visibility="Collapsed" LostFocus="RenameTextBox_LostFocus" KeyUp="RenameTextBox_KeyUp">
-
-                            </TextBox>
-                            -->
-
-                            <TextBlock Grid.Column="2" Text="{x:Bind SubNodeText, Mode=OneWay}" Margin="9 3 3 3" HorizontalAlignment="Right" Visibility="Collapsed"></TextBlock>
-
-                        </Grid>
-                    </Border>
-                </StackPanel>
-            </TreeViewItem>
-
-        </DataTemplate>
-
-        <model:ExplorerItemTemplateSelector x:Key="ExplorerItemTemplateSelector" FolderTemplate="{StaticResource FolderTemplate}" FileTemplate="{StaticResource FileTemplate}" />
-
-    </Page.Resources>
     <Grid x:Name="ContentArea">
-        <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup>
-                <VisualState>
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="1007" />
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters><!-- 
-                        <Setter Target="col1.Width" Value="3*"/>
-                        <Setter Target="col2.Width" Value="4*" />
-                        -->
-                        <Setter Target="row2.Height" Value="0" />
-                    </VisualState.Setters>
-                </VisualState>
-                <VisualState>
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="0" />
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="col1.Width" Value="*" />
-                        <Setter Target="col2.Width" Value="0" />
-                        <Setter Target="DetailsPane.(Grid.Row)" Value="1"/>
-                        <Setter Target="DetailsPane.(Grid.Column)" Value="0"/>
-                        <Setter Target="row1.Height" Value="3.5*" />
-                        <Setter Target="row2.Height" Value="6.5*" />
-                        <Setter Target="col1.MaxWidth" Value="1000" />
-                        <Setter Target="col2.MinWidth" Value="0" />
-                        <Setter Target="DetailsPane.Margin" Value="0,0,0,0"/>
-                        <Setter Target="ListViewPane.CornerRadius" Value="0,0,0,0"/>
-                        <Setter Target="DetailsPane.CornerRadius" Value="0,0,0,0"/>
-                        <Setter Target="ListViewPaneColumnGridSplitter.Visibility" Value="Collapsed"/>
-                        <Setter Target="ListViewPaneColumnGridSplitter.IsEnabled" Value="False"/>
-                        <Setter Target="ListViewPaneRowGridSplitter.Visibility" Value="Visible"/>
-                        <Setter Target="ListViewPaneRowGridSplitter.IsEnabled" Value="True"/>
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -194,7 +96,6 @@
                           IsRightTapEnabled="True"
                           IsDoubleTapEnabled="True" 
                           ItemsSource="{x:Bind ViewModel.Services, Mode=OneWay}" 
-                          ItemTemplateSelector="{StaticResource ExplorerItemTemplateSelector}" 
                           SelectedItem="{x:Bind ViewModel.SelectedTreeViewItem, Mode=TwoWay}" 
                           Background="Transparent"
                           Margin="0,2,0,0"
@@ -719,5 +620,44 @@
                 <TextBox x:Name="DebugTextBox" Text="{x:Bind ViewModel.DebugEventLog, Mode=OneWay}" TextWrapping="NoWrap" AcceptsReturn="True" IsSpellCheckEnabled="False" CornerRadius="0,0,0,0" HorizontalAlignment="Stretch" Padding="6 6 24 6" VerticalAlignment="Stretch" Margin="0" MinHeight="150" Height="200" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
             </Border>
         </Grid>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1007" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <!-- 
+                        <Setter Target="col1.Width" Value="3*"/>
+                        <Setter Target="col2.Width" Value="4*" />
+                        -->
+                        <Setter Target="row2.Height" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="col1.Width" Value="*" />
+                        <Setter Target="col2.Width" Value="0" />
+                        <Setter Target="DetailsPane.(Grid.Row)" Value="1"/>
+                        <Setter Target="DetailsPane.(Grid.Column)" Value="0"/>
+                        <Setter Target="row1.Height" Value="3.5*" />
+                        <Setter Target="row2.Height" Value="6.5*" />
+                        <Setter Target="col1.MaxWidth" Value="1000" />
+                        <Setter Target="col2.MinWidth" Value="0" />
+                        <Setter Target="DetailsPane.Margin" Value="0,0,0,0"/>
+                        <Setter Target="ListViewPane.CornerRadius" Value="0,0,0,0"/>
+                        <Setter Target="DetailsPane.CornerRadius" Value="0,0,0,0"/>
+                        <Setter Target="ListViewPaneColumnGridSplitter.Visibility" Value="Collapsed"/>
+                        <Setter Target="ListViewPaneColumnGridSplitter.IsEnabled" Value="False"/>
+                        <Setter Target="ListViewPaneRowGridSplitter.Visibility" Value="Visible"/>
+                        <Setter Target="ListViewPaneRowGridSplitter.IsEnabled" Value="True"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </Grid>
 </Page>
