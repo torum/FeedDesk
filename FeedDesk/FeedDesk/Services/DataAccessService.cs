@@ -421,7 +421,6 @@ public class DataAccessService : IDataAccessService
         return res;
     }
 
-    // Not really used because of updates on InsertEntries.
     public SqliteDataAccessResultWrapper UpdateFeed(string feedId, Uri feedUri, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri)
     {
         var res = new SqliteDataAccessResultWrapper();
@@ -826,8 +825,6 @@ public class DataAccessService : IDataAccessService
 
                 return res;
             }
-
-
         }
         catch (System.Reflection.TargetInvocationException ex)
         {
@@ -1159,10 +1156,14 @@ public class DataAccessService : IDataAccessService
         var res = new SqliteDataAccessSelectResultWrapper();
 
         if (feedIds is null)
+        {
             return res;
+        }
 
         if (feedIds.Count == 0)
+        {
             return res;
+        }
 
         var before = "SELECT feeds.name as feedName, feeds.feed_id as feedId, entries.title as entryTitle, entries.entry_id as entryId, entries.url as entryUrl, entries.published as entryPublished, entries.updated as entryUpdated, entries.summary as entrySummary, entries.content as entryContent, entries.content_type as entryContentType, entries.image_url as entryImageUri, entries.audio_url as entryAudioUri, entries.source as entrySource, entries.source_url as entrySourceUri, entries.author as entryAuthor, entries.category as entryCategory, entries.comment_url as entryCommentUri, entries.archived as entryArchived, entries.status as entryStatus FROM entries INNER JOIN feeds USING (feed_id) WHERE ";
 
@@ -1171,7 +1172,9 @@ public class DataAccessService : IDataAccessService
         foreach (var asdf in feedIds)
         {
             if (middle != "(")
+            {
                 middle += "OR ";
+            }
 
             middle += String.Format("feed_id = '{0}' ", asdf);
         }
@@ -1356,10 +1359,14 @@ public class DataAccessService : IDataAccessService
                 if (entry.IsArchived)
                 {
                     if (entry.Status == FeedEntryItem.ReadStatus.rsNew)
+                    {
                         entry.Status = FeedEntryItem.ReadStatus.rsNormal;
+                    }
 
                     if (entry.Status == FeedEntryItem.ReadStatus.rsNewVisited)
+                    {
                         entry.Status = FeedEntryItem.ReadStatus.rsNormalVisited;
+                    }
                 }
 
                 if (!entry.IsArchived)
@@ -1419,10 +1426,14 @@ public class DataAccessService : IDataAccessService
         var res = new SqliteDataAccessResultWrapper();
 
         if (feedIds is null)
+        {
             return res;
+        }
 
         if (feedIds.Count == 0)
+        {
             return res;
+        }
 
         var before = string.Format("UPDATE entries SET archived = '{0}' WHERE ", bool.TrueString);
 
@@ -1431,7 +1442,9 @@ public class DataAccessService : IDataAccessService
         foreach (var asdf in feedIds)
         {
             if (middle != "(")
+            {
                 middle += "OR ";
+            }
 
             middle += String.Format("feed_id = '{0}' ", asdf);
         }
@@ -1624,10 +1637,14 @@ public class DataAccessService : IDataAccessService
         var res = new SqliteDataAccessResultWrapper();
 
         if (feedIds is null)
+        {
             return res;
+        }
 
         if (feedIds.Count == 0)
+        {
             return res;
+        }
 
         string sqlDelEntries;// = string.Empty;
 
@@ -1640,7 +1657,9 @@ public class DataAccessService : IDataAccessService
             foreach (var asdf in feedIds)
             {
                 if (middle != "(")
+                {
                     middle += "OR ";
+                }
 
                 middle += String.Format("feed_id = '{0}' ", asdf);
             }
