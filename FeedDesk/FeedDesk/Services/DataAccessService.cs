@@ -895,7 +895,7 @@ public class DataAccessService : IDataAccessService
             return res;
         }
 
-        _readerWriterLock.EnterReadLock();
+        //_readerWriterLock.EnterReadLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1145,7 +1145,7 @@ public class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitReadLock();
+            //_readerWriterLock.ExitReadLock();
         }
 
         return res;
@@ -1192,7 +1192,7 @@ public class DataAccessService : IDataAccessService
 
         //Debug.WriteLine(before + middle + after);
 
-        _readerWriterLock.EnterReadLock();
+        //_readerWriterLock.EnterReadLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1415,7 +1415,7 @@ public class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitReadLock();
+            //_readerWriterLock.ExitReadLock();
         }
 
         return res;

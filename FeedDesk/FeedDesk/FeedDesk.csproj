@@ -57,7 +57,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6901" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Private.Uri" Version="4.3.2" />
@@ -92,14 +92,15 @@
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
-	  
-	  <PublishAot>false</PublishAot>
-	  <PublishTrimmed>false</PublishTrimmed>
+
 	  <!-- 
-	  <PublishAot>true</PublishAot>
-	  <PublishTrimmed>True</PublishTrimmed>
+	  	  <PublishAot>false</PublishAot>
+	  <PublishTrimmed>false</PublishTrimmed>
 	   -->
 	  <!-- 
+	  
+	  <PublishAot>true</PublishAot>
+	  <PublishTrimmed>True</PublishTrimmed>
 	  <PublishSingleFile>false</PublishSingleFile>
 	  
 	  <WindowsPackageType>None</WindowsPackageType> -->

@@ -244,7 +244,7 @@
     <value>Archive All</value>
   </data>
   <data name="ShellMenuBarItem_Entry_SlectedEntry.Text" xml:space="preserve">
-    <value>Slected Entry</value>
+    <value>Selected Entry</value>
   </data>
   <data name="ShellMenuBarItem_Entry_SlectedEntry_CopyURL.Text" xml:space="preserve">
     <value>Copy URL</value>
@@ -265,7 +265,7 @@
     <value>Refresh All</value>
   </data>
   <data name="ShellMenuBarItem_Feed_SlectedFeed.Text" xml:space="preserve">
-    <value>Slected Feed</value>
+    <value>Selected Feed</value>
   </data>
   <data name="ShellMenuBarItem_Feed_SlectedFeed_Edit.Text" xml:space="preserve">
     <value>Edit</value>
@@ -418,7 +418,7 @@
     <value>Check Feed's Validity</value>
   </data>
   <data name="Settings_SystemBackdrop.Text" xml:space="preserve">
-    <value>Visual effect</value>
+    <value>Visual Effect</value>
   </data>
   <data name="Settings_SystemBackdrop_Acrylic.Content" xml:space="preserve">
     <value>Acrylic</value>
@@ -430,16 +430,16 @@
     <value>Please wait...</value>
   </data>
   <data name="AppBarButton_Add_Feed.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Add feed (Ctrl+N)</value>
+    <value>Add Feed (Ctrl+N)</value>
   </data>
   <data name="AppBarButton_Add_Folder.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Add folder</value>
+    <value>Add Folder</value>
   </data>
   <data name="AppBarButton_Refresh.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Refresh all (Ctrl+R)</value>
+    <value>Refresh All (Ctrl+R)</value>
   </data>
   <data name="AppBarButton_Archive.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Archive all (Ctrl+A)</value>
+    <value>Archive All (Ctrl+A)</value>
   </data>
   <data name="ShellMenuBarItem_Entry_View_Inbox.ToolTipService.ToolTip" xml:space="preserve">
     <value>Inbox</value>
