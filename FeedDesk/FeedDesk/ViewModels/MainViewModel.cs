@@ -41,24 +41,23 @@ public partial class MainViewModel : ObservableRecipient
 
     #region == FeedEdit ==
 
-    private NodeFeed? _feedToEdit;
     public NodeFeed? FeedToEDit
     {
-        get => _feedToEdit;
+        get => field;
         set 
         { 
-            if (SetProperty(ref _feedToEdit, value))
+            if (SetProperty(ref field, value))
             {
-                NameToEditFeed = _feedToEdit?.Name;
+                NameToEditFeed = field?.Name;
             }
         }
     }
 
-    private string? _nameToEditFeed = string.Empty;
+    //private string? _nameToEditFeed = string.Empty;
     public string? NameToEditFeed
     {
-        get => _nameToEditFeed;
-        set => SetProperty(ref _nameToEditFeed, value);
+        get => field ?? string.Empty;
+        set => SetProperty(ref field, value);
     }
 
     [RelayCommand]
@@ -133,10 +132,7 @@ public partial class MainViewModel : ObservableRecipient
     {
         if (!string.IsNullOrEmpty(NameToEditFolder))
         {
-            if (FolderToEdit != null)
-            {
-                FolderToEdit.Name = NameToEditFolder;
-            }
+            FolderToEdit?.Name = NameToEditFolder;
 
             var shell = App.GetService<ShellPage>();
             _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
@@ -2394,10 +2390,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             await dispatcher.EnqueueAsync(() =>
             {
-                if (entry != null)
-                {
-                    entry.Status = rs;
-                }
+                entry?.Status = rs;
 
                 //if (nd != null)
                 //    nd.IsBusy = false;
