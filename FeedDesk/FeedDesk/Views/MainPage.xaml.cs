@@ -1,26 +1,29 @@
 ﻿using CommunityToolkit.WinUI;
-using FeedDesk.Helpers;
 using FeedDesk.Models;
 using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Windows.Storage;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace FeedDesk.Views;
 
 public sealed partial class MainPage : Page
 {
-    private WaitDialog? dialog;
+    private WaitDialog? _dialog;
 
     public MainViewModel ViewModel
     {
         get;
     }
+
+    public static List<NodeTree> DraggedItems
+    {
+        get; set;
+    } = [];
 
     public MainPage()
     {
@@ -35,7 +38,7 @@ public sealed partial class MainPage : Page
         //ViewModel.DebugClear += () => OnDebugClear();
 
         // Sets gridsplitter left.
-        LeftPaneGridColumn.Width = new GridLength(ViewModel.WidthLeftPane, GridUnitType.Pixel);
+        this.LeftPaneGridColumn.Width = new GridLength(ViewModel.WidthLeftPane, GridUnitType.Pixel);
         // DetailPane gridsplitter left
         col2.Width = new GridLength(ViewModel.WidthDetailPane, GridUnitType.Pixel);
         col1.Width = new GridLength(1.0, GridUnitType.Star);
@@ -45,32 +48,32 @@ public sealed partial class MainPage : Page
     {
         if (isShow)
         {
-            if (dialog == null)
+            if (_dialog == null)
             {
-                dialog = new WaitDialog();
+                _dialog = new WaitDialog();
                 var ring = new ProgressRing
                 {
                     HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center,
                     VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center,
                     IsActive = true,
                 };
-                dialog.Content = ring;
-                dialog.XamlRoot = XamlRoot;
-                dialog.RequestedTheme = ActualTheme;
-                dialog.Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style;
-                dialog.Title = "WaitDialog_Title".GetLocalized();
+                _dialog.Content = ring;
+                _dialog.XamlRoot = XamlRoot;
+                _dialog.RequestedTheme = ActualTheme;
+                _dialog.Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style;
+                _dialog.Title = "WaitDialog_Title".GetLocalized();
             }
             
-            await dialog.ShowAsync();
+            await _dialog.ShowAsync();
         }
         else
         {
-            if (dialog == null)
+            if (_dialog == null)
             {
                 return;
             }
 
-            dialog.Hide();
+            _dialog.Hide();
         }
     }
 
@@ -131,13 +134,8 @@ public sealed partial class MainPage : Page
                 ListViewEntryItem.SelectedItem = item;
             }
         }
+;
     }
-
-    public static List<NodeTree> DraggedItems
-    {
-        get; set;
-    }=
-    [];
 
     private void TreeView_DragItemsStarting(TreeView sender, TreeViewDragItemsStartingEventArgs args)
     {

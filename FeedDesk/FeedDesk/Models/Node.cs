@@ -1,27 +1,25 @@
-﻿using FeedDesk.Common;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace FeedDesk.Models;
 
-public abstract class Node : ViewModelBase
+public abstract class Node : ObservableObject
 {
-    private string _name ="";
-
     public string Name
     {
-        get => _name;
+        get;
         set
         {
             if (string.IsNullOrEmpty(value))
                 return;
 
-            if (_name == value)
+            if (field == value)
                 return;
 
-            _name = value;
+            field = value;
 
-            NotifyPropertyChanged(nameof(Name));
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
     protected Node(){}
 

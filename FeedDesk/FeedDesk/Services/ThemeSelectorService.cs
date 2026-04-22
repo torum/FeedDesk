@@ -1,10 +1,5 @@
-﻿using FeedDesk.Helpers;
-using FeedDesk.Services.Contracts;
+﻿using FeedDesk.Services.Contracts;
 using Microsoft.UI.Xaml;
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Windows.Storage;
 
 namespace FeedDesk.Services;
 

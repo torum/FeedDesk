@@ -55,22 +55,22 @@ public partial class FeedTreeBuilder : NodeRoot
                     };
                     var at = api switch
                     {
-                        "AtomPub" => ApiTypes.atAtomPub,
-                        "AtomFeed" => ApiTypes.atFeed,
-                        "RssFeed" => ApiTypes.atFeed,
-                        "Feed" => ApiTypes.atFeed,
-                        "XML-RPC_MovableType" => ApiTypes.atXMLRPC_MovableType,
-                        "XML-RPC_WordPress" => ApiTypes.atXMLRPC_WordPress,
-                        "AtomAPI" => ApiTypes.atAtomApi,
-                        _ => ApiTypes.atUnknown,
+                        "AtomPub" => ApiTypes.AtAtomPub,
+                        "AtomFeed" => ApiTypes.AtFeed,
+                        "RssFeed" => ApiTypes.AtFeed,
+                        "Feed" => ApiTypes.AtFeed,
+                        "XML-RPC_MovableType" => ApiTypes.AtXMLRPC_MovableType,
+                        "XML-RPC_WordPress" => ApiTypes.AtXMLRPC_WordPress,
+                        "AtomAPI" => ApiTypes.AtAtomApi,
+                        _ => ApiTypes.AtUnknown,
                     };
                     var viewType = (s.Attributes?["ViewType"] != null) ? s.Attributes?["ViewType"]?.Value : "Cards";
                     var vt = viewType switch
                     {
-                        "Cards" => ViewTypes.vtCards,
-                        "Magazine" => ViewTypes.vtMagazine,
-                        "ThreePanes" => ViewTypes.vtThreePanes,
-                        _ => ViewTypes.vtCards,
+                        "Cards" => ViewTypes.VtCards,
+                        "Magazine" => ViewTypes.VtMagazine,
+                        "ThreePanes" => ViewTypes.VtThreePanes,
+                        _ => ViewTypes.VtCards,
                     };
                     if (stp == ServiceTypes.Feed)
                         continue;
@@ -112,13 +112,13 @@ public partial class FeedTreeBuilder : NodeRoot
                                         // TODO:
                                         switch (account.Api)
                                         {
-                                            case ApiTypes.atAtomPub:
+                                            case ApiTypes.AtAtomPub:
                                                 entries = new NodeAtomPubEntryCollection(collectionName, new Uri(collectionHref), collectionId);
                                                 break;
-                                            case ApiTypes.atXMLRPC_MovableType:
+                                            case ApiTypes.AtXMLRPC_MovableType:
                                                 entries = new NodeXmlRpcEntryCollection(collectionName, new Uri(collectionHref), collectionId);
                                                 break;
-                                            case ApiTypes.atXMLRPC_WordPress:
+                                            case ApiTypes.AtXMLRPC_WordPress:
                                                 entries = new NodeXmlRpcEntryCollection(collectionName, new Uri(collectionHref), collectionId);
                                                 break;
                                                 //case ApiTypes.atAtomAPI:
@@ -181,13 +181,13 @@ public partial class FeedTreeBuilder : NodeRoot
 
                                                 switch (account.Api)
                                                 {
-                                                    case ApiTypes.atAtomPub:
+                                                    case ApiTypes.AtAtomPub:
                                                         category = new NodeAtomPubCategory(categoryName);
                                                         break;
-                                                    case ApiTypes.atXMLRPC_MovableType:
+                                                    case ApiTypes.AtXMLRPC_MovableType:
                                                         category = new NodeXmlRpcMTCategory(categoryName);
                                                         break;
-                                                    case ApiTypes.atXMLRPC_WordPress:
+                                                    case ApiTypes.AtXMLRPC_WordPress:
                                                         category = new NodeXmlRpcWPCategory(categoryName);
                                                         break;
                                                     //case ApiTypes.atAtomAPI:
@@ -288,10 +288,10 @@ public partial class FeedTreeBuilder : NodeRoot
             var viewType = (node.Attributes?["ViewType"] != null) ? node.Attributes["ViewType"]?.Value : "Cards";
             var vt = viewType switch
             {
-                "Cards" => ViewTypes.vtCards,
-                "Magazine" => ViewTypes.vtMagazine,
-                "ThreePanes" => ViewTypes.vtThreePanes,
-                _ => ViewTypes.vtCards,
+                "Cards" => ViewTypes.VtCards,
+                "Magazine" => ViewTypes.VtMagazine,
+                "ThreePanes" => ViewTypes.VtThreePanes,
+                _ => ViewTypes.VtCards,
             };
             folder.ViewType = vt;
 
@@ -375,16 +375,16 @@ public partial class FeedTreeBuilder : NodeRoot
         var api = (node.Attributes?["Api"] != null) ? node.Attributes?["Api"]?.Value : "Unknown";
         var at = api switch
         {
-            "Feed" => ApiTypes.atFeed,
-            _ => ApiTypes.atUnknown,
+            "Feed" => ApiTypes.AtFeed,
+            _ => ApiTypes.AtUnknown,
         };
         var viewType = (node.Attributes?["ViewType"] != null) ? node.Attributes?["ViewType"]?.Value : "Cards";
         var vt = viewType switch
         {
-            "Cards" => ViewTypes.vtCards,
-            "Magazine" => ViewTypes.vtMagazine,
-            "ThreePanes" => ViewTypes.vtThreePanes,
-            _ => ViewTypes.vtCards,
+            "Cards" => ViewTypes.VtCards,
+            "Magazine" => ViewTypes.VtMagazine,
+            "ThreePanes" => ViewTypes.VtThreePanes,
+            _ => ViewTypes.VtCards,
         };
         var siteTitle = "";
         var attr = node.Attributes?["SiteTitle"];
@@ -620,13 +620,13 @@ public partial class FeedTreeBuilder : NodeRoot
 
             if (errHttpObj != null)
             {
-                feed.Status = NodeFeed.DownloadStatus.error;
+                feed.Status = NodeFeed.DownloadStatus.Error;
                 feed.ErrorHttp = errHttpObj;
             }
 
             if (errDbObj != null)
             {
-                feed.Status = NodeFeed.DownloadStatus.error;
+                feed.Status = NodeFeed.DownloadStatus.Error;
                 feed.ErrorDatabase = errDbObj;
             }
 
@@ -687,15 +687,15 @@ public partial class FeedTreeBuilder : NodeRoot
                     XmlAttribute attrv = doc.CreateAttribute("ViewType");
                     switch (s.ViewType)
                     {
-                        case ViewTypes.vtCards:
+                        case ViewTypes.VtCards:
                             attrv.Value = "Cards";
                             service.SetAttributeNode(attrv);
                             break;
-                        case ViewTypes.vtMagazine:
+                        case ViewTypes.VtMagazine:
                             attrv.Value = "Magazine";
                             service.SetAttributeNode(attrv);
                             break;
-                        case ViewTypes.vtThreePanes:
+                        case ViewTypes.VtThreePanes:
                             attrv.Value = "ThreePanes";
                             service.SetAttributeNode(attrv);
                             break;
@@ -730,27 +730,27 @@ public partial class FeedTreeBuilder : NodeRoot
                     XmlAttribute atapi = doc.CreateAttribute("Api");
                     switch (((NodeService)s).Api)
                     {
-                        case ApiTypes.atAtomPub:
+                        case ApiTypes.AtAtomPub:
                             atapi.Value = "AtomPub";
                             service.SetAttributeNode(atapi);
                             break;
-                        case ApiTypes.atFeed:
+                        case ApiTypes.AtFeed:
                             atapi.Value = "Feed";
                             service.SetAttributeNode(atapi);
                             break;
-                        case ApiTypes.atXMLRPC_MovableType:
+                        case ApiTypes.AtXMLRPC_MovableType:
                             atapi.Value = "XML-RPC_MovableType";
                             service.SetAttributeNode(atapi);
                             break;
-                        case ApiTypes.atXMLRPC_WordPress:
+                        case ApiTypes.AtXMLRPC_WordPress:
                             atapi.Value = "XML-RPC_WordPress";
                             service.SetAttributeNode(atapi);
                             break;
-                        case ApiTypes.atAtomApi:
+                        case ApiTypes.AtAtomApi:
                             atapi.Value = "AtomAPI";
                             service.SetAttributeNode(atapi);
                             break;
-                        case ApiTypes.atUnknown:
+                        case ApiTypes.AtUnknown:
                             atapi.Value = "Unknown";
                             service.SetAttributeNode(atapi);
                             break;
@@ -894,15 +894,15 @@ public partial class FeedTreeBuilder : NodeRoot
         attrd = doc.CreateAttribute("ViewType");
         switch (fd.ViewType)
         {
-            case ViewTypes.vtCards:
+            case ViewTypes.VtCards:
                 attrd.Value = "Cards";
                 folder.SetAttributeNode(attrd);
                 break;
-            case ViewTypes.vtMagazine:
+            case ViewTypes.VtMagazine:
                 attrd.Value = "Magazine";
                 folder.SetAttributeNode(attrd);
                 break;
-            case ViewTypes.vtThreePanes:
+            case ViewTypes.VtThreePanes:
                 attrd.Value = "ThreePanes";
                 folder.SetAttributeNode(attrd);
                 break;
@@ -956,11 +956,11 @@ public partial class FeedTreeBuilder : NodeRoot
         attrf = doc.CreateAttribute("Api");
         switch (fd.Api)
         {
-            case ApiTypes.atFeed:
+            case ApiTypes.AtFeed:
                 attrf.Value = "Feed";
                 feed.SetAttributeNode(attrf);
                 break;
-            case ApiTypes.atUnknown:
+            case ApiTypes.AtUnknown:
                 attrf.Value = "Unknown";
                 feed.SetAttributeNode(attrf);
                 break;
@@ -969,15 +969,15 @@ public partial class FeedTreeBuilder : NodeRoot
         attrf = doc.CreateAttribute("ViewType");
         switch (fd.ViewType)
         {
-            case ViewTypes.vtCards:
+            case ViewTypes.VtCards:
                 attrf.Value = "Cards";
                 feed.SetAttributeNode(attrf);
                 break;
-            case ViewTypes.vtMagazine:
+            case ViewTypes.VtMagazine:
                 attrf.Value = "Magazine";
                 feed.SetAttributeNode(attrf);
                 break;
-            case ViewTypes.vtThreePanes:
+            case ViewTypes.VtThreePanes:
                 attrf.Value = "ThreePanes";
                 feed.SetAttributeNode(attrf);
                 break;

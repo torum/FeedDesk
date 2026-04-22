@@ -1,13 +1,9 @@
-﻿using System;
+﻿using CommunityToolkit.WinUI;
+using FeedDesk.Models.Clients;
+using System;
 using System.IO;
 using System.Text;
 using System.Xml;
-using CommunityToolkit.WinUI;
-using FeedDesk.Helpers;
-using FeedDesk.Models.Clients;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
-using static FeedDesk.Helpers.HtmlProperties;
 
 namespace FeedDesk.Models;
 
@@ -31,19 +27,18 @@ public abstract class EntryItem : Node
     // A link to Entry's HTML webpage.
     public Uri? AltHtmlUri { get; set; }
 
-    private string _pathIcon = "M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z";
     public string PathIcon
     {
-        get => _pathIcon;
+        get;
         set
         {
-            if (_pathIcon == value)
+            if (field == value)
                 return;
 
-            _pathIcon = value;
-            NotifyPropertyChanged(nameof(PathIcon));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z";
 
     public string Title
     {
@@ -54,26 +49,25 @@ public abstract class EntryItem : Node
                 return;
 
             Name = value;
-            NotifyPropertyChanged(nameof(Title));
+            OnPropertyChanged();
         }
     }
 
-    private string _summary = "";
     public string Summary
     {
-        get => _summary;
+        get;
         set
         {
-            if (_summary == value)
+            if (field == value)
                 return;
 
-            _summary = value;
-            NotifyPropertyChanged(nameof(Summary));
-            NotifyPropertyChanged(nameof(SummaryPlainText));
+            field = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SummaryPlainText));
         }
-    }
+    } = "";
 
-    public string SummaryPlainText => Windows.Data.Html.HtmlUtilities.ConvertToText(_summary);
+    public string SummaryPlainText => Windows.Data.Html.HtmlUtilities.ConvertToText(Summary);
 
     public enum ContentTypes
     {
@@ -108,7 +102,7 @@ public abstract class EntryItem : Node
             }
             */
 
-            NotifyPropertyChanged(nameof(Content));
+            OnPropertyChanged();
         }
     }
 
@@ -127,33 +121,32 @@ public abstract class EntryItem : Node
     */
 
     // UTC
-    private DateTime _published = default;
     public DateTime Published
     {
-        get => _published;
+        get;
         set
         {
-            if (_published == value)
+            if (field == value)
                 return;
 
-            _published = value;
-            NotifyPropertyChanged(nameof(Published));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = default;
 
     public string PublishedDateTimeFormatedAbout
     {
         get
         {
-            if (_published != default)
+            if (Published != default)
             {
-                return TimeAgo(_published.ToLocalTime());//_published.ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                return TimeAgo(Published.ToLocalTime());//_published.ToString(System.Globalization.CultureInfo.CurrentUICulture);
             }
             else
             {
-                if (_updated != default)
+                if (Updated != default)
                 {
-                    return TimeAgo(_updated.ToLocalTime());//_published.ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                    return TimeAgo(Updated.ToLocalTime());//_published.ToString(System.Globalization.CultureInfo.CurrentUICulture);
                 }
                 else
                 {
@@ -167,15 +160,15 @@ public abstract class EntryItem : Node
     {
         get
         {
-            if (_published != default)
+            if (Published != default)
             {
-                return _published.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                return Published.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
             }
             else
             {
-                if (_updated != default)
+                if (Updated != default)
                 {
-                    return _updated.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                    return Updated.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
                 }
                 else
                 {
@@ -186,153 +179,144 @@ public abstract class EntryItem : Node
     }
 
     // UTC
-    private DateTime _updated = default;
     public DateTime Updated
     {
-        get => _updated;
+        get;
         set
         {
-            if (_updated == value)
+            if (field == value)
                 return;
 
-            _updated = value;
-            NotifyPropertyChanged(nameof(Updated));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = default;
 
-    private string _author = "";
     public string Author
     {
         get
         {
-            if (string.IsNullOrEmpty(_author))
+            if (string.IsNullOrEmpty(field))
             {
                 return "";
             }
             else
             {
-                return _author;
+                return field;
             }
         }
         set
         {
-            if (_author == value)
+            if (field == value)
                 return;
 
-            _author = value;
-            NotifyPropertyChanged(nameof(Author));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
-    private string _category = "";
     public string Category
     {
         get
         {
-            if (string.IsNullOrEmpty(_category))
+            if (string.IsNullOrEmpty(field))
             {
                 return "";
             }
             else
             {
-                return _category;
+                return field;
             }
         }
         set
         {
-            if (_category == value)
+            if (field == value)
                 return;
 
-            _category = value;
-            NotifyPropertyChanged(nameof(Category));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
-    private Uri? _imageUri;
     public Uri? ImageUri
     {
-        get => _imageUri;
+        get;
         set
         {
-            if (_imageUri == value)
+            if (field == value)
                 return;
 
-            _imageUri = value;
-            NotifyPropertyChanged(nameof(ImageUri));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
-    private Uri? _audioUri;
     public Uri? AudioUri
     {
-        get => _audioUri;
+        get;
         set
         {
-            if (_audioUri == value)
+            if (field == value)
                 return;
 
-            _audioUri = value;
-            NotifyPropertyChanged(nameof(AudioUri));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
     // TODO: stil using?
     // For FeedEntryItem, "IsArchived" is used so far.
-    private string _commonStatus = "";
     public string CommonStatus
     {
-        get => _commonStatus;
+        get;
         protected set
         {
-            if (_commonStatus == value)
+            if (field == value)
                 return;
-            _commonStatus = value;
-            NotifyPropertyChanged(nameof(CommonStatus));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
     // rss item source@url (news source site info)
-    private string _source = "";
     public string Source
     {
-        get => _source;
+        get;
         set
         {
-            if (_source == value)
+            if (field == value)
                 return;
 
-            _source = value;
-            NotifyPropertyChanged(nameof(Source));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
-    private Uri? _sourceUri;
     public Uri? SourceUri
     {
-        get => _sourceUri;
+        get;
         set
         {
-            if (_sourceUri == value)
+            if (field == value)
                 return;
 
-            _sourceUri = value;
-            NotifyPropertyChanged(nameof(SourceUri));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
 
     // comment uri for hatena and hacker news.
-    private Uri? _commentUri;
     public Uri? CommentUri
     {
-        get => _commentUri;
+        get;
         set
         {
-            if (_commentUri == value)
+            if (field == value)
                 return;
 
-            _commentUri = value;
-            NotifyPropertyChanged(nameof(CommentUri));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
@@ -465,18 +449,17 @@ public partial class FeedEntryItem : EntryItem
         rsNormalVisited
     }
 
-    private ReadStatus _rs = ReadStatus.rsNormal;
     public ReadStatus Status
     {
-        get => _rs;
+        get;
         set
         {
-            if (_rs == value)
+            if (field == value)
                 return;
-            _rs = value;
-            NotifyPropertyChanged(nameof(Status));
+            field = value;
+            OnPropertyChanged();
 
-            PathIcon = _rs switch
+            PathIcon = field switch
             {
                 ReadStatus.rsNew => _rsNew,
                 ReadStatus.rsNewVisited => _rsNewVisited,
@@ -485,25 +468,24 @@ public partial class FeedEntryItem : EntryItem
                 _ => _rsNormal,
             };
         }
-    }
+    } = ReadStatus.rsNormal;
 
     // internal flag
-    private bool _isArchived = false;
     public bool IsArchived
     {
-        get => _isArchived;
+        get;
         set
         {
-            if (_isArchived == value)
+            if (field == value)
                 return;
-            _isArchived = value;
-            NotifyPropertyChanged(nameof(IsArchived));
+            field = value;
+            OnPropertyChanged();
 
             if (IsArchived)
                 CommonStatus = "IsArchived"; //?
 
         }
-    }
+    } = false;
 
     // not in spec. for internal/UI use.
     //private string _publisher = "";
@@ -513,11 +495,11 @@ public partial class FeedEntryItem : EntryItem
         {
             if (string.IsNullOrEmpty(Source))
             {
-                return _feedTitle;
+                return FeedTitle;
             }
             else
             {
-                return Source + " via " + _feedTitle;
+                return Source + " via " + FeedTitle;
                 // not gonna work..
                 //return _source + " " + "FeedEntryItem_Publisher_Via".GetLocalized() + " " + _feedTitle;
                 //return $"{Source} {"FeedEntryItem_Publisher_Via".GetLocalized()} {_feedTitle}";
@@ -525,18 +507,17 @@ public partial class FeedEntryItem : EntryItem
         }
     }
 
-    private string _feedTitle = "";
     public string FeedTitle
     {
-        get => _feedTitle;
+        get;
         set
         {
-            if (_feedTitle == value)
+            if (field == value)
                 return;
-            _feedTitle = value;
-            NotifyPropertyChanged(nameof(FeedTitle));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
     public string Host
     {
@@ -611,20 +592,19 @@ public partial class EditEntryItem : EntryItem
     }
 
     // EditStatus. This is system's internal status.
-    private EditStatus _es;
     public EditStatus Status
     {
-        get => _es;
+        get;
         set
         {
-            if (_es == value)
+            if (field == value)
                 return;
-            _es = value;
+            field = value;
 
             // Update icon.
-            NotifyPropertyChanged(nameof(Status));
+            OnPropertyChanged();
 
-            switch (_es)
+            switch (field)
             {
                 case EditStatus.esNew:
                     PathIcon = _esNew;

@@ -1,7 +1,6 @@
 ﻿using FeedDesk.Models;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using static FeedDesk.Models.FeedEntryItem;
 
 namespace FeedDesk.Services.Contracts;

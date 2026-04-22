@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using FeedDesk.Models.Clients;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 
 namespace FeedDesk.Models;
 
@@ -18,21 +17,21 @@ public enum ServiceTypes
 
 public enum ApiTypes
 {
-    atFeed,
-    atAtomPub,
+    AtFeed,
+    AtAtomPub,
     //AtomPub_Hatena,
-    atXMLRPC_MovableType,
-    atXMLRPC_WordPress,
+    AtXMLRPC_MovableType,
+    AtXMLRPC_WordPress,
     //atWPJson,
-    atAtomApi,
-    atUnknown
+    AtAtomApi,
+    AtUnknown
 }
 
 public enum ViewTypes
 {
-    vtCards,
-    vtMagazine,
-    vtThreePanes
+    VtCards,
+    VtMagazine,
+    VtThreePanes
 }
 
 // HTTP REST Auth Types enum.
@@ -43,92 +42,83 @@ public enum AuthTypes
 
 public abstract class NodeTree : Node
 {
-    private string _pathData = "M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z";
     public string PathIcon
     {
-        get => _pathData;
+        get;
         protected set
         {
-            if (_pathData == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _pathData = value;
-
-            NotifyPropertyChanged(nameof(PathIcon));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z";
 
-    private bool _isSelected;
     public bool IsSelected
     {
-        get => _isSelected;
+        get;
         set
         {
-            if (_isSelected == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _isSelected = value;
-
-            NotifyPropertyChanged(nameof(IsSelected));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
-    private bool _isExpanded;
     public bool IsExpanded
     {
-        get => _isExpanded;
+        get;
         set
         {
-            if (_isExpanded == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _isExpanded = value;
-
-            NotifyPropertyChanged(nameof(IsExpanded));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
-    private string _subNodeText = "";
     public string SubNodeText
     {
-        get => _subNodeText;
+        get;
         set
         {
-            if (_subNodeText == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _subNodeText = value;
-            NotifyPropertyChanged(nameof(SubNodeText));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
-    private int _entryNewCount = 0;
     public int EntryNewCount
     {
-        get => _entryNewCount;
+        get;
         set
         {
-            if (_entryNewCount == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _entryNewCount = value;
+            field = value;
+            OnPropertyChanged();
 
-            NotifyPropertyChanged(nameof(EntryNewCount));
-
-            if (_entryNewCount > 0)
+            if (field > 0)
             {
                 IsEntryCountMoreThanZero = true;
-                if (_entryNewCount > 99)
+                if (field > 99)
                 {
                     //SubNodeText = "99+";
                 }
@@ -143,39 +133,35 @@ public abstract class NodeTree : Node
                 //SubNodeText = "";
             }
         }
-    }
+    } = 0;
 
-    private bool _isEntryCountMoreThanZero;
     public bool IsEntryCountMoreThanZero
     {
-        get => _isEntryCountMoreThanZero;
+        get;
         set
         {
-            if (_isEntryCountMoreThanZero == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _isEntryCountMoreThanZero = value;
-
-            NotifyPropertyChanged(nameof(IsEntryCountMoreThanZero));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
-    private ViewTypes _viewType;
     public ViewTypes ViewType
     {
-        get => _viewType;
+        get;
         set
         {
-            if (_viewType == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _viewType = value;
-
-            NotifyPropertyChanged(nameof(ViewType));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
@@ -231,18 +217,17 @@ public abstract class NodeTree : Node
     }
     */
 
-    private bool _isBusy;
     public bool IsBusy
     {
-        get => _isBusy;
+        get;
         set
         {
-            if (_isBusy == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _isBusy = value;
+            field = value;
 
             if (value)
             {
@@ -262,10 +247,10 @@ public abstract class NodeTree : Node
             // if this has busy childrenn, make it busy anyway.
             if (_isBusyChildrenCount > 0)
             {
-                _isBusy = true;
+                field = true;
             }
-            
-            NotifyPropertyChanged(nameof(IsBusy));
+
+            OnPropertyChanged();
         }
     }
 
@@ -292,7 +277,7 @@ public abstract class NodeTree : Node
             if ((parentNode is NodeFolder) || (parentNode is NodeRoot) || (parentNode is FeedTreeBuilder))
             {
                 if (parentNode.IsBusyChildrenCount > 0)
-                    {
+                {
                     parentNode.IsBusyChildrenCount -= 1;
                 }
 
@@ -312,12 +297,12 @@ public abstract class NodeTree : Node
         {
 
             if (_isBusyChildrenCount == value)
-                {
+            {
                 return;
             }
 
             _isBusyChildrenCount = value;
-            NotifyPropertyChanged(nameof(IsBusyChildrenCount));
+            OnPropertyChanged();
 
             if (_isBusyChildrenCount > 0)
             {
@@ -330,51 +315,60 @@ public abstract class NodeTree : Node
         }
     }
 
-    private bool _isDisplayUnarchivedOnly = true;
-    public bool IsDisplayUnarchivedOnly
+    public bool IsInboxOnly
     {
-        get => _isDisplayUnarchivedOnly;
+        get;
         set
         {
-            if (_isDisplayUnarchivedOnly == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _isDisplayUnarchivedOnly = value;
+            field = value;
+            OnPropertyChanged();
+        }
+    } = true;
 
-            NotifyPropertyChanged(nameof(IsDisplayUnarchivedOnly));
+    public bool IsPendingReload
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged();
         }
     }
 
-    private NodeTree? _parent;
     public NodeTree? Parent
     {
-        get => _parent;
+        get;
         set
         {
-            if (_parent == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _parent = value;
-
-            NotifyPropertyChanged(nameof(Parent));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
-    private ObservableCollection<NodeTree> _children = [];
     public ObservableCollection<NodeTree> Children
     {
-        get => _children;
+        get;
         set
         {
-            _children = value;
-
-            NotifyPropertyChanged(nameof(Children));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = [];
 
     protected NodeTree(){}
 
@@ -403,14 +397,14 @@ public abstract class NodeTree : Node
         foreach (var c in childList)
         {
             if (c == ntc)
-                {
+            {
                 return true;
             }
 
             if (c.Children.Count > 0)
             {
                 if (ContainsChildLoop(c.Children, ntc))
-                    {
+                {
                     return true;
                 }
             }
@@ -486,22 +480,6 @@ public partial class NodeRoot : NodeTree
 // NodeFolder for NodeFeeds (Node/NodeTree)
 public partial class NodeFolder : NodeTree
 {
-    protected bool _isPendingReload;
-    public bool IsPendingReload
-    {
-        get => _isPendingReload;
-        set
-        {
-            if (_isPendingReload == value)
-                {
-                return;
-            }
-
-            _isPendingReload = value;
-            NotifyPropertyChanged(nameof(IsPendingReload));
-        }
-    }
-
     public NodeFolder(string name) : base(name)
     {
         PathIcon = "M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M7.5,15A1.5,1.5 0 0,0 6,16.5A1.5,1.5 0 0,0 7.5,18A1.5,1.5 0 0,0 9,16.5A1.5,1.5 0 0,0 7.5,15M6,10V12A6,6 0 0,1 12,18H14A8,8 0 0,0 6,10M6,6V8A10,10 0 0,1 16,18H18A12,12 0 0,0 6,6Z";
@@ -635,72 +613,68 @@ public partial class NodeFeed : NodeService
 
     // Atom //feed/title
     // RSS2.0 //rss/channel/title
-    private string _title = string.Empty;
     public string Title
     {
-        get => _title;
+        get;
         set
         {
-            if (_title == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _title = value;
-            NotifyPropertyChanged(nameof(Title));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = string.Empty;
 
     // Atom //feed/subtitle
     // RSS2.0  //rss/channel/description
-    private string _description = string.Empty;
     public string Description
     {
-        get => _description;
+        get;
         set
         {
-            if (_description == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _description = value;
-            NotifyPropertyChanged(nameof(Description));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = string.Empty;
 
     // not really used.
     // RSS2.0 //rss/channnel/copyright
-    private string _copyright = string.Empty;
     public string Copyright
     {
-        get => _copyright;
+        get;
         set
         {
-            if (_copyright == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _copyright = value;
-            NotifyPropertyChanged(nameof(Copyright));
+            field = value;
+            OnPropertyChanged();
         }
-    }
+    } = string.Empty;
 
     // Atom //feed/link, RSS2.0 //rss/channnel/link
-    private Uri? _htmlUri;
     public Uri? HtmlUri
     {
-        get => _htmlUri;
+        get;
         set
         {
-            if (_htmlUri == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _htmlUri = value;
-            NotifyPropertyChanged(nameof(HtmlUri));
+            field = value;
+            OnPropertyChanged();
         }
     }
 
@@ -724,22 +698,21 @@ public partial class NodeFeed : NodeService
 
     // Atom //feed/updated
     // RSS2.0 //rss/channel/lastBuildDate
-    private DateTime _updated = default;
     public DateTime Updated
     {
-        get => _updated;
+        get;
         set
         {
-            if (_updated == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _updated = value;
-            NotifyPropertyChanged(nameof(Updated));
-            NotifyPropertyChanged(nameof(UpdatedDateTimeFormated));
+            field = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(UpdatedDateTimeFormated));
         }
-    }
+    } = default;
 
     public string? UpdatedDateTimeFormated
     {
@@ -758,55 +731,54 @@ public partial class NodeFeed : NodeService
 
     public enum DownloadStatus
     {
-        normal,
-        downloading,
-        saving,
-        loading,
-        error
+        Normal,
+        Downloading,
+        Saving,
+        Loading,
+        Error
     }
 
-    private DownloadStatus _status = DownloadStatus.normal;
     public DownloadStatus Status
     {
-        get => _status;
+        get;
         set
         {
-            if (_status == value)
-                {
+            if (field == value)
+            {
                 return;
             }
 
-            _status = value;
+            field = value;
 
-            if (_status == DownloadStatus.normal)
+            if (field == DownloadStatus.Normal)
             {
                 PathIcon = _defaultPathIcon;
             }
-            else if (_status == DownloadStatus.downloading)
+            else if (field == DownloadStatus.Downloading)
             {
                 PathIcon = _downloadingPathIcon;
             }
-            else if (_status == DownloadStatus.saving)
+            else if (field == DownloadStatus.Saving)
             {
                 PathIcon = _savingPathIcon;
             }
-            else if (_status == DownloadStatus.loading)
+            else if (field == DownloadStatus.Loading)
             {
                 PathIcon = _loadingPathIcon;
             }
-            else if (_status == DownloadStatus.error)
+            else if (field == DownloadStatus.Error)
             {
                 PathIcon = _loadErrorPathIcon;
             }
-            NotifyPropertyChanged(nameof(PathIcon));
+            OnPropertyChanged(nameof(PathIcon));
 
-            NotifyPropertyChanged(nameof(Status));
+            OnPropertyChanged();
         }
-    }
+    } = DownloadStatus.Normal;
 
     public ObservableCollection<EntryItem> List { get; set; } = [];
 
-    public NodeFeed(string name, Uri feedUrl) : base(name, feedUrl, ApiTypes.atFeed, ServiceTypes.Feed)
+    public NodeFeed(string name, Uri feedUrl) : base(name, feedUrl, ApiTypes.AtFeed, ServiceTypes.Feed)
     {
         PathIcon = "M6.18,15.64A2.18,2.18 0 0,1 8.36,17.82C8.36,19 7.38,20 6.18,20C5,20 4,19 4,17.82A2.18,2.18 0 0,1 6.18,15.64M4,4.44A15.56,15.56 0 0,1 19.56,20H16.73A12.73,12.73 0 0,0 4,7.27V4.44M4,10.1A9.9,9.9 0 0,1 13.9,20H11.07A7.07,7.07 0 0,0 4,12.93V10.1Z";
     }
@@ -849,7 +821,7 @@ public abstract class NodeEntryCollection : NodeTree
         get
         {
             if (Parent == null)
-                {
+            {
                 return null;
             }
 
@@ -859,12 +831,12 @@ public abstract class NodeEntryCollection : NodeTree
             }
 
             if (Parent.Parent == null)
-                {
+            {
                 return null;
             }
 
             if (Parent.Parent is not NodeService ndsp)
-                {
+            {
                 return null;
             }
 

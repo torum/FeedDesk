@@ -10,7 +10,6 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Windows.Media.Protection.PlayReady;
 
 namespace FeedDesk.Services;
 

@@ -1,26 +1,18 @@
 using CommunityToolkit.WinUI;
-using CommunityToolkit.WinUI.Helpers;
 using FeedDesk.Helpers;
-using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
 using FeedDesk.Views;
 using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using Windows.Storage;
-using Windows.UI.ViewManagement;
-using Windows.UI.WindowManagement;
 
 namespace FeedDesk;
 
@@ -28,22 +20,21 @@ public partial class MainWindow : Window
 {
     // Window position and size
     // TODO: Change this lator.1920x1080
-    private int winRestoreWidth = 1024;//1024;
-    private int winRestoreHeight = 768;//768;
-    private int winRestoreTop = 100;
-    private int winRestoreleft = 100;
+    private int _winRestoreWidth = 1024;//1024;
+    private int _winRestoreHeight = 768;//768;
+    private int _winRestoreTop = 100;
+    private int _winRestoreleft = 100;
 
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
 
     // DispatcherQueue
-    private Microsoft.UI.Dispatching.DispatcherQueue? _currentDispatcherQueue;// = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-    public Microsoft.UI.Dispatching.DispatcherQueue? CurrentDispatcherQueue => _currentDispatcherQueue;
+    public Microsoft.UI.Dispatching.DispatcherQueue? CurrentDispatcherQueue { get; private set; }
 
     public MainWindow() 
     {
         // This DispatcherQueue should be alive as long as MainWindow is alive. Make sure to clear when the window is closed.
-        _currentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        CurrentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
         InitializeComponent();
 
@@ -295,10 +286,10 @@ public partial class MainWindow : Window
             }
         }
 
-        winRestoreWidth = (int)width;
-        winRestoreHeight = (int)height;
-        winRestoreTop = (int)top;
-        winRestoreleft = (int)left;
+        _winRestoreWidth = (int)width;
+        _winRestoreHeight = (int)height;
+        _winRestoreTop = (int)top;
+        _winRestoreleft = (int)left;
 
         // Restore window size and position
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
@@ -310,7 +301,7 @@ public partial class MainWindow : Window
                 if (winState == OverlappedPresenterState.Maximized)
                 {
                     // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(winRestoreleft, winRestoreTop, winRestoreWidth, winRestoreHeight));
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                     // Maximize the window.
                     presenter.Maximize();
                 }
@@ -319,12 +310,12 @@ public partial class MainWindow : Window
                     // This should not happen, but just in case.
                     presenter.Restore();
                     // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(winRestoreleft, winRestoreTop, winRestoreWidth, winRestoreHeight));
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                 }
                 else
                 {
                     // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(winRestoreleft, winRestoreTop, winRestoreWidth, winRestoreHeight));
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                 }
             }
 
@@ -460,10 +451,10 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    winRestoreHeight = (int)appWindow.Size.Height;
-                    winRestoreWidth = (int)appWindow.Size.Width;
-                    winRestoreTop = (int)appWindow.Position.Y;
-                    winRestoreleft = (int)appWindow.Position.X;
+                    _winRestoreHeight = (int)appWindow.Size.Height;
+                    _winRestoreWidth = (int)appWindow.Size.Width;
+                    _winRestoreTop = (int)appWindow.Position.Y;
+                    _winRestoreleft = (int)appWindow.Position.X;
                 }
             }
         }
@@ -472,7 +463,7 @@ public partial class MainWindow : Window
     private void WindowEx_Closed(object sender, WindowEventArgs args)
     {
         // For some stupid reason, we needed this, otherwise we get COM error.
-        _currentDispatcherQueue = null;
+        CurrentDispatcherQueue = null;
 
         SaveSettings();
     }
@@ -526,7 +517,7 @@ public partial class MainWindow : Window
             attrs = doc.CreateAttribute("width");
             if (winState == OverlappedPresenterState.Maximized)
             {
-                attrs.Value = winRestoreWidth.ToString();
+                attrs.Value = _winRestoreWidth.ToString();
             }
             else
             {
@@ -538,7 +529,7 @@ public partial class MainWindow : Window
             attrs = doc.CreateAttribute("height");
             if (winState == OverlappedPresenterState.Maximized)
             {
-                attrs.Value = winRestoreHeight.ToString();
+                attrs.Value = _winRestoreHeight.ToString();
             }
             else
             {
@@ -550,7 +541,7 @@ public partial class MainWindow : Window
             attrs = doc.CreateAttribute("top");
             if (winState == OverlappedPresenterState.Maximized)
             {
-                attrs.Value = winRestoreTop.ToString();
+                attrs.Value = _winRestoreTop.ToString();
             }
             else
             {
@@ -562,7 +553,7 @@ public partial class MainWindow : Window
             attrs = doc.CreateAttribute("left");
             if (winState == OverlappedPresenterState.Maximized)
             {
-                attrs.Value = winRestoreleft.ToString();
+                attrs.Value = _winRestoreleft.ToString();
             }
             else
             {

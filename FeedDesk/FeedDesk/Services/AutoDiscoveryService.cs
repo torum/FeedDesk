@@ -9,13 +9,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
-using Windows.Media.Protection.PlayReady;
 
 namespace FeedDesk.Services;
 
@@ -146,35 +144,33 @@ public class ServiceResultHtmlPage : ServiceResultBase
     public string ErrTitle { get; set; } = "";
     public string ErrDescription {get; set; } = "";
 
-    private ObservableCollection<FeedLink> _feeds = [];
     public ObservableCollection<FeedLink> Feeds
     {
-        get => _feeds;
+        get;
         set
         {
-            if (_feeds == value)
+            if (field == value)
             {
                 return;
             }
 
-            _feeds = value;
+            field = value;
         }
-    }
+    } = [];
 
-    private ObservableCollection<SearviceDocumentLinkBase> _services = [];
     public ObservableCollection<SearviceDocumentLinkBase> Services
     {
-        get => _services;
+        get;
         set
         {
-            if (_services == value)
+            if (field == value)
             {
                 return;
             }
 
-            _services = value;
+            field = value;
         }
-    }
+    } = [];
 
     public ServiceResultHtmlPage()
     {
@@ -1234,13 +1230,13 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
         if (xdoc.DocumentElement?.Name is "app:service" or "service")
         {
-            var account = new NodeService("New Service (Atom Publishing Protocol)", userName, apiKey, addr, ApiTypes.atAtomPub, ServiceTypes.AtomPub)
+            var account = new NodeService("New Service (Atom Publishing Protocol)", userName, apiKey, addr, ApiTypes.AtAtomPub, ServiceTypes.AtomPub)
             {
                 EndPoint = addr,
                 ServiceType = ServiceTypes.AtomPub,
                 UserName = userName,
                 UserPassword = apiKey,
-                Api = ApiTypes.atAtomPub,
+                Api = ApiTypes.AtAtomPub,
                 AuthType = authType
             };
 

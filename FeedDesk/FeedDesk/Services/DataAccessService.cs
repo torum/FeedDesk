@@ -1,16 +1,12 @@
-﻿using System;
+﻿using FeedDesk.Models;
+using FeedDesk.Services.Contracts;
+using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
-using Microsoft.Data.Sqlite;
-using FeedDesk.Services.Contracts;
-using FeedDesk.Models;
-using static FeedDesk.Models.FeedEntryItem;
-using static FeedDesk.Services.FeedLink;
-using System.Threading;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Xml;
+using System.Threading;
+using static FeedDesk.Models.FeedEntryItem;
 
 namespace FeedDesk.Services;
 

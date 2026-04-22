@@ -10,7 +10,7 @@
   <Identity
     Name="60132torumyax.FeedDesk"
     Publisher="CN=F3079A96-760D-4F53-9E00-374C09B6D4B1"
-    Version="1.0.23.0" />
+    Version="1.0.3.0" />
 
   <Properties>
     <DisplayName>FeedDesk</DisplayName>
@@ -19,13 +19,13 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+	  <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26226.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26226.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
-	  <Resource Language="en-US"/>
-	  <Resource Language="ja-JP"/>
+    <Resource Language="en-US"/>
+    <Resource Language="ja-JP"/>
   </Resources>
 
   <Applications>

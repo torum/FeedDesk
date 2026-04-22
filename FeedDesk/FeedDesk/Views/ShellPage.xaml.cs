@@ -1,20 +1,10 @@
-﻿using System.Xml;
-using System.Xml.Linq;
-using FeedDesk.Services.Contracts;
-using FeedDesk.Services;
-using FeedDesk.ViewModels;
+﻿using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
-using FeedDesk.Helpers;
-using static System.Net.Mime.MediaTypeNames;
-using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace FeedDesk.Views;
 

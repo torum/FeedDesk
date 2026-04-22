@@ -1,4 +1,3 @@
-using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;

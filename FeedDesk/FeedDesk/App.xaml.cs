@@ -5,39 +5,22 @@ using FeedDesk.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.ApplicationSettings;
 
 namespace FeedDesk;
 
 public partial class App : Application
 {
     // AppDataFolder
-    private static readonly string _appName = "FeedDesk";//_resourceLoader.GetString("AppName");
-    private static readonly string _appDeveloper = "torum";
-    private static readonly string _envDataFolder = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    public static readonly string AppName = _appName;
-    public static string AppDataFolder { get; } = _envDataFolder + System.IO.Path.DirectorySeparatorChar + _appDeveloper + System.IO.Path.DirectorySeparatorChar + _appName;
-    public static string AppConfigFilePath { get; } = System.IO.Path.Combine(AppDataFolder, _appName + ".config");
+    private static readonly string AppDeveloper = "torum";
+    private static readonly string EnvDataFolder = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    public static readonly string AppName = "FeedDesk";//_resourceLoader.GetString("AppName");
+    public static string AppDataFolder { get; } = EnvDataFolder + System.IO.Path.DirectorySeparatorChar + AppDeveloper + System.IO.Path.DirectorySeparatorChar + AppName;
+    public static string AppConfigFilePath { get; } = System.IO.Path.Combine(AppDataFolder, AppName + ".config");
 
 
     // ErrorLog

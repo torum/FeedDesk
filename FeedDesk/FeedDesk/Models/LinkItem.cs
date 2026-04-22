@@ -1,10 +1,10 @@
-﻿using FeedDesk.Common;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FeedDesk.Services;
 using System.Collections.Generic;
 
 namespace FeedDesk.Models;
 
-public abstract class LinkItem : ViewModelBase
+public abstract class LinkItem : ObservableObject
 {
     public Dictionary<string, string> IconPathStrings { get; set; } = new()
     {
@@ -14,63 +14,59 @@ public abstract class LinkItem : ViewModelBase
         { "XML-RPC", "M6,20A6,6 0 0,1 0,14C0,10.91 2.34,8.36 5.35,8.04C6.6,5.64 9.11,4 12,4C15.63,4 18.66,6.58 19.35,10C21.95,10.19 24,12.36 24,15A5,5 0 0,1 19,20H6M9.09,8.4L4.5,13L9.09,17.6L10.5,16.18L7.32,13L10.5,9.82L9.09,8.4M14.91,8.4L13.5,9.82L16.68,13L13.5,16.18L14.91,17.6L19.5,13L14.91,8.4Z" },
     };
 
-    private string? _iconPath;
     public string? IconPath
     {
-        get => _iconPath;
+        get;
         set
         {
-            if (_iconPath == value)
+            if (field == value)
                 return;
 
-            _iconPath = value;
+            field = value;
 
-            NotifyPropertyChanged(nameof(IconPath));
+            OnPropertyChanged();
         }
     }
 
-    private string? _typeText;
     public string? TypeText
     {
-        get => _typeText;
+        get;
         set
         {
-            if (_typeText == value)
+            if (field == value)
                 return;
 
-            _typeText = value;
+            field = value;
 
-            NotifyPropertyChanged(nameof(TypeText));
+            OnPropertyChanged();
         }
     }
 
-    private string _title = "";
     public string Title
     {
-        get => _title;
+        get;
         set
         {
-            if (_title == value)
+            if (field == value)
                 return;
 
-            _title = value;
+            field = value;
 
-            NotifyPropertyChanged(nameof(Title));
+            OnPropertyChanged();
         }
-    }
+    } = "";
 
-    private string? _displayUrl;
     public string? DisplayUrl
     {
-        get => _displayUrl;
+        get;
         set
         {
-            if (_displayUrl == value)
+            if (field == value)
                 return;
 
-            _displayUrl = value;
+            field = value;
 
-            NotifyPropertyChanged(nameof(DisplayUrl));
+            OnPropertyChanged();
         }
     }
 

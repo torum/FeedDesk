@@ -17,159 +17,83 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     #region == Properties ==
 
-    private bool _isBusy;
     public bool IsBusy
     {
-        get => _isBusy;
+        get;
         set
         {
-            SetProperty(ref _isBusy, value);
+            SetProperty(ref field, value);
 
             IsButtonEnabled = value;
         }
     }
 
-    private bool _isShowError;
-    public bool IsShowError
-    {
-        get => _isShowError;
-        set => SetProperty(ref _isShowError, value);
-    }
+    [ObservableProperty]
+    public partial bool IsShowError { get; set; }
+    [ObservableProperty]
+    public partial bool IsShowLog { get; set; }
+    [ObservableProperty]
+    public partial bool IsButtonEnabled { get; private set; }
 
-    private bool _isShowLog;
-    public bool IsShowLog
-    {
-        get => _isShowLog;
-        set => SetProperty(ref _isShowLog, value);
-    }
-
-    private bool _isButtonEnabled;
-    public bool IsButtonEnabled
-    {
-        get => _isButtonEnabled;
-        private set=> SetProperty(ref _isButtonEnabled, value);
-    }
-
-    private string _websiteOrEndpointUrl = "";
     public string WebsiteOrEndpointUrl
     {
-        get => _websiteOrEndpointUrl;
+        get;
         //set => SetProperty(ref _websiteOrEndpointUrl, value.Trim());
         set
         {
-            if (SetProperty(ref _websiteOrEndpointUrl, value.Trim()))
+            if (SetProperty(ref field, value.Trim()))
             {
                 GoCommand.NotifyCanExecuteChanged();
             }
         }
-    }
+    } = "";
 
-    private string _userIdAtomPub = "";
-    public string UserIdAtomPub
-    {
-        get => _userIdAtomPub;
-        set => SetProperty(ref _userIdAtomPub, value);
-    }
+    [ObservableProperty]
+    public partial string UserIdAtomPub { get; set; } = "";
+    [ObservableProperty]
+    public partial string ApiKeyAtomPub { get; set; } = "";
+    [ObservableProperty]
+    public partial AuthTypes AuthType { get; set; } = AuthTypes.Wsse;
+    [ObservableProperty]
+    public partial string? SelectedItemType { get; set; }
 
-    private string _apiKeyAtomPub = "";
-    public string ApiKeyAtomPub
-    {
-        get => _apiKeyAtomPub;
-        set => SetProperty(ref _apiKeyAtomPub, value);
-    }
-
-    private AuthTypes _authType = AuthTypes.Wsse;
-    public AuthTypes AuthType
-    {
-        get => _authType;
-        set => SetProperty(ref _authType, value);
-    }
-
-    private string? _selectedItemType;
-    public string? SelectedItemType
-    {
-        get => _selectedItemType;
-        set => SetProperty(ref _selectedItemType, value);
-    }
-
-    private string? _selectedItemTitleLabel;
     public string? SelectedItemTitleLabel
     {
-        get => _selectedItemTitleLabel;
+        get;
         //set => SetProperty(ref _selectedItemTitleLabel, value);
         set
         {
-            if (SetProperty(ref _selectedItemTitleLabel, value))
+            if (SetProperty(ref field, value))
             {
                 AddSelectedAndCloseCommand.NotifyCanExecuteChanged();
             }
         }
     }
 
-    private bool _isXmlRpc = false;
-    public bool IsXmlRpc
-    {
-        get => _isXmlRpc;
-        set => SetProperty(ref _isXmlRpc, value);
-    }
+    [ObservableProperty]
+    public partial bool IsXmlRpc { get; set; } = false;
+    [ObservableProperty]
+    public partial string UserIdXmlRpc { get; set; } = "";
+    [ObservableProperty]
+    public partial string PasswordXmlRpc { get; set; } = "";
+    [ObservableProperty]
+    public partial string StatusText { get; set; } = "";
+    [ObservableProperty]
+    public partial string StatusTitleText { get; set; } = "";
+    [ObservableProperty]
+    public partial string StatusLogText { get; set; } = "";
+    [ObservableProperty]
+    public partial int SelectedTabIndex { get; set; } = 0;
+    [ObservableProperty]
+    public partial ObservableCollection<LinkItem> LinkItems { get; set; } = [];
 
-    private string _userIdXmlRpc = "";
-    public string UserIdXmlRpc
-    {
-        get => _userIdXmlRpc;
-        set => SetProperty(ref _userIdXmlRpc, value);
-    }
-
-    private string _passwordXmlRpc = "";
-    public string PasswordXmlRpc
-    {
-        get => _passwordXmlRpc;
-        set => SetProperty(ref _passwordXmlRpc, value);
-    }
-
-    private string _statusString = "";
-    public string StatusText
-    {
-        get => _statusString;
-        set => SetProperty(ref _statusString, value);
-    }
-
-    private string _statusTitleString = "";
-    public string StatusTitleText
-    {
-        get => _statusTitleString;
-        set => SetProperty(ref _statusTitleString, value);
-    }
-
-    private string _statusLogString = "";
-    public string StatusLogText
-    {
-        get => _statusLogString;
-        set => SetProperty(ref _statusLogString, value);
-    }
-
-    private int _selectedTabIndex = 0;
-    public int SelectedTabIndex
-    {
-        get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, value);
-    }
-
-    private ObservableCollection<LinkItem> _linkItems = [];
-    public ObservableCollection<LinkItem> LinkItems
-    {
-        get => _linkItems;
-        set => SetProperty(ref _linkItems, value);
-    }
-
-    private LinkItem? _selectedLinkItem;
     public LinkItem? SelectedLinkItem
     {
-        get => _selectedLinkItem;
+        get;
         //set => SetProperty(ref _selectedLinkItem, value);
         set
         {
-            if (SetProperty(ref _selectedLinkItem, value))
+            if (SetProperty(ref field, value))
             {
                 GoSelectedCommand.NotifyCanExecuteChanged();
             }

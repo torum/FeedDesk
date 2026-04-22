@@ -1,6 +1,7 @@
 ﻿using FeedDesk.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Collections.Generic;
 using DataPackageOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation;
 
 namespace FeedDesk.Views.Controls;
@@ -116,6 +117,7 @@ internal partial class MyTreeViewItem : TreeViewItem
         }
 
         var draggedItem = MainPage.DraggedItems[0];
+
         var draggedOverItem = DataContext as NodeTree;
 
         if (draggedItem is NodeFeed && draggedOverItem is NodeFolder)
