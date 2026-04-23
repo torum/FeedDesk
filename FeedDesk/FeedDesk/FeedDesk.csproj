@@ -14,7 +14,7 @@
 	  <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 	  <SelfContained>true</SelfContained>
 	  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-
+	  <PlatformTarget>AnyCPU</PlatformTarget>
 	  <IncludeSymbols>True</IncludeSymbols>
 	  
 	  <WindowsPackageType>None</WindowsPackageType>

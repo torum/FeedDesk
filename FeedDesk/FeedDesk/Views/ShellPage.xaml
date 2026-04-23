@@ -7,9 +7,8 @@
     xmlns:animatedvisuals="using:Microsoft.UI.Xaml.Controls.AnimatedVisuals"
     xmlns:helpers="using:FeedDesk.Helpers"
     NavigationCacheMode="Required"
-    Loaded="OnLoaded"
-    Unloaded="OnUnloaded"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Unloaded="Page_Unloaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
@@ -356,7 +355,7 @@
 
         <Grid Grid.Row="1">
 
-            <Frame x:Name="NavigationFrame" NavigationFailed="NavigationFrame_NavigationFailed" Loaded="NavigationFrame_Loaded"/>
+            <Frame x:Name="NavigationFrame"/>
 
         </Grid>
         

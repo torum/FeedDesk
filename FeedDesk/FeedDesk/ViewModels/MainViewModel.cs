@@ -514,15 +514,12 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var que = App.MainWnd?.CurrentDispatcherQueue;
-        if (que is not null)
+        //var que = App.MainWnd?.CurrentDispatcherQueue;
+        _dispatcherService.TryEnqueue(() =>
         {
-            App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
-            {
-                _debugEventLogStringBuilder.AppendLine(data);
-                DebugEventLog = _debugEventLogStringBuilder.ToString();
-            });
-        }
+            _debugEventLogStringBuilder.AppendLine(data);
+            DebugEventLog = _debugEventLogStringBuilder.ToString();
+        });
     }
 
     #endregion
@@ -763,25 +760,24 @@ public partial class MainViewModel : ObservableRecipient
     #region == Services ==
 
     private readonly IFileDialogService _fileDialogService;
-
     private readonly IDataAccessService _dataAccessService;
-
     private readonly IFeedClientService _feedClientService;
-
     private readonly IOpmlService _opmlService;
+    private readonly IDispatcherService _dispatcherService;
 
     #endregion
 
     private readonly CancellationTokenSource _cts = new();
     private CancellationTokenSource ctsForSelectedTreeViewItem = new();
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService, IDispatcherService dispatcherService)
     {
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
         _feedClientService = feedClientService;
         _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
         _opmlService = opmlService;
+        _dispatcherService = dispatcherService;
 
         InitializeFeedTree();
         InitializeDatabase();
@@ -856,43 +852,23 @@ public partial class MainViewModel : ObservableRecipient
             //Debug.WriteLine(Windows.Storage.ApplicationData.Current.LocalFolder.Path);
         }
 
-        var res = await Task.Run(()=>_dataAccessService.InitializeDatabase(filePath), _cts.Token);
-        if (res.IsError)
+        try
         {
-            ErrorMain = res.Error;
-            IsMainErrorInfoBarVisible = true;
-
-            Debug.WriteLine("SQLite DB init: " + res.Error.ErrText + ": " + res.Error.ErrDescription + " @" + res.Error.ErrPlace + "@" + res.Error.ErrPlaceParent);
-        }
-    }
-
-    /*
-    private void InitializeFeedClient()
-    {
-        // subscribe to DebugOutput event.
-        //_feedClientService.BaseClient.DebugOutput += new BaseClient.ClientDebugOutput(OnDebugOutput);
-
-        InitClientsRecursiveLoop(_services.Children);
-    }
-    */
-    /*
-    private void InitClientsRecursiveLoop(ObservableCollection<NodeTree> nt)
-    {
-        foreach (var c in nt)
-        {
-            if (c is NodeFeed nf)
+            var res = await Task.Run(() => _dataAccessService.InitializeDatabase(filePath), _cts.Token);
+            if (res.IsError)
             {
-                nf.Client = _feedClientService.BaseClient;
-                //nf.Client.DebugOutput += new BaseClient.ClientDebugOutput(OnDebugOutput);
-            }
+                ErrorMain = res.Error;
+                IsMainErrorInfoBarVisible = true;
 
-            if (c.Children.Count > 0)
-            {
-                InitClientsRecursiveLoop(c.Children);
+                Debug.WriteLine("SQLite DB init: " + res.Error.ErrText + ": " + res.Error.ErrDescription + " @" + res.Error.ErrPlace + "@" + res.Error.ErrPlaceParent);
             }
         }
+        catch (Exception e)
+        {
+            _ = e;
+            Debug.WriteLine($"Exception @InitializeDatabase: {e}");
+        }
     }
-    */
 
     #endregion
 
@@ -902,15 +878,16 @@ public partial class MainViewModel : ObservableRecipient
     {
         try
         {
-            _cts?.Cancel();
-
+            _feedClientService.BaseClient.DebugOutput -= OnDebugOutput;
             _feedClientService?.BaseClient?.Dispose();
+
+            _cts?.Cancel();
 
             _cts?.Dispose();
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("Error while Shutdown() : " + ex);
+            Debug.WriteLine("Error while CleanUp() : " + ex);
         }
     }
 
@@ -947,7 +924,7 @@ public partial class MainViewModel : ObservableRecipient
             return res;
         }
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;//App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return res;
@@ -1074,7 +1051,7 @@ public partial class MainViewModel : ObservableRecipient
             return res;
         }
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;//App.MainWnd?.CurrentDispatcherQueue;
 
         if (dispatcher is null)
         {
@@ -1320,7 +1297,7 @@ public partial class MainViewModel : ObservableRecipient
     {
         if (nt == null) return;
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;//App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -1526,7 +1503,7 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -1597,7 +1574,7 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -1702,6 +1679,7 @@ public partial class MainViewModel : ObservableRecipient
                         }
                     }
                 }
+
                 if (dispatcher is null)
                 {
                     return;
@@ -1847,8 +1825,8 @@ public partial class MainViewModel : ObservableRecipient
         {
             return;
         }
-        
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+
+        var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -1922,9 +1900,9 @@ public partial class MainViewModel : ObservableRecipient
     {    
         var shell = App.GetService<ShellPage>();
         shell.NavFrame.Navigate(typeof(FeedAddPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
-    }//=> _navigationService.NavigateTo(typeof(FeedAddViewModel).FullName!, null);
+    }
 
-    public async void AddFeed(FeedLink feedlink)
+    public async Task AddFeed(FeedLink feedlink)
     {
         if (feedlink == null)
         {
@@ -1943,7 +1921,7 @@ public partial class MainViewModel : ObservableRecipient
 
         var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feedlink.FeedUri.AbsoluteUri, feedlink.FeedUri, feedlink.Title, feedlink.SiteTitle, "", new DateTime(), feedlink.SiteUri), _cts.Token);
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -2163,7 +2141,7 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -2244,7 +2222,7 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -2441,7 +2419,7 @@ public partial class MainViewModel : ObservableRecipient
     #region == Listview commands  ==
 
     [RelayCommand(CanExecute = nameof(CanEntryArchiveAll))]
-    private void EntryArchiveAll()
+    private async Task EntryArchiveAll()
     {
         if (SelectedTreeViewItem is null)
         {
@@ -2453,28 +2431,20 @@ public partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        // This may freeze UI in certain situations.
-        //await ArchiveAllAsync(SelectedTreeViewItem);
-
-        //Task.Run(() => ArchiveAllAsync(SelectedTreeViewItem));
-
         var nt = SelectedTreeViewItem;
-        Task.Run(async () =>
-        {
-            try
-            {
-                await ArchiveAllAsync(nt);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"EntryArchiveAll: {ex.Message}");
-                App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
-                {
-                    (App.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
-                });
-            }
-        }, _cts.Token);
 
+        try
+        {
+            await ArchiveAllAsync(nt);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"EntryArchiveAll: {ex.Message}");
+            _ = _dispatcherService.TryEnqueue(() =>
+            {
+                (App.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
+            });
+        }
     }
 
     private bool CanEntryArchiveAll()
@@ -2579,7 +2549,6 @@ public partial class MainViewModel : ObservableRecipient
     [RelayCommand(CanExecute = nameof(CanToggleShowAllEntries))]
     private async Task ToggleShowAllEntries()
     {
-        Debug.WriteLine("ToggleShowAllEntries");
         if (SelectedTreeViewItem is null)
         {
             return;
@@ -2656,32 +2625,25 @@ public partial class MainViewModel : ObservableRecipient
     #region == OPML ex/import commands ==
 
     [RelayCommand(CanExecute = nameof(CanOpmlImport))]
-    public void OpmlImport()
+    public async Task OpmlImport()
     {
-        //_ = Task.Run(() => OpmlImportAsync());
-        // This is gonna freeze UI.
-        //_ = OpmlImportAsync();
-
-        _ = Task.Run(async () => 
+        try
         {
-            try
+            await OpmlImportAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"OpmlImport: {ex.Message}");
+            _ = _dispatcherService.TryEnqueue(() =>
             {
-                await OpmlImportAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"OpmlImport: {ex.Message}");
-                App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
-                {
-                    (App.Current as App)?.AppendErrorLog("OpmlImport", ex.Message);
-                });
-            }
-        }, _cts.Token);
+                (App.Current as App)?.AppendErrorLog("OpmlImport", ex.Message);
+            });
+        }
     }
 
     public async Task OpmlImportAsync()
     {
-        var dispatcher = App.MainWnd?.CurrentDispatcherQueue;
+        var dispatcher = _dispatcherService;//App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
         {
             return;
@@ -2836,7 +2798,7 @@ public partial class MainViewModel : ObservableRecipient
                 {
                     Debug.WriteLine("InsertFeed:" + "error");
 
-                    App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
+                    await _dispatcherService.EnqueueAsync(() =>
                     {
                         feed.ErrorDatabase = resInsert.Error;
                     });

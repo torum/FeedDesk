@@ -28,14 +28,8 @@ public partial class MainWindow : Window
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
 
-    // DispatcherQueue
-    public Microsoft.UI.Dispatching.DispatcherQueue? CurrentDispatcherQueue { get; private set; }
-
     public MainWindow() 
     {
-        // This DispatcherQueue should be alive as long as MainWindow is alive. Make sure to clear when the window is closed.
-        CurrentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-
         InitializeComponent();
 
         this.Title = "AppDisplayName".GetLocalized();
@@ -43,9 +37,6 @@ public partial class MainWindow : Window
 
         this.ExtendsContentIntoTitleBar = true;
 
-        //settings = new UISettings();
-        //settings.ColorValuesChanged += Settings_ColorValuesChanged;
-        
         LoadSettings();
 
         // It's important to set content as early as here in order to set theme.
@@ -60,6 +51,7 @@ public partial class MainWindow : Window
             // Don't do this. This right here interfear the color change in active state change.
             //SetCapitionButtonColorForWin11();
 
+            // Call shelPage now that shellpage is careated.
             root.InitWhenMainWindowIsReady(this);
         }
     }
@@ -436,7 +428,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void WindowEx_SizeChanged(object sender, WindowSizeChangedEventArgs args)
+    private void Window_SizeChanged(object sender, WindowSizeChangedEventArgs args)
     {
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
         if (appWindow != null)
@@ -460,12 +452,20 @@ public partial class MainWindow : Window
         }
     }
 
-    private void WindowEx_Closed(object sender, WindowEventArgs args)
+    private void Window_Closed(object sender, WindowEventArgs args)
     {
-        // For some stupid reason, we needed this, otherwise we get COM error.
-        CurrentDispatcherQueue = null;
+        var vm = App.GetService<MainViewModel>();
+
+        // Save service tree.
+        vm.SaveServiceXml();
+
+        // Dispose httpclient.
+        vm.CleanUp();
 
         SaveSettings();
+
+        // Save err log.
+        (App.Current as App)?.SaveErrorLog();
     }
 
     private void SaveSettings()

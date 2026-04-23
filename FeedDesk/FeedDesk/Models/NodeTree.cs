@@ -217,6 +217,7 @@ public abstract class NodeTree : Node
     }
     */
 
+    // Indicating feeds update is in progress (don't drag&drop TreeViewItem)
     public bool IsBusy
     {
         get;
@@ -315,6 +316,7 @@ public abstract class NodeTree : Node
         }
     }
 
+    // When showing the list of entries, this flag is used to determine "UnarchivedOnly" or "All" (when retrieving from DB and updating menu button and comboboxes).
     public bool IsInboxOnly
     {
         get;
@@ -330,6 +332,7 @@ public abstract class NodeTree : Node
         }
     } = true;
 
+    // A new entries are added to Database, so if current view and node is the same, reload is required. If false, no need to reload the list.
     public bool IsPendingReload
     {
         get;

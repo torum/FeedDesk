@@ -13,8 +13,6 @@ namespace FeedDesk.ViewModels;
 
 public partial class FeedAddViewModel : ObservableRecipient
 {
-    private readonly IAutoDiscoveryService _serviceDiscovery;
-
     #region == Properties ==
 
     public bool IsBusy
@@ -146,10 +144,14 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     #endregion
 
-    public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery)
+    private readonly IAutoDiscoveryService _serviceDiscovery;
+    private readonly IDispatcherService _dispatcherService;
+
+    public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery, IDispatcherService dispatcherService)
     {
         _serviceDiscovery = serviceDiscovery;
         _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
+        _dispatcherService = dispatcherService;
 
         GoBackCommand = new RelayCommand(OnGoBack);
         GoCommand = new RelayCommand(OnGo, CanGo);
@@ -224,22 +226,10 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     private void OnStatusUpdate(AutoDiscoveryService sender, string data)
     {
-        var uithread = App.MainWnd?.CurrentDispatcherQueue?.HasThreadAccess;
-
-        if (uithread != null)
+        _ = _dispatcherService.TryEnqueue(() =>
         {
-            if (uithread == true)
-            {
-                StatusLogText = StatusLogText + data + Environment.NewLine;
-            }
-            else
-            {
-                App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
-                {
-                    StatusLogText = StatusLogText + data + Environment.NewLine;
-                });
-            }
-        }
+            StatusLogText = StatusLogText + data + Environment.NewLine;
+        });
     }
 
     private async void OnGo()
@@ -548,7 +538,7 @@ public partial class FeedAddViewModel : ObservableRecipient
         return true;
     }
 
-    private void OnAddSelectedAndClose()
+    private async void OnAddSelectedAndClose()
     {
         if (SelectedLinkItem == null)
         {
@@ -585,7 +575,7 @@ public partial class FeedAddViewModel : ObservableRecipient
             */
 
             var vm = App.GetService<MainViewModel>();
-            vm.AddFeed(fli.FeedLinkData);
+            await vm.AddFeed(fli.FeedLinkData);
 
             var shell = App.GetService<ShellPage>();
             _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });

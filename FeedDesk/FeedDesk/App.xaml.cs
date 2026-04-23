@@ -4,6 +4,7 @@ using FeedDesk.ViewModels;
 using FeedDesk.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
@@ -45,6 +46,8 @@ public partial class App : Application
         get; private set;
     }
 
+    public Microsoft.UI.Dispatching.DispatcherQueue? CurrentDispatcherQueue { get; private set; }
+
     public IHost Host
     {
         get;
@@ -63,6 +66,8 @@ public partial class App : Application
 
     public App()
     {
+        CurrentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+
         // Only works in packaged environment.
         //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en-US";
         //System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("en-US", false);
@@ -76,50 +81,34 @@ public partial class App : Application
         InitializeComponent();
 
         Host = Microsoft.Extensions.Hosting.Host.
-        CreateDefaultBuilder().
-        UseContentRoot(AppContext.BaseDirectory).
-        ConfigureServices((context, services) =>
-        {
-            // Default Activation Handler
-            //services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
+            CreateDefaultBuilder().
+            UseContentRoot(AppContext.BaseDirectory).
+            ConfigureServices((context, services) =>
+            {
+                // Core Services
+                services.AddSingleton<IFileDialogService, FileDialogService>();
+                services.AddSingleton<IDataAccessService, DataAccessService>();
+                services.AddSingleton<IFeedClientService, FeedClientService>();
+                services.AddSingleton<IAutoDiscoveryService, AutoDiscoveryService>();
+                services.AddSingleton<IOpmlService, OpmlService>();
+                services.AddSingleton<IDispatcherService>(new DispatcherService(CurrentDispatcherQueue));
 
-            // Other Activation Handlers
-            //services.AddTransient<IActivationHandler, AppNotificationActivationHandler>();
+                // Views and ViewModels
+                services.AddSingleton<SettingsPage>();
+                services.AddTransient<FeedAddViewModel>();
+                services.AddTransient<FeedAddPage>();
+                services.AddSingleton<FeedEditPage>();
+                services.AddSingleton<FolderEditPage>();
+                services.AddSingleton<FolderAddPage>();
+                services.AddSingleton<MainWindow>();
+                services.AddSingleton<MainViewModel>();
+                services.AddSingleton<MainPage>();
+                services.AddSingleton<ShellPage>();
 
-            // Services
-            //services.AddSingleton<IAppNotificationService, AppNotificationService>();
-            //services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
-            //services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
-            //services.AddTransient<IWebViewService, WebViewService>();
-            //services.AddSingleton<IActivationService, ActivationService>();
-            //services.AddSingleton<IPageService, PageService>();
-            //services.AddSingleton<INavigationService, NavigationService>();
-            //services.AddTransient<INavigationViewService, NavigationViewService>();
-
-            // Core Services
-            services.AddSingleton<IFileDialogService, FileDialogService>();
-            services.AddSingleton<IDataAccessService, DataAccessService>();
-            services.AddSingleton<IFeedClientService, FeedClientService>();
-            services.AddSingleton<IAutoDiscoveryService, AutoDiscoveryService>();
-            services.AddSingleton<IOpmlService, OpmlService>();
-
-            // Views and ViewModels
-            //services.AddSingleton<SettingsViewModel>();
-            services.AddSingleton<SettingsPage>();
-            services.AddTransient<FeedAddViewModel>();
-            services.AddTransient<FeedAddPage>();
-            services.AddSingleton<FeedEditPage>();
-            services.AddSingleton<FolderEditPage>();
-            services.AddSingleton<FolderAddPage>();
-            services.AddSingleton<MainWindow>();
-            services.AddSingleton<MainViewModel>();
-            services.AddSingleton<MainPage>();
-            services.AddSingleton<ShellPage>();
-
-            // Configuration
-            //services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
-        }).
-        Build();
+                // Configuration
+                //services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+            }).
+            Build();
 
 
         Microsoft.UI.Xaml.Application.Current.UnhandledException += App_UnhandledException;
@@ -163,14 +152,13 @@ public partial class App : Application
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)
     {
-        MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
+        CurrentDispatcherQueue?.TryEnqueue(() =>
         {
             MainWnd?.Activate();
             // TODO:
             //MainWindow?.BringToFront();
         });
     }
-
 
     #region == UnhandledException ==
 

@@ -159,8 +159,6 @@ public sealed partial class MainPage : Page
                     return;
                 }
 
-
-
                 if (nt.Parent != null)
                 {
                     if (nt.Parent is NodeFolder originalFolder)
@@ -172,9 +170,7 @@ public sealed partial class MainPage : Page
                     }
                 }
 
-
                 DraggedItems.Add(nt);
-
             }
             else
             {
