@@ -38,7 +38,6 @@ public partial class FeedAddViewModel : ObservableRecipient
     public string WebsiteOrEndpointUrl
     {
         get;
-        //set => SetProperty(ref _websiteOrEndpointUrl, value.Trim());
         set
         {
             if (SetProperty(ref field, value.Trim()))
@@ -60,7 +59,6 @@ public partial class FeedAddViewModel : ObservableRecipient
     public string? SelectedItemTitleLabel
     {
         get;
-        //set => SetProperty(ref _selectedItemTitleLabel, value);
         set
         {
             if (SetProperty(ref field, value))
@@ -90,7 +88,6 @@ public partial class FeedAddViewModel : ObservableRecipient
     public LinkItem? SelectedLinkItem
     {
         get;
-        //set => SetProperty(ref _selectedLinkItem, value);
         set
         {
             if (SetProperty(ref field, value))
@@ -103,6 +100,8 @@ public partial class FeedAddViewModel : ObservableRecipient
     #endregion
 
     #region == Command ==
+
+    // TODO: Use [RelayCommand(CanExecute = nameof(CanGo))]
 
     public ICommand GoBackCommand
     {

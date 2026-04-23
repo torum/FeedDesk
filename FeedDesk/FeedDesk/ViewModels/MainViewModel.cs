@@ -35,6 +35,9 @@ public partial class MainViewModel : ObservableRecipient
     #region == Flags ==
 
     [ObservableProperty]
+    public partial bool IsTreeWorking { get; set;}
+
+    [ObservableProperty]
     public partial bool IsBackEnabled { get; set; }
     [ObservableProperty]
     public partial bool IsDebugWindowEnabled { get; set; } = false;
@@ -2324,6 +2327,8 @@ public partial class MainViewModel : ObservableRecipient
     [RelayCommand(CanExecute = nameof(CanFeedRefreshAll))]
     private async Task FeedRefreshAll()
     {
+        IsTreeWorking = true;
+
         DebugEventLog = string.Empty;
         Root.IsBusy = true;
         await Task.Delay(100);
@@ -2351,6 +2356,8 @@ public partial class MainViewModel : ObservableRecipient
 
         Root.IsBusy = false;
         await Task.Delay(100);
+
+        IsTreeWorking = true;
     }
 
     private bool CanFeedRefreshAll()
@@ -2370,6 +2377,8 @@ public partial class MainViewModel : ObservableRecipient
 
         if (tvn is NodeFeed feed)
         {
+            IsTreeWorking = true;
+
             feed.IsBusy = true;
             var list = await GetEntriesAsync(feed);
             if (list.Count > 0)
@@ -2377,9 +2386,13 @@ public partial class MainViewModel : ObservableRecipient
                 await SaveEntriesAsync(list, feed);
             }
             feed.IsBusy = false;
+
+            IsTreeWorking = false;
         }
         else if (tvn is NodeFolder folder)
         {
+            IsTreeWorking = true;
+
             //await dispatcher.EnqueueAsync(async () =>
             //{
             folder.IsBusy = true;
@@ -2397,6 +2410,8 @@ public partial class MainViewModel : ObservableRecipient
             await Task.Delay(100);
             //EntryArchiveAllCommand.NotifyCanExecuteChanged();
             //});
+
+            IsTreeWorking = false;
         }
         else
         {
