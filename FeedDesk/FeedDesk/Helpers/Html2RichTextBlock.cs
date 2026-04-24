@@ -64,6 +64,7 @@ public class HtmlProperties : DependencyObject
     public static Thickness ParagraphMargin { get; set; } = new Thickness(0, 12, 0, 12);
     public static Thickness BlockquoteMargin { get; set; } = new Thickness(24, 6, 0, 6);
     public static Thickness PreCodeMargin { get; set; } = new Thickness(24, 6, 0, 6);
+    public static Thickness ImageMargin { get; set; } = new Thickness(0, 6, 0, 12);
 
     public static FontFamily PreCodeFontFamily { get; set; } = new FontFamily("Courier New");//Consolas //new FontFamily("monospace");
 
@@ -388,6 +389,7 @@ public class HtmlProperties : DependencyObject
                         : GenerateHyperLink(node);
                 case "ul":
                     return GenerateUl(node);
+                // TODO:
                 case "li":
                     return GenerateLi(node);
                 case "b":
@@ -443,7 +445,7 @@ public class HtmlProperties : DependencyObject
 
     private static Inline GenerateImage(HtmlNode node)
     {
-        var span = new Span();
+        var span = new Span();//
         try
         {
             if (node.Attributes["src"] != null)
@@ -491,6 +493,8 @@ public class HtmlProperties : DependencyObject
                     image.Visibility = Visibility.Collapsed;
 
                     image.Source = new BitmapImage(new Uri(sourceUri, UriKind.Absolute));
+
+                    image.Margin = ImageMargin;
 
                     inlineUiContainer.Child = image;
 
@@ -605,7 +609,11 @@ public class HtmlProperties : DependencyObject
 
     private static void ImageFailed(object sender, ExceptionRoutedEventArgs e)
     {
-        Debug.WriteLine("image failed to load: " + e.ErrorMessage);
+        Debug.WriteLine($"Image failed to load: {e.ErrorMessage}");
+        if (sender is Image img)
+        {
+            img.Visibility = Visibility.Collapsed;
+        }
     }
 
     private static void ImageOpened(object sender, RoutedEventArgs e)
@@ -836,7 +844,7 @@ public class HtmlProperties : DependencyObject
 
         span.Inlines.Add(inlineUiContainer);
         AddChildren(span, node);
-        span.Inlines.Add(new LineBreak());
+        //span.Inlines.Add(new LineBreak());//?
         return span;
     }
 
