@@ -213,6 +213,7 @@ public partial class MainWindow : Window
                     }
                 }
 
+                /*
                 var xDetailPane = mainWindow.Element("DetailPane");
                 if (xDetailPane != null)
                 {
@@ -225,6 +226,23 @@ public partial class MainWindow : Window
                             if (w > 256)
                             {
                                 vm.WidthDetailPane = w;
+                            }
+                        }
+                    }
+                }
+                */
+                var xListViewPane = mainWindow.Element("ListViewPane");
+                if (xListViewPane != null)
+                {
+                    if (xListViewPane.Attribute("width") != null)
+                    {
+                        var xvalue = xListViewPane.Attribute("width")?.Value;
+                        if (!string.IsNullOrEmpty(xvalue))
+                        {
+                            var w = double.Parse(xvalue);
+                            if (w > 256)
+                            {
+                                vm.WidthListViewPane = w;
                             }
                         }
                     }
@@ -578,6 +596,9 @@ public partial class MainWindow : Window
             }
             mainWindow.SetAttributeNode(attrs);
 
+            // Layout
+            //ListViewPaneColumnGridSplitter
+
 
             var xLeftPane = doc.CreateElement(string.Empty, "LeftPane", string.Empty);
             var xAttrs = doc.CreateAttribute("width");
@@ -586,12 +607,20 @@ public partial class MainWindow : Window
 
             mainWindow.AppendChild(xLeftPane);
 
+            /*
             var xDetailPane = doc.CreateElement(string.Empty, "DetailPane", string.Empty);
             xAttrs = doc.CreateAttribute("width");
             xAttrs.Value = vm.WidthDetailPane.ToString();
             xDetailPane.SetAttributeNode(xAttrs);
 
             mainWindow.AppendChild(xDetailPane);
+            */
+            var xListViewPane = doc.CreateElement(string.Empty, "ListViewPane", string.Empty);
+            xAttrs = doc.CreateAttribute("width");
+            xAttrs.Value = vm.WidthListViewPane.ToString();
+            xListViewPane.SetAttributeNode(xAttrs);
+
+            mainWindow.AppendChild(xListViewPane);
 
             // set Main Window element to root.
             root.AppendChild(mainWindow);

@@ -191,63 +191,18 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Error -->
-            <Border Visibility="{x:Bind ViewModel.IsShowFeedError,Mode=OneWay}" Background="{ThemeResource NavigationViewContentBackground}" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
-                <ScrollViewer>
-
-                    <Grid Margin="12,12,12,12" HorizontalAlignment="Stretch">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="42"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="24"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-
-                            <Viewbox Width="18" Height="18" Margin="0" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
-                                <Canvas Width="18" Height="18">
-                                    <Path Fill="Red" Data="M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z" />
-                                </Canvas>
-                            </Viewbox>
-
-                            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="24,4,0,0" Style="{ThemeResource SubtitleTextBlockStyle}" Opacity="0.7"><Run Text="Error"/></TextBlock>
-
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="3,12,24,0" HorizontalAlignment="Stretch">
-                            <TextBox Header="Type:" Text="{x:Bind ViewModel.ErrorObj.ErrType, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
-
-                            <TextBox Header="Description:" Text="{x:Bind ViewModel.ErrorObj.ErrDescription, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
-
-                            <TextBox Header="Error message:" Text="{x:Bind ViewModel.ErrorObj.ErrText, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" HorizontalAlignment="Stretch"></TextBox>
-
-                            <TextBox Header="Location 1:"  Text="{x:Bind ViewModel.ErrorObj.ErrPlaceParent, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0,0,0,0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
-
-                            <TextBox Header="Location 2:" Text="{x:Bind ViewModel.ErrorObj.ErrPlace, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0,0,0,0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
-
-                            <TextBox Header="Date and Time:" Text="{x:Bind ViewModel.ErrorObj.ErrDatetime, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0,0,0,0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
-
-                        </StackPanel>
-
-                    </Grid>
-
-                </ScrollViewer>
-            </Border>
-
-            <!-- ListView and details pane -->
+            <!-- ListView and Detail pane -->
             <Grid Visibility="{x:Bind ViewModel.IsNotShowFeedError,Mode=OneWay}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" x:Name="row1" MinHeight="200"/>
                     <RowDefinition Height="Auto" x:Name="row2"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*" x:Name="col1" MinWidth="256"/>
-                    <ColumnDefinition Width="4*" x:Name="col2" MinWidth="256" />
+                    <ColumnDefinition Width="300" x:Name="col1" MinWidth="256"/>
+                    <ColumnDefinition Width="1*" x:Name="col2" MinWidth="256" />
                 </Grid.ColumnDefinitions>
 
+                <!-- ListView pane -->
                 <Border x:Name="ListViewPane" Grid.Row="0" Grid.Column="0" SizeChanged="ListViewPane_SizeChanged" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -427,33 +382,22 @@
                     </Grid>
                 </Border>
 
-                <!-- Column Grid Splitter  -->
-                <communityToolkitControls:GridSplitter x:Name="ListViewPaneColumnGridSplitter" Grid.Row="0" Grid.Column="1"
-                               Width="16"
-                               HorizontalAlignment="Left"
-                               ResizeBehavior="BasedOnAlignment"
-                               ResizeDirection="Auto">
-                    <communityToolkitControls:GridSplitter.RenderTransform>
-                        <TranslateTransform X="-7" />
-                    </communityToolkitControls:GridSplitter.RenderTransform>
-                </communityToolkitControls:GridSplitter>
-
                 <!-- Row Grid Splitter  -->
                 <communityToolkitControls:GridSplitter x:Name="ListViewPaneRowGridSplitter" Grid.Row="1" Visibility="Collapsed" IsEnabled="False"
                                Height="16"
-                               VerticalAlignment="Top">
+                               VerticalAlignment="Top"
+                               ResizeBehavior="BasedOnAlignment"
+                               ResizeDirection="Rows">
                     <communityToolkitControls:GridSplitter.RenderTransform>
                         <TranslateTransform Y="-7" />
                     </communityToolkitControls:GridSplitter.RenderTransform>
                 </communityToolkitControls:GridSplitter>
 
-                <!-- Details pane --> 
-                   <!-- SolidBackgroundFillColorQuarternaryBrush SolidBackgroundFillColorTertiaryBrush -->
+                <!-- Details pane -->
                 <Border x:Name="DetailsPane" Grid.Row="0" Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" Margin="0" CornerRadius="{ThemeResource NavigationViewContentChildGridCornerRadius}" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}" SizeChanged="DetailsPane_SizeChanged">
                     <ScrollViewer x:Name="DetailsPaneScrollViewer" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
-                        <StackPanel x:Name="DetailsContentStackPanel" Margin="0" MaxWidth="1000" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" HorizontalAlignment="Stretch">
-                            <!-- adaptive procedure on code behind > MaxWidth="1000" HorizontalAlignment="Center"  -->
+                        <StackPanel x:Name="DetailsContentStackPanel" Margin="0" Width="780" MaxWidth="780" Visibility="{x:Bind ViewModel.IsEntryDetailVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" HorizontalAlignment="Stretch">
                             <!-- ImageLink -->
                             <StackPanel Visibility="{x:Bind ViewModel.IsImageLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" Margin="12,12,12,0">
                                 <TextBlock Text="{x:Bind ViewModel.SelectedListViewItem.ImageUri.AbsoluteUri, Mode=OneWay}" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource BodyTextBlockStyle}" Visibility="Collapsed"/>
@@ -461,9 +405,6 @@
                                     <Border.Background>
                                         <ImageBrush ImageSource="{x:Bind ViewModel.SelectedListViewItem.ImageUri.AbsoluteUri, Mode=OneWay}" Stretch="UniformToFill"/>
                                     </Border.Background>
-                                    <!--
-                                            <Image Source="{x:Bind ViewModel.SelectedListViewItem.ImageUri.AbsoluteUri, Mode=OneWay}" HorizontalAlignment="Stretch" Margin="0,12,0,0" MaxHeight="270" Opacity="0"/>
-                                             -->
                                 </Border>
                             </StackPanel>
 
@@ -474,7 +415,6 @@
                                 <TextBlock Visibility="{x:Bind ViewModel.IsAltLinkExists, Mode=OneWay}" Style="{ThemeResource DetailTitleStyle}" FontSize="{StaticResource LargeFontSize}" Opacity="0.9">
                                         <Hyperlink NavigateUri="{x:Bind ViewModel.SelectedListViewItem.AltHtmlUri, Mode=OneWay}"><Run Text="{x:Bind ViewModel.SelectedListViewItem.Name, Mode=OneWay}"></Run></Hyperlink>
                                 </TextBlock>
-                                
 
                                 <communityToolkitControls:WrapPanel Orientation="Horizontal" VerticalSpacing="4" HorizontalSpacing="0" Margin="0 0 0 4">
 
@@ -510,7 +450,7 @@
                                 </StackPanel>
 
                                 <!-- AudioLink -->
-                                <StackPanel HorizontalAlignment="Left" Margin="0,6,0,0" Visibility="{x:Bind ViewModel.IsAudioLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                                <StackPanel HorizontalAlignment="Left" Visibility="{x:Bind ViewModel.IsAudioLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                                     <TextBlock Text="Audio" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource DetailBodyStrongStyle}" Opacity="0.9"/>
 
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,10,0,0" >
@@ -518,22 +458,11 @@
                                         <Button x:Uid="MainPage_DetailsPane_CopyURL" Command="{x:Bind ViewModel.CopyAudioFileUrlToClipboardCommand, Mode=OneWay}" Margin="12,0,22,0"/>
                                     </StackPanel>
                                 </StackPanel>
-                                <!--
-                                            <StackPanel Visibility="{x:Bind ViewModel.IsAudioLinkExists, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                                                <StackPanel HorizontalAlignment="Left" Margin="0,6,0,0">
-                                                    <MediaPlayerElement Source="{x:Bind ViewModel.MediaSource, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsMediaPlayerVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" HorizontalAlignment="Left" MaxWidth="740" AutoPlay="False" AreTransportControlsEnabled="True" />
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0" Visibility="{x:Bind ViewModel.IsNotMediaPlayerVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
-                                                        <Button Content="Download Audio File" Command="{x:Bind ViewModel.DownloadAudioFileCommand, Mode=OneWay}" Margin="22,0,0,0" />
-                                                        <Button Content="Copy URL to Clipboard" Command="{x:Bind ViewModel.CopyAudioFileUrlToClipboardCommand, Mode=OneWay}" Margin="12,0,22,0"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </StackPanel>
-                                            -->
 
                                 <!-- Summary -->
                                 <StackPanel Visibility="{x:Bind ViewModel.IsSummaryExists, Mode=OneWay}">
                                     <TextBlock x:Uid="MainPage_DetailsPane_Summary" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource DetailBodyStrongStyle}"/>
-                                    <RichTextBlock helper:HtmlProperties.Html="{x:Bind ViewModel.SelectedListViewItem.Summary, Mode=OneWay}" Padding="2,18,0,6" Margin="0" IsTextSelectionEnabled="True" Style="{ThemeResource DetailBodyRichTextBlockStyle}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Left"/>
+                                    <RichTextBlock helper:HtmlProperties.Html="{x:Bind ViewModel.SelectedListViewItem.Summary, Mode=OneWay}" Padding="2,6,0,6" Margin="0" IsTextSelectionEnabled="True" Style="{ThemeResource DetailBodyRichTextBlockStyle}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Left"/>
                                     <!-- 
                                         <TextBlock Style="{ThemeResource DetailBodyStyle}" TextWrapping="Wrap" Text="{x:Bind ViewModel.SelectedListViewItem.Summary, Mode=OneWay}"/>
                                          -->
@@ -542,13 +471,13 @@
                                 <!-- ContentText -->
                                 <StackPanel Visibility="{x:Bind ViewModel.IsContentText, Mode=OneWay}">
                                     <TextBlock x:Uid="MainPage_DetailsPane_Content" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource DetailBodyStrongStyle}" />
-                                    <TextBlock Text="{x:Bind ViewModel.SelectedListViewItem.Content, Mode=OneWay}" Padding="2,18,0,6" TextWrapping="Wrap" Style="{ThemeResource DetailBodyStyle}"/>
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedListViewItem.Content, Mode=OneWay}" Padding="2,6,0,6" TextWrapping="Wrap" Style="{ThemeResource DetailBodyStyle}"/>
                                 </StackPanel>
 
                                 <!-- ContentHTML -->
                                 <StackPanel Visibility="{x:Bind ViewModel.IsContentHTML, Mode=OneWay}">
                                     <TextBlock x:Uid="MainPage_DetailsPane_Content" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource DetailBodyStrongStyle}"/>
-                                    <RichTextBlock helper:HtmlProperties.Html="{x:Bind ViewModel.SelectedListViewItem.Content, Mode=OneWay}" Padding="2,18,0,6" Margin="0" IsTextSelectionEnabled="True" Style="{ThemeResource DetailBodyRichTextBlockStyle}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Left"/>
+                                    <RichTextBlock helper:HtmlProperties.Html="{x:Bind ViewModel.SelectedListViewItem.Content, Mode=OneWay}" Padding="2,6,0,6" Margin="0" IsTextSelectionEnabled="True" Style="{ThemeResource DetailBodyRichTextBlockStyle}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Left"/>
                                 </StackPanel>
 
                                 <!--
@@ -590,7 +519,64 @@
                     </ScrollViewer>
                 </Border>
 
+                <!-- Column Grid Splitter  -->
+                <communityToolkitControls:GridSplitter x:Name="ListViewPaneColumnGridSplitter" Grid.Row="0" Grid.Column="1"
+                               Width="16"
+                               HorizontalAlignment="Left"
+                               ResizeBehavior="BasedOnAlignment"
+                               ResizeDirection="Columns">
+                    <communityToolkitControls:GridSplitter.RenderTransform>
+                        <TranslateTransform X="-7" />
+                    </communityToolkitControls:GridSplitter.RenderTransform>
+                </communityToolkitControls:GridSplitter>
+
             </Grid>
+
+            <!-- Error pane -->
+            <Border Visibility="{x:Bind ViewModel.IsShowFeedError,Mode=OneWay}" Background="{ThemeResource NavigationViewContentBackground}" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
+                <ScrollViewer>
+
+                    <Grid Margin="12,12,12,12" HorizontalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="42"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="24"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+
+                            <Viewbox Width="18" Height="18" Margin="0" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
+                                <Canvas Width="18" Height="18">
+                                    <Path Fill="Red" Data="M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z" />
+                                </Canvas>
+                            </Viewbox>
+
+                            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="24,4,0,0" Style="{ThemeResource SubtitleTextBlockStyle}" Opacity="0.7"><Run Text="Error"/></TextBlock>
+
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="3,12,24,0" HorizontalAlignment="Stretch">
+                            <TextBox Header="Type:" Text="{x:Bind ViewModel.ErrorObj.ErrType, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
+
+                            <TextBox Header="Description:" Text="{x:Bind ViewModel.ErrorObj.ErrDescription, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
+
+                            <TextBox Header="Error message:" Text="{x:Bind ViewModel.ErrorObj.ErrText, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" HorizontalAlignment="Stretch"></TextBox>
+
+                            <TextBox Header="Location 1:"  Text="{x:Bind ViewModel.ErrorObj.ErrPlaceParent, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0,0,0,0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
+
+                            <TextBox Header="Location 2:" Text="{x:Bind ViewModel.ErrorObj.ErrPlace, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0,0,0,0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
+
+                            <TextBox Header="Date and Time:" Text="{x:Bind ViewModel.ErrorObj.ErrDatetime, Mode=OneWay}" Background="Transparent" Opacity="0.7" Margin="0,12,0,0" BorderThickness="0,0,0,0" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="False" HorizontalAlignment="Stretch"></TextBox>
+
+                        </StackPanel>
+
+                    </Grid>
+
+                </ScrollViewer>
+            </Border>
 
         </Grid>
 
@@ -624,10 +610,6 @@
                         <AdaptiveTrigger MinWindowWidth="1007" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <!-- 
-                        <Setter Target="col1.Width" Value="3*"/>
-                        <Setter Target="col2.Width" Value="4*" />
-                        -->
                         <Setter Target="row2.Height" Value="0" />
                     </VisualState.Setters>
                 </VisualState>

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
 
@@ -37,11 +38,15 @@ public sealed partial class MainPage : Page
         //ViewModel.DebugOutput += (sender, arg) => { OnDebugOutput(arg); };
         //ViewModel.DebugClear += () => OnDebugClear();
 
-        // Sets gridsplitter left.
+        // TreeView pane gridsplitter left.
         this.LeftPaneGridColumn.Width = new GridLength(ViewModel.WidthLeftPane, GridUnitType.Pixel);
+
         // DetailPane gridsplitter left
-        col2.Width = new GridLength(ViewModel.WidthDetailPane, GridUnitType.Pixel);
-        col1.Width = new GridLength(1.0, GridUnitType.Star);
+        // TODO:
+        //col1.Width = new GridLength(1.0, GridUnitType.Star);
+        //col2.Width = new GridLength(ViewModel.WidthDetailPane, GridUnitType.Pixel);
+        col1.Width = new GridLength(ViewModel.WidthListViewPane, GridUnitType.Pixel);
+        col2.Width = new GridLength(1.0, GridUnitType.Star);
     }
 
     public async void OnShowWaitDialog(bool isShow)
@@ -139,6 +144,12 @@ public sealed partial class MainPage : Page
 
     private void TreeView_DragItemsStarting(TreeView sender, TreeViewDragItemsStartingEventArgs args)
     {
+        if (ViewModel.IsTreeWorking)
+        {
+            args.Cancel = true;
+            return;
+        }
+
         if (args.Items.Count > 0)
         {
 
@@ -241,18 +252,21 @@ public sealed partial class MainPage : Page
 
     private void LeftPane_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        // save the width when closed.
         ViewModel.WidthLeftPane = LeftPaneGridColumn.ActualWidth;
     }
 
     private void ListViewPane_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        ViewModel.WidthDetailPane = col2.ActualWidth;
+        // save the width when closed.
+        //ViewModel.WidthDetailPane = col2.ActualWidth;
+        ViewModel.WidthListViewPane = col1.ActualWidth;
     }
-    
+
     private void ListViewEntryItem_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // reset scrollviewer pos.
-        DetailsPaneScrollViewer.ChangeView(0, 0, 1);
+        //DetailsPaneScrollViewer.ChangeView(0, 0, 1);
     }
 
     private async void ListViewEntryItem_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)

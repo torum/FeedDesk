@@ -660,7 +660,7 @@ public partial class MainViewModel : ObservableRecipient
     [ObservableProperty]
     public partial double WidthLeftPane { get; set; } = 256;
     [ObservableProperty]
-    public partial double WidthDetailPane { get; set; } = 256;
+    public partial double WidthListViewPane { get; set; } = 300;//256;
 
     #endregion
 
@@ -2335,7 +2335,7 @@ public partial class MainViewModel : ObservableRecipient
         Root.IsBusy = false;
         await Task.Delay(100);
 
-        IsTreeWorking = true;
+        IsTreeWorking = false;
     }
 
     private bool CanFeedRefreshAll()
@@ -2440,7 +2440,7 @@ public partial class MainViewModel : ObservableRecipient
         catch (Exception ex)
         {
             Debug.WriteLine($"EntryArchiveAll: {ex.Message}");
-            _ = _dispatcherService.TryEnqueue(() =>
+            _dispatcherService.TryEnqueue(() =>
             {
                 (App.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
             });
@@ -2634,7 +2634,7 @@ public partial class MainViewModel : ObservableRecipient
         catch (Exception ex)
         {
             Debug.WriteLine($"OpmlImport: {ex.Message}");
-            _ = _dispatcherService.TryEnqueue(() =>
+            _dispatcherService.TryEnqueue(() =>
             {
                 (App.Current as App)?.AppendErrorLog("OpmlImport", ex.Message);
             });
