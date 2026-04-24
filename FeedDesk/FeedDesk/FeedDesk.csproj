@@ -14,16 +14,21 @@
 	  <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 	  <SelfContained>true</SelfContained>
 	  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-	  <PlatformTarget>AnyCPU</PlatformTarget>
+
 	  <IncludeSymbols>True</IncludeSymbols>
 	  
+	  <!--
 	  <WindowsPackageType>None</WindowsPackageType>
+	  -->
 
-	  <VersionPrefix>1.0.3.0</VersionPrefix>
-	  <FileVersion>1.0.3.0</FileVersion>
-	  <AssemblyVersion>1.0.3</AssemblyVersion>
-	  
+	  <VersionPrefix>1.1.0.0</VersionPrefix>
+	  <FileVersion>1.1.0.0</FileVersion>
+	  <AssemblyVersion>1.1.0</AssemblyVersion>
+
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Memo_for_publish_commands.txt" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -127,25 +132,31 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <Optimize>True</Optimize>
     <DebugType>full</DebugType>
+	  <IsPublishable>True</IsPublishable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Optimize>True</Optimize>
     <DebugType>full</DebugType>
+	  <IsPublishable>True</IsPublishable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <Optimize>True</Optimize>
     <DebugType>full</DebugType>
+	  <IsPublishable>True</IsPublishable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <DebugType>full</DebugType>
     <Optimize>True</Optimize>
+	  <IsPublishable>True</IsPublishable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebugType>full</DebugType>
     <Optimize>True</Optimize>
+	  <IsPublishable>True</IsPublishable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebugType>full</DebugType>
     <Optimize>True</Optimize>
+	  <IsPublishable>True</IsPublishable>
   </PropertyGroup>
 </Project>
