@@ -1,6 +1,7 @@
 using FeedDesk.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml;
 using Windows.System;
 
 namespace FeedDesk.Views;
@@ -22,6 +23,8 @@ public sealed partial class FolderEditPage : Page
     {
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.GoBack));
+
+        this.FolderNameTextBox.Focus(FocusState.Programmatic);
     }
 
     private static KeyboardAccelerator BuildKeyboardAccelerator(VirtualKey key, VirtualKeyModifiers? modifiers = null)

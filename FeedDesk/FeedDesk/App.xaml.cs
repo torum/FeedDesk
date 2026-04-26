@@ -22,8 +22,7 @@ public partial class App : Application
     public static readonly string AppName = "FeedDesk";//_resourceLoader.GetString("AppName");
     public static string AppDataFolder { get; } = EnvDataFolder + System.IO.Path.DirectorySeparatorChar + AppDeveloper + System.IO.Path.DirectorySeparatorChar + AppName;
     public static string AppConfigFilePath { get; } = System.IO.Path.Combine(AppDataFolder, AppName + ".config");
-
-
+    
     // ErrorLog
 #if DEBUG
     public bool IsSaveErrorLog = true;

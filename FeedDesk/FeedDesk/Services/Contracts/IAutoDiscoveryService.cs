@@ -10,7 +10,7 @@ public interface IAutoDiscoveryService
 {
     event AutoDiscoveryStatusUpdateEventHandler? StatusUpdate;
 
-    Task<ServiceResultBase> DiscoverService(Uri addr, bool isFeed);
+    Task<ServiceResultBase> DiscoverService(Uri addr, bool isFeed, bool isAutoDiscoveryEnabled);
 
     Task<ServiceResultBase> DiscoverServiceWithAuth(Uri addr, string userName, string apiKey, AuthTypes authType);
 

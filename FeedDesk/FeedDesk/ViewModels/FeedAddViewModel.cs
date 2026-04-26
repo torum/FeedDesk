@@ -7,6 +7,7 @@ using FeedDesk.Views;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
@@ -290,7 +291,7 @@ public partial class FeedAddViewModel : ObservableRecipient
 
         try
         {
-            var sr = await _serviceDiscovery.DiscoverService(uri, true);
+            var sr = await _serviceDiscovery.DiscoverService(uri, true, true);
 
             if (sr == null)
             {
@@ -310,14 +311,21 @@ public partial class FeedAddViewModel : ObservableRecipient
                 return;
             }
 
+            // TODO: not implemented.
             // Aut hRequired returned. Probably API endpoint.
-            if (sr is ServiceResultAuthRequired)
+            if (sr is ServiceResultAuthRequired sra)
             {
                 IsShowError = false;
                 IsShowLog = false;
 
-                // Auth input page.
-                GoToAuthInputPage();
+                // Auth input page.(Not implemented)
+                //GoToAuthInputPage();
+
+                StatusTitleText = "Authorization Required";
+                StatusText = $"";
+
+                IsShowError = true;
+                IsShowLog = false;
 
                 IsBusy = false;
                 return;

@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using Windows.Media.Protection.PlayReady;
 
 namespace FeedDesk.Services;
 
@@ -278,9 +279,16 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
     #region == Methods ==
 
-    public async Task<ServiceResultBase> DiscoverService(Uri addr, bool isFeed)
+    public async Task<ServiceResultBase> DiscoverService(Uri addr, bool isFeed, bool isAutoDiscoveryEnabled)
     {
         UpdateStatus(string.Format(">> HTTP GET " + addr.AbsoluteUri));
+
+        // Force get rss (for GitHub)
+        _httpClient.DefaultRequestHeaders.Accept.Remove(new MediaTypeWithQualityHeaderValue("text/html"));
+        if (isAutoDiscoveryEnabled)
+        {
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
+        }
 
         try
         {

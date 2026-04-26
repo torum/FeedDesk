@@ -8,6 +8,7 @@
     xmlns:model="using:FeedDesk.Models"
     NavigationCacheMode="Disabled"
     mc:Ignorable="d"
+    Loaded="Page_Loaded"
      Background="{ThemeResource NavigationViewContentBackground}">
     <Grid x:Name="ContentArea">
         <ScrollViewer>
@@ -54,7 +55,11 @@
 
                                     <StackPanel Margin="24" HorizontalAlignment="Stretch">
 
-                                        <TextBox Header="URL:" PlaceholderText="https://...." Text="{x:Bind ViewModel.WebsiteOrEndpointUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch"/>
+                                        <TextBox x:Name="UrlTextBox" Header="URL:" PlaceholderText="https://...." Text="{x:Bind ViewModel.WebsiteOrEndpointUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch">
+                                            <TextBox.KeyboardAccelerators>
+                                                <KeyboardAccelerator Key="Enter" Invoked="UrlTextBox_EnterInvoked" />
+                                            </TextBox.KeyboardAccelerators>
+                                        </TextBox>
 
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 

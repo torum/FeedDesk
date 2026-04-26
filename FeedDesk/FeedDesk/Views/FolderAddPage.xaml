@@ -46,7 +46,7 @@
 
                             <StackPanel Margin="12,6,0,0">
                                 <TextBlock x:Uid="FolderAddPage_Folder_Name" Style="{ThemeResource BodyTextBlockStyle}" Margin="{StaticResource XSmallTopMargin}"/>
-                                <TextBox Text="{x:Bind ViewModel.NameToAddFolder, Mode=TwoWay}" Margin="{StaticResource XSmallTopMargin}" Width="300" MaxWidth="800" HorizontalAlignment="Left"></TextBox>
+                                <TextBox x:Name="FolderNameTextBox" Text="{x:Bind ViewModel.NameToAddFolder, Mode=TwoWay}" Margin="{StaticResource XSmallTopMargin}" Width="300" MaxWidth="800" HorizontalAlignment="Left"></TextBox>
                             </StackPanel>
 
                             <StackPanel Margin="12,6,0,0">
