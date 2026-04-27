@@ -266,7 +266,7 @@ public sealed partial class MainPage : Page
     private void ListViewEntryItem_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // reset scrollviewer pos.
-        //DetailsPaneScrollViewer.ChangeView(0, 0, 1);
+        DetailsPaneScrollViewer.ChangeView(0, 0, 1);
     }
 
     private async void ListViewEntryItem_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
