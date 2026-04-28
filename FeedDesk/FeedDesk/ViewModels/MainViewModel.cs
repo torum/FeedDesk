@@ -2315,6 +2315,7 @@ public partial class MainViewModel : ObservableRecipient
 
         if (tasks.Count <= 0)
         {
+            IsTreeWorking = false;
             return;
         }
 
@@ -2340,7 +2341,9 @@ public partial class MainViewModel : ObservableRecipient
 
     private bool CanFeedRefreshAll()
     {
-        return Services.Count > 0;
+        if (IsTreeWorking) return false;
+        if (Services.Count == 0) return false;
+        return true;
     }
 
     [RelayCommand(CanExecute = nameof(CanFeedRefresh))]

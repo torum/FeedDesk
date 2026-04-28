@@ -16,10 +16,8 @@
 	  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 
 	  <IncludeSymbols>True</IncludeSymbols>
-	  
-	  <!--
+
 	  <WindowsPackageType>None</WindowsPackageType>
-	  -->
 
 	  <VersionPrefix>1.1.0.1</VersionPrefix>
 	  <FileVersion>1.1.0.1</FileVersion>
