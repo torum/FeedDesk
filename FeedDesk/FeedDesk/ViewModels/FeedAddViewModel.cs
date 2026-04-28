@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
@@ -98,108 +99,18 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     #endregion
 
-    #region == Command ==
-
-    // TODO: Use [RelayCommand(CanExecute = nameof(CanGo))]
-
-    public ICommand GoBackCommand
-    {
-        get;
-    }
-
-    public IRelayCommand GoCommand
-    {
-        get;
-    }
-
-    public IRelayCommand GoSelectedCommand
-    {
-        get;
-    }
-
-    public IRelayCommand AddSelectedAndCloseCommand
-    {
-        get;
-    }
-
-
-    public ICommand GoToFirstTabCommand
-    {
-        get;
-    }
-
-    public ICommand GoToSecondTabCommand
-    {
-        get;
-    }
-
-    public ICommand GoToThirdTabCommand
-    {
-        get;
-    }
-
-    public ICommand GoToFourthTabCommand
-    {
-        get;
-    }
-
-    #endregion
+    #region == Services ==
 
     private readonly IAutoDiscoveryService _serviceDiscovery;
     private readonly IDispatcherService _dispatcherService;
+
+    #endregion
 
     public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery, IDispatcherService dispatcherService)
     {
         _serviceDiscovery = serviceDiscovery;
         _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
         _dispatcherService = dispatcherService;
-
-        GoBackCommand = new RelayCommand(OnGoBack);
-        GoCommand = new RelayCommand(OnGo, CanGo);
-        GoSelectedCommand = new RelayCommand(OnGoSelected, CanGoSelected);
-        AddSelectedAndCloseCommand = new RelayCommand(OnAddSelectedAndClose, CanAddSelectedAndClose);
-
-        GoToFirstTabCommand = new RelayCommand(OnGoToFirstTab);
-        GoToSecondTabCommand = new RelayCommand(OnGoToSecondTab);
-        GoToThirdTabCommand = new RelayCommand(OnGoToThirdTab);
-        GoToFourthTabCommand = new RelayCommand(OnGoToFourthTab);
-    }
-
-    private void OnGoBack()
-    {
-        var shell = App.GetService<ShellPage>();
-        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
-    }
-
-    private void OnGoToFirstTab()
-    {
-        GoToFirstPage();
-    }
-
-    private void OnGoToSecondTab()
-    {
-        GoToSelectFeedOrServicePage();
-    }
-
-    private void OnGoToThirdTab()
-    {
-        if (SelectedLinkItem is FeedLinkItem)
-        {
-            GoToSelectFeedOrServicePage();
-        }
-        else if (SelectedLinkItem is ServiceDocumentLinkItem)
-        {
-            GoToAuthInputPage();
-        }
-        else
-        {
-            GoToSelectFeedOrServicePage();
-        }
-    }
-
-    private void OnGoToFourthTab()
-    {
-        GoToServiceFoundPage();
     }
 
     #region == Methods ==
@@ -225,6 +136,50 @@ public partial class FeedAddViewModel : ObservableRecipient
 
     #endregion
 
+    #region == Commands ==
+
+    [RelayCommand]
+    private void GoBack()
+    {
+        var shell = App.GetService<ShellPage>();
+        _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
+    }
+
+    [RelayCommand]
+    private void GoToFirstTab()
+    {
+        GoToFirstPage();
+    }
+
+    [RelayCommand]
+    private void GoToSecondTab()
+    {
+        GoToSelectFeedOrServicePage();
+    }
+
+    [RelayCommand]
+    private void GoToThirdTab()
+    {
+        if (SelectedLinkItem is FeedLinkItem)
+        {
+            GoToSelectFeedOrServicePage();
+        }
+        else if (SelectedLinkItem is ServiceDocumentLinkItem)
+        {
+            GoToAuthInputPage();
+        }
+        else
+        {
+            GoToSelectFeedOrServicePage();
+        }
+    }
+
+    [RelayCommand]
+    private void GoToFourthTab()
+    {
+        GoToServiceFoundPage();
+    }
+
     private void OnStatusUpdate(AutoDiscoveryService sender, string data)
     {
         _ = _dispatcherService.TryEnqueue(() =>
@@ -233,7 +188,8 @@ public partial class FeedAddViewModel : ObservableRecipient
         });
     }
 
-    private async void OnGo()
+    [RelayCommand(CanExecute = nameof(CanGo))]
+    private async Task Go()
     {
         StatusTitleText = "";
         StatusText = "";
@@ -480,7 +436,6 @@ public partial class FeedAddViewModel : ObservableRecipient
 
         IsBusy = false;
     }
-
     private bool CanGo()
     {
         if (string.IsNullOrEmpty(WebsiteOrEndpointUrl))
@@ -496,7 +451,8 @@ public partial class FeedAddViewModel : ObservableRecipient
         return true;
     }
 
-    private void OnGoSelected()
+    [RelayCommand(CanExecute = nameof(CanGoSelected))]
+    private void GoSelected()
     {
         if (SelectedLinkItem == null)
         {
@@ -529,7 +485,6 @@ public partial class FeedAddViewModel : ObservableRecipient
 
         GoToServiceFoundPage();
     }
-
     private bool CanGoSelected()
     {
         if (SelectedLinkItem == null)
@@ -546,7 +501,8 @@ public partial class FeedAddViewModel : ObservableRecipient
         return true;
     }
 
-    private async void OnAddSelectedAndClose()
+    [RelayCommand(CanExecute = nameof(CanAddSelectedAndClose))]
+    private async Task AddSelectedAndClose()
     {
         if (SelectedLinkItem == null)
         {
@@ -630,7 +586,6 @@ public partial class FeedAddViewModel : ObservableRecipient
             }
         }
     }
-
     private bool CanAddSelectedAndClose()
     {
         if (SelectedLinkItem == null)
@@ -651,4 +606,6 @@ public partial class FeedAddViewModel : ObservableRecipient
 
         return true;
     }
+
+    #endregion
 }
