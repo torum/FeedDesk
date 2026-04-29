@@ -54,6 +54,13 @@ public partial class MainWindow : Window
             // Call shelPage now that shellpage is careated.
             root.InitWhenMainWindowIsReady(this);
         }
+
+
+        if (this.AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.PreferredMinimumWidth = 600;
+            presenter.PreferredMinimumHeight = 780;
+        }
     }
 
     public void SetCapitionButtonColorForWin11()
