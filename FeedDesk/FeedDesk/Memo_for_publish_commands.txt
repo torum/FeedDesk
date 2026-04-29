@@ -1,24 +1,20 @@
 
 (A) Create package bundle file for Microsoft store.
 -------
-dotnet build FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=x64 /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:AppxBundle=Never /p:WindowsAppSDKSelfContained=true /p:PublishAot=false -p:WindowsPackageType=MSIX --self-contained true
+dotnet publish FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=x64 /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:AppxBundle=Never /p:WindowsAppSDKSelfContained=true /p:PublishAot=false -p:WindowsPackageType=MSIX --self-contained true
 
-dotnet build FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=x86 /p:Platform=x86 /p:RuntimeIdentifier=win-x86 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:AppxBundle=Never /p:WindowsAppSDKSelfContained=true /p:PublishAot=false -p:WindowsPackageType=MSIX --self-contained true
+dotnet publish FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=x86 /p:Platform=x86 /p:RuntimeIdentifier=win-x86 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:AppxBundle=Never /p:WindowsAppSDKSelfContained=true /p:PublishAot=false -p:WindowsPackageType=MSIX --self-contained true
 
-dotnet build FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=ARM64 /p:Platform=ARM64 /p:RuntimeIdentifier=win-arm64 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:AppxBundle=Never /p:WindowsAppSDKSelfContained=true /p:PublishAot=false -p:WindowsPackageType=MSIX --self-contained true
+dotnet publish FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=ARM64 /p:Platform=ARM64 /p:RuntimeIdentifier=win-arm64 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:AppxBundle=Never /p:WindowsAppSDKSelfContained=true /p:PublishAot=false -p:WindowsPackageType=MSIX --self-contained true
 -------
 
 
+Should be .msixupload files in AppPackages folder.
 
 
-Select each .msix and the .appxsym or .msixsym files (optional but recommended for debugging) and zip it (don't zip the folder).
-Rename and change file extension to .msixupload
-If automatically .msixupload is producued, use that.(PDB is included in exe,)
-
-FeedDesk_1.0.3.0_x64.msixupload
-FeedDesk_1.0.3.0_x86.msixupload
-FeedDesk_1.0.3.0_arm64.msixupload
-
+FeedDesk_1.1.1.0_x64.msixupload
+FeedDesk_1.1.1.0_x86.msixupload
+FeedDesk_1.1.1.0_arm64.msixupload
 
 
 =======
