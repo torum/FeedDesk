@@ -1106,7 +1106,6 @@ public partial class MainViewModel : ObservableRecipient
 
                 await Task.Delay(100);
 
-
                 feed.IsBusy = false;
             }
             else
@@ -1215,6 +1214,13 @@ public partial class MainViewModel : ObservableRecipient
                         {
                             Debug.WriteLine($"Getting {feed.Name} @GetAllEntriesAndSaveTaskAsync");
 
+                            feed.IsBusy = true;
+
+                            await _dispatcherService.EnqueueAsync(() =>
+                            {
+                                EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                            });
+
                             var list = await GetEntriesAsync(feed);
 
                             _cts.Token.ThrowIfCancellationRequested();
@@ -1247,6 +1253,13 @@ public partial class MainViewModel : ObservableRecipient
                                 //
                                 //await CheckParentSelectedAndNotifyAsync(feed);
                             }
+
+                            feed.IsBusy = false;
+
+                            await _dispatcherService.EnqueueAsync(() =>
+                            {
+                                EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                            });
 
                             await Task.Delay(100);
 
@@ -2316,6 +2329,8 @@ public partial class MainViewModel : ObservableRecipient
         if (tasks.Count <= 0)
         {
             IsTreeWorking = false;
+            Root.IsBusy = false;
+            EntryArchiveAllCommand.NotifyCanExecuteChanged();
             return;
         }
 
@@ -2333,10 +2348,12 @@ public partial class MainViewModel : ObservableRecipient
             }
         }
 
-        Root.IsBusy = false;
         await Task.Delay(100);
 
         IsTreeWorking = false;
+        Root.IsBusy = false;
+
+        EntryArchiveAllCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanFeedRefreshAll()
@@ -2361,7 +2378,10 @@ public partial class MainViewModel : ObservableRecipient
             IsTreeWorking = true;
 
             feed.IsBusy = true;
+            EntryArchiveAllCommand.NotifyCanExecuteChanged();
+
             var list = await GetEntriesAsync(feed);
+
             if (list.Count > 0)
             {
                 await SaveEntriesAsync(list, feed);
@@ -2396,6 +2416,7 @@ public partial class MainViewModel : ObservableRecipient
         }
         else
         {
+            EntryArchiveAllCommand.NotifyCanExecuteChanged();
             return;
         }
 
@@ -2410,6 +2431,8 @@ public partial class MainViewModel : ObservableRecipient
                 Debug.WriteLine($"No updates({tvn.Name}) @FeedRefresh");
             }
         }
+
+        EntryArchiveAllCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanFeedRefresh()
@@ -2438,6 +2461,7 @@ public partial class MainViewModel : ObservableRecipient
 
         try
         {
+            // TODO: Don't archive all; Archive only loaded entries in the listview.
             await ArchiveAllAsync(nt);
         }
         catch (Exception ex)
@@ -2470,6 +2494,11 @@ public partial class MainViewModel : ObservableRecipient
         if (SelectedTreeViewItem.IsBusy)
         {
             //return false;
+        }
+
+        if (SelectedTreeViewItem.IsBusyChildrenCount > 0)
+        {
+            return false;
         }
 
         if (Entries.Count <= 0)
