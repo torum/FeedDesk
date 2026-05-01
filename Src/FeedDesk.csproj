@@ -29,7 +29,8 @@
 	  <TrimmerSingleWarn>false</TrimmerSingleWarn>
 	  <Optimize>true</Optimize>
 	  <CsWinRTAotWarningLevel>3</CsWinRTAotWarningLevel>
-	  
+
+	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
   </PropertyGroup>
   <ItemGroup>
