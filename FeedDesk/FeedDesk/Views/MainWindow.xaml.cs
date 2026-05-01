@@ -13,6 +13,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 using Windows.Storage;
+using WinRT;
 
 namespace FeedDesk;
 
@@ -141,7 +142,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var winState = OverlappedPresenterState.Restored;
+        OverlappedPresenterState? winState = null; // For AOT workaround, don't set default, = OverlappedPresenterState.Restored;
 
         ElementTheme eleThme = ElementTheme.Default;
         SystemBackdropOption bd = SystemBackdropOption.None;
@@ -200,6 +201,10 @@ public partial class MainWindow : Window
                     {
                         // Ignore minimized.
                         winState = OverlappedPresenterState.Restored;
+                    }
+                    else
+                    {
+                        winState = null;
                     }
                 }
 
@@ -315,17 +320,28 @@ public partial class MainWindow : Window
             // Window state
             if (appWindow.Presenter is OverlappedPresenter presenter)
             {
+                // AOT bad
+                // https://github.com/microsoft/CsWinRT/issues/1930
+            }
+
+            if (winState is null)
+            {
+                // do nothing.
+            }
+            else
+            {
+                // Window state
                 if (winState == OverlappedPresenterState.Maximized)
                 {
                     // Sets restore size and position.
                     appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                     // Maximize the window.
-                    presenter.Maximize();
+                    (appWindow.Presenter as OverlappedPresenter)!.Maximize();
                 }
                 else if (winState == OverlappedPresenterState.Minimized)
                 {
                     // This should not happen, but just in case.
-                    presenter.Restore();
+                    (appWindow.Presenter as OverlappedPresenter)!.Restore();
                     // Sets restore size and position.
                     appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                 }
@@ -336,11 +352,6 @@ public partial class MainWindow : Window
                 }
             }
 
-            //
-            appWindow.Closing += (s, a) =>
-            {
-                //
-            };
         }
 
         // For the strictly backward compatibility reason, load preference from localsetting.
@@ -516,11 +527,13 @@ public partial class MainWindow : Window
             // Main Window element
             var mainWindow = doc.CreateElement(string.Empty, "MainWindow", string.Empty);
 
-            var winState = OverlappedPresenterState.Restored;
+            OverlappedPresenterState? winState = null; // For AOT workaround, don't set default.  = OverlappedPresenterState.Restored;
 
             Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
             if (appWindow != null)
             {
+                // AOT bad
+                // https://github.com/microsoft/CsWinRT/issues/1930
                 if (appWindow.Presenter is OverlappedPresenter presenter)
                 {
                     if (presenter.State == OverlappedPresenterState.Maximized)
@@ -528,6 +541,24 @@ public partial class MainWindow : Window
                         winState = OverlappedPresenterState.Maximized;
                     }
                     else if (presenter.State == OverlappedPresenterState.Minimized)
+                    {
+                        winState = OverlappedPresenterState.Restored;
+                    }
+                    else
+                    {
+                        winState = OverlappedPresenterState.Restored;
+                    }
+                }
+                else
+                {
+                    // For AOT tmp workaround
+                    OverlappedPresenter presenterAOT = this.AppWindow.Presenter.As<OverlappedPresenter>();
+
+                    if (presenterAOT.State == OverlappedPresenterState.Maximized)
+                    {
+                        winState = OverlappedPresenterState.Maximized;
+                    }
+                    else if (presenterAOT.State == OverlappedPresenterState.Minimized)
                     {
                         winState = OverlappedPresenterState.Restored;
                     }
