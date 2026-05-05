@@ -14,14 +14,14 @@ using System.Threading.Tasks;
 
 namespace FeedDesk;
 
-public partial class App : Application
+public partial class App
 {
     // AppDataFolder
     private static readonly string AppDeveloper = "torum";
-    private static readonly string EnvDataFolder = System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    private static readonly string EnvDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
     public static readonly string AppName = "FeedDesk";//_resourceLoader.GetString("AppName");
-    public static string AppDataFolder { get; } = EnvDataFolder + System.IO.Path.DirectorySeparatorChar + AppDeveloper + System.IO.Path.DirectorySeparatorChar + AppName;
-    public static string AppConfigFilePath { get; } = System.IO.Path.Combine(AppDataFolder, AppName + ".config");
+    public static string AppDataFolder { get; } = EnvDataFolder + Path.DirectorySeparatorChar + AppDeveloper + Path.DirectorySeparatorChar + AppName;
+    public static string AppConfigFilePath { get; } = Path.Combine(AppDataFolder, AppName + ".config");
     
     // ErrorLog
 #if DEBUG
@@ -29,8 +29,8 @@ public partial class App : Application
 #else
     public bool IsSaveErrorLog = false;
 #endif
-    public string LogFilePath = System.Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + System.IO.Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
-    private readonly StringBuilder Errortxt = new();
+    public string LogFilePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
+    private readonly StringBuilder _errortxt = new();
 
     //public const string BackdropSettingsKey = "AppSystemBackdropOption";
 
@@ -55,7 +55,7 @@ public partial class App : Application
     public static T GetService<T>()
         where T : class
     {
-        if ((App.Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
+        if ((Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
         {
             throw new ArgumentException($"{typeof(T)} needs to be registered in ConfigureServices within App.xaml.cs.");
         }
@@ -65,7 +65,7 @@ public partial class App : Application
 
     public App()
     {
-        CurrentDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        CurrentDispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         // Only works in packaged environment.
         //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en-US";
@@ -110,7 +110,7 @@ public partial class App : Application
             Build();
 
 
-        Microsoft.UI.Xaml.Application.Current.UnhandledException += App_UnhandledException;
+        Current.UnhandledException += App_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
     }
@@ -130,7 +130,7 @@ public partial class App : Application
             var activatedEventArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
             await mainInstance.RedirectActivationToAsync(activatedEventArgs);
 
-            System.Diagnostics.Process.GetCurrentProcess().Kill();
+            Process.GetCurrentProcess().Kill();
             return;
         }
         else
@@ -216,10 +216,10 @@ public partial class App : Application
 
     public void AppendErrorLog(string kindTxt, string errorTxt)
     {
-        Errortxt.AppendLine(kindTxt + ": " + errorTxt);
+        _errortxt.AppendLine(kindTxt + ": " + errorTxt);
         var dt = DateTime.Now;
-        Errortxt.AppendLine($"Occured at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
-        Errortxt.AppendLine("");
+        _errortxt.AppendLine($"Occured at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
+        _errortxt.AppendLine("");
     }
 
     public void SaveErrorLog()
@@ -234,17 +234,16 @@ public partial class App : Application
             return;
         }
 
-        if (Errortxt.Length > 0)
-        {
-            Errortxt.AppendLine("");
-            var dt = DateTime.Now;
-            Errortxt.AppendLine($"Saved at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
+        if (_errortxt.Length <= 0) return;
+        
+        _errortxt.AppendLine("");
+        var dt = DateTime.Now;
+        _errortxt.AppendLine($"Saved at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
 
-            var s = Errortxt.ToString();
-            if (!string.IsNullOrEmpty(s))
-            {
-                File.WriteAllText(LogFilePath, s);
-            }
+        var s = _errortxt.ToString();
+        if (!string.IsNullOrEmpty(s))
+        {
+            File.WriteAllText(LogFilePath, s);
         }
     }
 

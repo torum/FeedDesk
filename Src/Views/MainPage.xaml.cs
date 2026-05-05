@@ -58,8 +58,8 @@ public sealed partial class MainPage : Page
                 _dialog = new WaitDialog();
                 var ring = new ProgressRing
                 {
-                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center,
-                    VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
                     IsActive = true,
                 };
                 _dialog.Content = ring;
@@ -276,7 +276,7 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        if (e.OriginalSource is not Microsoft.UI.Xaml.Controls.ListViewItem)
+        if (e.OriginalSource is not ListViewItem)
         {
             return;
         }

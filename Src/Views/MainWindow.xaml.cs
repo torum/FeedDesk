@@ -79,7 +79,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            if (App.Current.RequestedTheme == ApplicationTheme.Dark)
+            if (Application.Current.RequestedTheme == ApplicationTheme.Dark)
             {
                 this.AppWindow.TitleBar.ButtonForegroundColor = Colors.White;
                 this.AppWindow.TitleBar.ButtonInactiveForegroundColor = Colors.White;
@@ -97,36 +97,36 @@ public partial class MainWindow : Window
         var filePath = App.AppConfigFilePath;
         if (RuntimeHelper.IsMSIX)
         {
-            filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
+            filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
         }
 
         var vm = App.GetService<MainViewModel>();
 
-        if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+        if (DesktopAcrylicController.IsSupported())
         {
             vm.IsAcrylicSupported = true;
 
             vm.IsBackdropEnabled = true;
         }
-        if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+        if (MicaController.IsSupported())
         {
             vm.IsMicaSupported = true;
 
             vm.IsBackdropEnabled = true;
         }
 
-        if (!System.IO.File.Exists(filePath)) 
+        if (!File.Exists(filePath)) 
         {
             // Sets default.
 
-            if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+            if (DesktopAcrylicController.IsSupported())
             {
                 SystemBackdrop = new DesktopAcrylicBackdrop();
                 vm.Material = SystemBackdropOption.Acrylic;
 
                 vm.IsBackdropEnabled = true;
             }
-            else if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            else if (MicaController.IsSupported())
             {
                 SystemBackdrop = new MicaBackdrop()
                 {
@@ -347,6 +347,11 @@ public partial class MainWindow : Window
                 }
                 else
                 {
+                    // TODO:
+                    //var dpi = Windows.Win32.PInvoke.GetDpiForWindow(new Windows.Win32.Foundation.HWND(WinRT.Interop.WindowNative.GetWindowHandle(this)));
+                    //var scalingFactor = (float)dpi / 96;
+                    //AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(400.0f * scalingFactor), (int)(300.0f * scalingFactor)));
+
                     // Sets restore size and position.
                     appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                 }
@@ -406,7 +411,7 @@ public partial class MainWindow : Window
 
         if (backdrop == SystemBackdropOption.Mica)
         {
-            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            if (MicaController.IsSupported())
             {
                 this.SystemBackdrop = new MicaBackdrop()
                 {
@@ -420,7 +425,7 @@ public partial class MainWindow : Window
         }
         else if (backdrop == SystemBackdropOption.MicaAlt)
         {
-            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            if (MicaController.IsSupported())
             {
                 this.SystemBackdrop = new MicaBackdrop()
                 {
@@ -434,7 +439,7 @@ public partial class MainWindow : Window
         }
         else if (backdrop == SystemBackdropOption.Acrylic)
         {
-            if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+            if (DesktopAcrylicController.IsSupported())
             {
                 this.SystemBackdrop = new DesktopAcrylicBackdrop();
 
@@ -501,7 +506,7 @@ public partial class MainWindow : Window
         SaveSettings();
 
         // Save err log.
-        (App.Current as App)?.SaveErrorLog();
+        (Application.Current as App)?.SaveErrorLog();
     }
 
     private void SaveSettings()
@@ -695,11 +700,11 @@ public partial class MainWindow : Window
         var filePath = App.AppConfigFilePath;
         if (RuntimeHelper.IsMSIX)
         {
-            filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
+            filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
         }
         else
         {
-            System.IO.Directory.CreateDirectory(App.AppDataFolder);
+            Directory.CreateDirectory(App.AppDataFolder);
         }
 
         try

@@ -165,7 +165,7 @@ public class HtmlProperties : DependencyObject
         if (string.IsNullOrWhiteSpace(input))
             return string.Empty;
 
-        return System.Net.WebUtility.HtmlDecode(input);
+        return WebUtility.HtmlDecode(input);
     }
 
     private static Block? GenerateBlockForTopNode(HtmlNode node)

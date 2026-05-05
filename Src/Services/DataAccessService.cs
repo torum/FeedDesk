@@ -1074,11 +1074,11 @@ public class DataAccessService : IDataAccessService
                 
                 if (entry.IsArchived)
                 {
-                    if (entry.Status == FeedEntryItem.ReadStatus.rsNew)
-                        entry.Status = FeedEntryItem.ReadStatus.rsNormal;
+                    if (entry.Status == ReadStatus.rsNew)
+                        entry.Status = ReadStatus.rsNormal;
 
-                    if (entry.Status == FeedEntryItem.ReadStatus.rsNewVisited)
-                        entry.Status = FeedEntryItem.ReadStatus.rsNormalVisited;
+                    if (entry.Status == ReadStatus.rsNewVisited)
+                        entry.Status = ReadStatus.rsNormalVisited;
                 }
                 
                 if (!entry.IsArchived)
@@ -1354,14 +1354,14 @@ public class DataAccessService : IDataAccessService
 
                 if (entry.IsArchived)
                 {
-                    if (entry.Status == FeedEntryItem.ReadStatus.rsNew)
+                    if (entry.Status == ReadStatus.rsNew)
                     {
-                        entry.Status = FeedEntryItem.ReadStatus.rsNormal;
+                        entry.Status = ReadStatus.rsNormal;
                     }
 
-                    if (entry.Status == FeedEntryItem.ReadStatus.rsNewVisited)
+                    if (entry.Status == ReadStatus.rsNewVisited)
                     {
-                        entry.Status = FeedEntryItem.ReadStatus.rsNormalVisited;
+                        entry.Status = ReadStatus.rsNormalVisited;
                     }
                 }
 

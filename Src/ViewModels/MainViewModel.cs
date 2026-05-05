@@ -8,10 +8,8 @@ using FeedDesk.Services;
 using FeedDesk.Services.Contracts;
 using FeedDesk.Views;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -155,7 +153,7 @@ public partial class MainViewModel : ObservableRecipient
             catch (Exception ex)
             {
                 Debug.WriteLine($"SelectedTreeViewItem: {ex.Message}");
-                (App.Current as App)?.AppendErrorLog("SelectedTreeViewItem", ex.Message);
+                (Application.Current as App)?.AppendErrorLog("SelectedTreeViewItem", ex.Message);
             }
 
         }
@@ -211,7 +209,7 @@ public partial class MainViewModel : ObservableRecipient
                 IsSummaryExists = true;
             }
 
-            if ((field as EntryItem).ContentType == EntryItem.ContentTypes.text)
+            if (field.ContentType == EntryItem.ContentTypes.text)
             {
                 IsContentText = true;
 
@@ -225,10 +223,10 @@ public partial class MainViewModel : ObservableRecipient
                 IsContentText = false;
             }
 
-            if (((field as EntryItem).ContentType == EntryItem.ContentTypes.textHtml) ||
-                ((field as EntryItem).ContentType == EntryItem.ContentTypes.unknown))
+            if ((field.ContentType == EntryItem.ContentTypes.textHtml) ||
+                (field.ContentType == EntryItem.ContentTypes.unknown))
             {
-                IsContentHTML = true;
+                IsContentHtml = true;
 
                 if (!string.IsNullOrEmpty(field.Content.Trim()))
                 {
@@ -237,44 +235,16 @@ public partial class MainViewModel : ObservableRecipient
             }
             else
             {
-                IsContentHTML = false;
+                IsContentHtml = false;
             }
 
-            if ((field as EntryItem).AltHtmlUri != null)
-            {
-                IsAltLinkExists = true;
-            }
-            else
-            {
-                IsAltLinkExists = false;
-            }
+            IsAltLinkExists = (field).AltHtmlUri != null;
 
-            if (field.ImageUri != null)
-            {
-                IsImageLinkExists = true;
-            }
-            else
-            {
-                IsImageLinkExists = false;
-            }
+            IsImageLinkExists = field.ImageUri != null;
 
-            if (field.AudioUri != null)
-            {
-                IsAudioLinkExists = true;
-            }
-            else
-            {
-                IsAudioLinkExists = false;
-            }
+            IsAudioLinkExists = field.AudioUri != null;
 
-            if (field.CommentUri != null)
-            {
-                IsCommentPageLinkExists = true;
-            }
-            else
-            {
-                IsCommentPageLinkExists = false;
-            }
+            IsCommentPageLinkExists = field.CommentUri != null;
 
             if ((field.Status != FeedEntryItem.ReadStatus.rsNewVisited) && (field.Status != FeedEntryItem.ReadStatus.rsNormalVisited))
             {
@@ -294,7 +264,7 @@ public partial class MainViewModel : ObservableRecipient
     [ObservableProperty]
     public partial bool IsContentText { get; set; }
     [ObservableProperty]
-    public partial bool IsContentHTML { get; set; }
+    public partial bool IsContentHtml { get; set; }
 
     public bool IsAltLinkExists
     {
@@ -419,11 +389,11 @@ public partial class MainViewModel : ObservableRecipient
 
             }
 
-            if (_selectedEntryArchiveStatus.Key == Models.EntryArchivingStatusKeys.Inbox)
+            if (_selectedEntryArchiveStatus.Key == EntryArchivingStatusKeys.Inbox)
             {
                 nt.IsInboxOnly = true;
             }
-            else if (_selectedEntryArchiveStatus.Key == Models.EntryArchivingStatusKeys.All)
+            else if (_selectedEntryArchiveStatus.Key == EntryArchivingStatusKeys.All)
             {
                 nt.IsInboxOnly = false;
             }
@@ -2469,7 +2439,7 @@ public partial class MainViewModel : ObservableRecipient
             Debug.WriteLine($"EntryArchiveAll: {ex.Message}");
             _dispatcherService.TryEnqueue(() =>
             {
-                (App.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
+                (Application.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
             });
         }
     }
@@ -2668,7 +2638,7 @@ public partial class MainViewModel : ObservableRecipient
             Debug.WriteLine($"OpmlImport: {ex.Message}");
             _dispatcherService.TryEnqueue(() =>
             {
-                (App.Current as App)?.AppendErrorLog("OpmlImport", ex.Message);
+                (Application.Current as App)?.AppendErrorLog("OpmlImport", ex.Message);
             });
         }
     }
@@ -2890,7 +2860,7 @@ public partial class MainViewModel : ObservableRecipient
         catch (Exception ex)
         {
             Debug.WriteLine($"OpmlExport: {ex.Message}");
-            (App.Current as App)?.AppendErrorLog("OpmlExport", ex.Message);
+            (Application.Current as App)?.AppendErrorLog("OpmlExport", ex.Message);
         }
     }
 
@@ -2952,7 +2922,7 @@ public partial class MainViewModel : ObservableRecipient
     #region == Shell page commands ==
 
     [RelayCommand]
-    private static void MenuFileExit() => App.Current.Exit();
+    private static void MenuFileExit() => Application.Current.Exit();
 
     [RelayCommand]
     private static void MenuSettings()

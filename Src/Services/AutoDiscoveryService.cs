@@ -998,7 +998,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         if (elementTitle != null)
                         {
                             //feedTitle = elementTitle.TextContent;
-                            feedTitle = System.Net.WebUtility.HtmlDecode(elementTitle.InnerText);
+                            feedTitle = WebUtility.HtmlDecode(elementTitle.InnerText);
 
                             if (!string.IsNullOrEmpty(feedTitle))
                             {
@@ -1079,7 +1079,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         var elementTitle = document.DocumentElement.SelectSingleNode("channel/title");
                         if (elementTitle != null)
                         {
-                            feedTitle = System.Net.WebUtility.HtmlDecode(elementTitle.InnerText);//elementTitle.InnerText;
+                            feedTitle = WebUtility.HtmlDecode(elementTitle.InnerText);//elementTitle.InnerText;
                         }
 
                         if (!string.IsNullOrEmpty(feedTitle))
@@ -1137,7 +1137,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         if (elementTitle != null)
                         {
                             //feedTitle = elementTitle.TextContent;
-                            feedTitle = System.Net.WebUtility.HtmlDecode(elementTitle.InnerText);//elementTitle.InnerText;
+                            feedTitle = WebUtility.HtmlDecode(elementTitle.InnerText);//elementTitle.InnerText;
 
                             if (!string.IsNullOrEmpty(feedTitle))
                             {

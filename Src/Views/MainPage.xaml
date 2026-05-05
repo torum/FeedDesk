@@ -473,7 +473,7 @@
                                 </StackPanel>
 
                                 <!-- ContentHTML -->
-                                <StackPanel Visibility="{x:Bind ViewModel.IsContentHTML, Mode=OneWay}">
+                                <StackPanel Visibility="{x:Bind ViewModel.IsContentHtml, Mode=OneWay}">
                                     <TextBlock x:Uid="MainPage_DetailsPane_Content" Margin="{StaticResource SmallTopMargin}" Style="{ThemeResource DetailBodyStrongStyle}"/>
                                     <RichTextBlock helper:HtmlProperties.Html="{x:Bind ViewModel.SelectedListViewItem.Content, Mode=OneWay}" Padding="2,6,0,6" Margin="0" IsTextSelectionEnabled="True" Style="{ThemeResource DetailBodyRichTextBlockStyle}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Left"/>
                                 </StackPanel>
