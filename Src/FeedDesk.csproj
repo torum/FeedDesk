@@ -13,26 +13,23 @@
 	  <Nullable>enable</Nullable>
 	  <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 	  <SelfContained>true</SelfContained>
-	  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 
 	  <IncludeSymbols>True</IncludeSymbols>
 
-	  <WindowsPackageType>None</WindowsPackageType>
+	  <WindowsPackageType>MSIX</WindowsPackageType>
 
-	  <VersionPrefix>1.1.1.0</VersionPrefix>
-	  <FileVersion>1.1.1.0</FileVersion>
-	  <AssemblyVersion>1.1.1.0</AssemblyVersion>
+	  <VersionPrefix>1.1.2.0</VersionPrefix>
+	  <FileVersion>1.1.2.0</FileVersion>
+	  <AssemblyVersion>1.1.2.0</AssemblyVersion>
 
 	  <!-- MS bug: https://github.com/microsoft/WindowsAppSDK/issues/5817 -->
-	  <AppxBundleAutoResourcePackageQualifiers>Scale|DXFeatureLevel</AppxBundleAutoResourcePackageQualifiers>
-	  <AppxDefaultResourceQualifiers>Language=en-US;ja-JP;</AppxDefaultResourceQualifiers>
 	  
 	  <IsAotCompatible>true</IsAotCompatible>
 	  <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
 	  <TrimmerSingleWarn>false</TrimmerSingleWarn>
 	  <Optimize>true</Optimize>
 	  <CsWinRTAotWarningLevel>3</CsWinRTAotWarningLevel>
-
+	  
 	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
   </PropertyGroup>
@@ -77,7 +74,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1839" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="1.7.260425100">
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="1.7.260501103">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
