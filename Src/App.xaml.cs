@@ -11,6 +11,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using WinRT;
+
+
+// https://github.com/CommunityToolkit/Windows/issues/612
+[assembly: GeneratedWinRTExposedExternalType(typeof(GridLength))]
+
 
 namespace FeedDesk;
 

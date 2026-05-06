@@ -22,8 +22,10 @@
 	  <FileVersion>1.1.2.0</FileVersion>
 	  <AssemblyVersion>1.1.2.0</AssemblyVersion>
 
-	  <!-- MS bug: https://github.com/microsoft/WindowsAppSDK/issues/5817 -->
-	  
+	  <!-- Workaround for MS bug: https://github.com/microsoft/WindowsAppSDK/issues/5817 -->
+	  <AppxBundleAutoResourcePackageQualifiers>Scale|DXFeatureLevel</AppxBundleAutoResourcePackageQualifiers>
+	  <AppxFilterOutUnusedLanguagesResourceFileMaps>false</AppxFilterOutUnusedLanguagesResourceFileMaps>
+
 	  <IsAotCompatible>true</IsAotCompatible>
 	  <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
 	  <TrimmerSingleWarn>false</TrimmerSingleWarn>
