@@ -196,6 +196,16 @@ public partial class MainViewModel : ObservableRecipient
                 return;
             }
 
+            // WinUI3 is very limited in fuctionality. So manually update IsSelected.
+            foreach (var item in Entries)
+            {
+                if (item is FeedEntryItem fei)
+                {
+                    fei.IsSelected = false;
+                }
+            }
+            field.IsSelected = true;
+
             IsEntryDetailVisible = true;
 
             EntryViewExternalCommand.NotifyCanExecuteChanged();
@@ -1193,7 +1203,17 @@ public partial class MainViewModel : ObservableRecipient
 
                             var list = await GetEntriesAsync(feed);
 
-                            _cts.Token.ThrowIfCancellationRequested();
+                            //_cts.Token.ThrowIfCancellationRequested();
+                            if (_cts.Token.IsCancellationRequested)
+                            {
+                                feed.IsBusy = false;
+
+                                await _dispatcherService.EnqueueAsync(() =>
+                                {
+                                    EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                                });
+                                return;
+                            }
 
                             if (list.Count > 0)
                             {
@@ -1201,7 +1221,17 @@ public partial class MainViewModel : ObservableRecipient
 
                                 //await Task.Delay(100);
 
-                                _cts.Token.ThrowIfCancellationRequested();
+                                //_cts.Token.ThrowIfCancellationRequested();
+                                if (_cts.Token.IsCancellationRequested)
+                                {
+                                    feed.IsBusy = false;
+
+                                    await _dispatcherService.EnqueueAsync(() =>
+                                    {
+                                        EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                                    });
+                                    return;
+                                }
 
                                 if (res.Count > 0)
                                 {
@@ -1296,21 +1326,24 @@ public partial class MainViewModel : ObservableRecipient
             }
             await dispatcher.EnqueueAsync( () =>
             {
-                //nt.IsBusy = true;
-                if (nt == SelectedTreeViewItem)
-                {
-                    // Let's not clear
-                    //Entries.Clear();
-                    // Let's not notify here..
-                    //EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                }
+                nt.IsBusy = true;
             });
 
             if (nt is NodeFeed feed)
             {
                 res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedId(feed.Id, feed.IsInboxOnly), _cts.Token);
 
-                cancellationToken.ThrowIfCancellationRequested();
+                //cancellationToken.ThrowIfCancellationRequested();
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Debug.WriteLine("cancellationToken.IsCancellationRequested @LoadEntriesAsync1");
+                    await dispatcher.EnqueueAsync(() =>
+                    {
+                        feed.IsBusy = false;
+                        EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                    });
+                    return;
+                }
 
                 if (res.IsError)
                 {
@@ -1360,13 +1393,25 @@ public partial class MainViewModel : ObservableRecipient
                     await dispatcher.EnqueueAsync( () =>
                     {
                         folder.IsBusy = false;
+                        EntryArchiveAllCommand.NotifyCanExecuteChanged();
                     });
                     return;
                 }
 
                 res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsInboxOnly), _cts.Token);
 
-                cancellationToken.ThrowIfCancellationRequested();
+                //cancellationToken.ThrowIfCancellationRequested();
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Debug.WriteLine("cancellationToken.IsCancellationRequested @LoadEntriesAsync2");
+                    await dispatcher.EnqueueAsync(() =>
+                    {
+                        folder.IsBusy = false;
+                        EntryArchiveAllCommand.NotifyCanExecuteChanged();
+
+                    });
+                    return;
+                }
 
                 if (res.IsError)
                 {
@@ -1398,19 +1443,23 @@ public partial class MainViewModel : ObservableRecipient
                 return;
             }
 
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Debug.WriteLine("cancellationToken.IsCancellationRequested @LoadEntriesAsync3");
+                await dispatcher.EnqueueAsync(() =>
+                {
+                    nt.IsBusy = false;
+                    EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                });
+                return;
+            }
             if (dispatcher is null)
             {
                 return;
             }
             await dispatcher.EnqueueAsync( () =>
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    Debug.WriteLine("cancellationToken.IsCancellationRequested @LoadEntriesAsync");
-                    nt.IsBusy = false;
-                    return;
-                }
-
                 // Update the count
                 nt.EntryNewCount = res.UnreadCount;
 
@@ -1454,6 +1503,7 @@ public partial class MainViewModel : ObservableRecipient
                         folder.IsPendingReload = false;
                     }
 
+                    nt.IsBusy = false;
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 }
                 else
@@ -1517,6 +1567,7 @@ public partial class MainViewModel : ObservableRecipient
                 }
 
                 feed.IsBusy = false;
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
             });
         }
         else
@@ -1540,6 +1591,8 @@ public partial class MainViewModel : ObservableRecipient
                 feed.Status = NodeFeed.DownloadStatus.Error;
 
                 Debug.WriteLine(feed.ErrorDatabase.ErrText + ", " + feed.ErrorDatabase.ErrDescription + ", " + feed.ErrorDatabase.ErrPlace);
+                feed.IsBusy = false;
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
             });
 
             feed.IsBusy = false;
@@ -1565,18 +1618,15 @@ public partial class MainViewModel : ObservableRecipient
 
         if (nd is NodeFeed feed)
         {
-            //await dispatcher.EnqueueAsync(() =>
-            //{
-                feed.IsBusy = true;
+            feed.IsBusy = true;
 
-                if (feed == SelectedTreeViewItem)
+            if (feed == SelectedTreeViewItem)
+            {
+                await dispatcher.EnqueueAsync(() =>
                 {
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                }
-
-                // TODO: not really saving
-                //feed.Status = NodeFeed.DownloadStatus.saving;
-            //});
+                });
+            }
 
             List<string> list =
             [
@@ -1606,6 +1656,7 @@ public partial class MainViewModel : ObservableRecipient
                     feed.Status = NodeFeed.DownloadStatus.Error;
 
                     feed.IsBusy = false;
+                    EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
 
                 return;
@@ -1647,28 +1698,8 @@ public partial class MainViewModel : ObservableRecipient
                             }
                         }
                     }
+
                     feed.IsBusy = false;
-                });
-
-                if (res.AffectedCount > 0)
-                {
-                    if (feed == SelectedTreeViewItem)
-                    {
-                        if (!feed.IsInboxOnly)
-                        {
-                            // not needed_
-                            //await LoadEntriesAsync(SelectedTreeViewItem);
-                            //LoadEntriesAwaiter(feed);
-                        }
-                    }
-                }
-
-                if (dispatcher is null)
-                {
-                    return;
-                }
-                await dispatcher.EnqueueAsync(() =>
-                {
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
             }
@@ -1685,12 +1716,11 @@ public partial class MainViewModel : ObservableRecipient
                 {
                     if (folder == SelectedTreeViewItem)
                     {
+                        folder.IsBusy = true;
                         //Entries.Clear();
                         EntryArchiveAllCommand.NotifyCanExecuteChanged();
                     }
                 });
-
-                folder.IsBusy = true;
 
                 List<string> tmpList = [];
 
@@ -1730,9 +1760,10 @@ public partial class MainViewModel : ObservableRecipient
                             {
                                 Entries.Clear();
                             }
-                        });
 
-                        folder.IsBusy = false;
+                            folder.IsBusy = false;
+                            EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                        });
 
                         if (folder == SelectedTreeViewItem)
                         {
@@ -1745,15 +1776,6 @@ public partial class MainViewModel : ObservableRecipient
                     }
                 }
 
-                if (dispatcher is null)
-                {
-                    return;
-                }
-
-                await dispatcher.EnqueueAsync(() =>
-                {
-                    EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                });
             }
         }
     }

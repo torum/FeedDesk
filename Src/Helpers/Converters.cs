@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
 
@@ -32,5 +33,22 @@ public partial class BooleanToVisibilityCollapsedConverter : IValueConverter
         if (Equals(value, FalseValue))
             return false;
         return null;
+    }
+}
+
+public partial class BoolToFontWeightConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool isBold && isBold)
+        {
+            return FontWeights.SemiBold;
+        }
+        return FontWeights.Normal;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
     }
 }

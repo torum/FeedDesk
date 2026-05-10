@@ -341,7 +341,7 @@
                                             <PathIcon Data="{x:Bind PathIcon, Mode=OneWay}" Foreground="{ThemeResource SystemAccentColorLight2}" Width ="24" Height="24" Margin="6" VerticalAlignment="Center" HorizontalAlignment="Center"></PathIcon>
                                         </Viewbox>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind Name}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" x:Phase="0" Style="{ThemeResource NodeEntryTitleTextBlockStyle}" Padding="2" Margin="12,6,0,0"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind Name}" FontWeight="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource BoolToFontWeightConverter}}" HorizontalAlignment="Left" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" x:Phase="0" Style="{ThemeResource NodeEntryTitleTextBlockStyle}" Padding="2" Margin="12,6,0,0"/>
 
                                         <TextBlock Grid.Row="0" Grid.Column="2" Text="{x:Bind PublishedDateTimeFormatedAbout}" x:Phase="1" HorizontalAlignment="Right" Style="{ThemeResource NodeEntryTitleCaptionTextBlockStyle}" Padding="2" Margin="6,6,0,0"/>
 

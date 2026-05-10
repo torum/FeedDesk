@@ -19,8 +19,7 @@
 
             <helpers:ElementThemeEnumToBooleanConverter x:Key="ElementThemeEnumToBooleanConverter" />
             <helpers:SystemBackdropEnumToBooleanConverter x:Key="SystemBackdropEnumToBooleanConverter" />
-
-
+            <helpers:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
 
 
             <ResourceDictionary.MergedDictionaries>

@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private int _winRestoreWidth = 1024;//1024;
     private int _winRestoreHeight = 768;//768;
     private int _winRestoreTop = 100;
-    private int _winRestoreleft = 100;
+    private int _winRestoreLeft = 100;
 
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
@@ -311,7 +311,24 @@ public partial class MainWindow : Window
         _winRestoreWidth = (int)width;
         _winRestoreHeight = (int)height;
         _winRestoreTop = (int)top;
-        _winRestoreleft = (int)left;
+        _winRestoreLeft = (int)left;
+
+        if (_winRestoreWidth < 500)
+        {
+            _winRestoreWidth = 500;
+        }
+        if (_winRestoreHeight < 500)
+        {
+            _winRestoreHeight = 500;
+        }
+        if (_winRestoreTop < 0)
+        {
+            _winRestoreTop = 0;
+        }
+        if (_winRestoreLeft < 0)
+        {
+            _winRestoreLeft = 0;
+        }
 
         // Restore window size and position
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
@@ -334,16 +351,17 @@ public partial class MainWindow : Window
                 if (winState == OverlappedPresenterState.Maximized)
                 {
                     // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreLeft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                     // Maximize the window.
                     (appWindow.Presenter as OverlappedPresenter)!.Maximize();
                 }
                 else if (winState == OverlappedPresenterState.Minimized)
                 {
+                    // DONT restore minimized size and pos. bad.
                     // This should not happen, but just in case.
-                    (appWindow.Presenter as OverlappedPresenter)!.Restore();
+                    //(appWindow.Presenter as OverlappedPresenter)!.Restore();
                     // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
+                    //appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                 }
                 else
                 {
@@ -353,7 +371,7 @@ public partial class MainWindow : Window
                     //AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(400.0f * scalingFactor), (int)(300.0f * scalingFactor)));
 
                     // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
+                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreLeft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
                 }
             }
 
@@ -487,7 +505,7 @@ public partial class MainWindow : Window
                     _winRestoreHeight = (int)appWindow.Size.Height;
                     _winRestoreWidth = (int)appWindow.Size.Width;
                     _winRestoreTop = (int)appWindow.Position.Y;
-                    _winRestoreleft = (int)appWindow.Position.X;
+                    _winRestoreLeft = (int)appWindow.Position.X;
                 }
             }
         }
@@ -574,100 +592,102 @@ public partial class MainWindow : Window
                 }
             }
 
-            // Main Window attributes
-            attrs = doc.CreateAttribute("width");
-            if (winState == OverlappedPresenterState.Maximized)
+            if (winState != null)
             {
-                attrs.Value = _winRestoreWidth.ToString();
+                // Main Window attributes
+                attrs = doc.CreateAttribute("width");
+                if (winState == OverlappedPresenterState.Maximized)
+                {
+                    attrs.Value = _winRestoreWidth.ToString();
+                }
+                else
+                {
+                    attrs.Value = this.AppWindow.Size.Width.ToString();
+                }
+                //attrs.Value = this.AppWindow.Size.Width.ToString();
+                mainWindow.SetAttributeNode(attrs);
+
+                attrs = doc.CreateAttribute("height");
+                if (winState == OverlappedPresenterState.Maximized)
+                {
+                    attrs.Value = _winRestoreHeight.ToString();
+                }
+                else
+                {
+                    attrs.Value = this.AppWindow.Size.Height.ToString();
+                }
+                //attrs.Value = App.MainWindow.AppWindow.Size.Height.ToString();//App.MainWindow.GetAppWindow().Size.Height.ToString();
+                mainWindow.SetAttributeNode(attrs);
+
+                attrs = doc.CreateAttribute("top");
+                if (winState == OverlappedPresenterState.Maximized)
+                {
+                    attrs.Value = _winRestoreTop.ToString();
+                }
+                else
+                {
+                    attrs.Value = this.AppWindow.Position.Y.ToString();
+                }
+                //attrs.Value = App.MainWindow.AppWindow.Position.Y.ToString();
+                mainWindow.SetAttributeNode(attrs);
+
+                attrs = doc.CreateAttribute("left");
+                if (winState == OverlappedPresenterState.Maximized)
+                {
+                    attrs.Value = _winRestoreLeft.ToString();
+                }
+                else
+                {
+                    attrs.Value = this.AppWindow.Position.X.ToString();
+                }
+                //attrs.Value = App.MainWindow.AppWindow.Position.X.ToString();
+                mainWindow.SetAttributeNode(attrs);
+
+                attrs = doc.CreateAttribute("state");
+                if (winState == OverlappedPresenterState.Maximized)
+                {
+                    attrs.Value = "Maximized";
+                }
+                else if (winState == OverlappedPresenterState.Restored)
+                {
+                    attrs.Value = "Normal";
+
+                }
+                else if (winState == OverlappedPresenterState.Minimized)
+                {
+                    attrs.Value = "Minimized";
+                }
+                mainWindow.SetAttributeNode(attrs);
+
+                // Layout
+                //ListViewPaneColumnGridSplitter
+
+
+                var xLeftPane = doc.CreateElement(string.Empty, "LeftPane", string.Empty);
+                var xAttrs = doc.CreateAttribute("width");
+                xAttrs.Value = vm.WidthLeftPane.ToString();
+                xLeftPane.SetAttributeNode(xAttrs);
+
+                mainWindow.AppendChild(xLeftPane);
+
+                /*
+                var xDetailPane = doc.CreateElement(string.Empty, "DetailPane", string.Empty);
+                xAttrs = doc.CreateAttribute("width");
+                xAttrs.Value = vm.WidthDetailPane.ToString();
+                xDetailPane.SetAttributeNode(xAttrs);
+
+                mainWindow.AppendChild(xDetailPane);
+                */
+                var xListViewPane = doc.CreateElement(string.Empty, "ListViewPane", string.Empty);
+                xAttrs = doc.CreateAttribute("width");
+                xAttrs.Value = vm.WidthListViewPane.ToString();
+                xListViewPane.SetAttributeNode(xAttrs);
+
+                mainWindow.AppendChild(xListViewPane);
+
+                // set Main Window element to root.
+                root.AppendChild(mainWindow);
             }
-            else
-            {
-                attrs.Value = this.AppWindow.Size.Width.ToString();
-            }
-            //attrs.Value = this.AppWindow.Size.Width.ToString();
-            mainWindow.SetAttributeNode(attrs);
-
-            attrs = doc.CreateAttribute("height");
-            if (winState == OverlappedPresenterState.Maximized)
-            {
-                attrs.Value = _winRestoreHeight.ToString();
-            }
-            else
-            {
-                attrs.Value = this.AppWindow.Size.Height.ToString();
-            }
-            //attrs.Value = App.MainWindow.AppWindow.Size.Height.ToString();//App.MainWindow.GetAppWindow().Size.Height.ToString();
-            mainWindow.SetAttributeNode(attrs);
-
-            attrs = doc.CreateAttribute("top");
-            if (winState == OverlappedPresenterState.Maximized)
-            {
-                attrs.Value = _winRestoreTop.ToString();
-            }
-            else
-            {
-                attrs.Value = this.AppWindow.Position.Y.ToString();
-            }
-            //attrs.Value = App.MainWindow.AppWindow.Position.Y.ToString();
-            mainWindow.SetAttributeNode(attrs);
-
-            attrs = doc.CreateAttribute("left");
-            if (winState == OverlappedPresenterState.Maximized)
-            {
-                attrs.Value = _winRestoreleft.ToString();
-            }
-            else
-            {
-                attrs.Value = this.AppWindow.Position.X.ToString();
-            }
-            //attrs.Value = App.MainWindow.AppWindow.Position.X.ToString();
-            mainWindow.SetAttributeNode(attrs);
-
-            attrs = doc.CreateAttribute("state");
-            if (winState == OverlappedPresenterState.Maximized)
-            {
-                attrs.Value = "Maximized";
-            }
-            else if (winState == OverlappedPresenterState.Restored)
-            {
-                attrs.Value = "Normal";
-
-            }
-            else if (winState == OverlappedPresenterState.Minimized)
-            {
-                attrs.Value = "Minimized";
-            }
-            mainWindow.SetAttributeNode(attrs);
-
-            // Layout
-            //ListViewPaneColumnGridSplitter
-
-
-            var xLeftPane = doc.CreateElement(string.Empty, "LeftPane", string.Empty);
-            var xAttrs = doc.CreateAttribute("width");
-            xAttrs.Value = vm.WidthLeftPane.ToString();
-            xLeftPane.SetAttributeNode(xAttrs);
-
-            mainWindow.AppendChild(xLeftPane);
-
-            /*
-            var xDetailPane = doc.CreateElement(string.Empty, "DetailPane", string.Empty);
-            xAttrs = doc.CreateAttribute("width");
-            xAttrs.Value = vm.WidthDetailPane.ToString();
-            xDetailPane.SetAttributeNode(xAttrs);
-
-            mainWindow.AppendChild(xDetailPane);
-            */
-            var xListViewPane = doc.CreateElement(string.Empty, "ListViewPane", string.Empty);
-            xAttrs = doc.CreateAttribute("width");
-            xAttrs.Value = vm.WidthListViewPane.ToString();
-            xListViewPane.SetAttributeNode(xAttrs);
-
-            mainWindow.AppendChild(xListViewPane);
-
-            // set Main Window element to root.
-            root.AppendChild(mainWindow);
-
         }
 
         // Themes

@@ -248,7 +248,7 @@ public abstract class NodeTree : Node
             // if this has busy childrenn, make it busy anyway.
             if (_isBusyChildrenCount > 0)
             {
-                field = true;
+                //field = true;
             }
 
             OnPropertyChanged();
