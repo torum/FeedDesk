@@ -37,10 +37,13 @@ public partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial bool IsBackEnabled { get; set; }
+
     [ObservableProperty]
     public partial bool IsDebugWindowEnabled { get; set; } = false;
+
     [ObservableProperty]
     public partial bool IsEntryDetailVisible { get; set; } = false;
+
     public bool IsFeedTreeLoaded { get; private set; }
 
     #endregion
@@ -61,7 +64,8 @@ public partial class MainViewModel : ObservableRecipient
 
     public NodeTree? SelectedTreeViewItem
     {
-        get; set
+        get; 
+        set
         {
             if (field == value)
             {
@@ -81,7 +85,6 @@ public partial class MainViewModel : ObservableRecipient
             ctsForSelectedTreeViewItem?.Cancel();
             ctsForSelectedTreeViewItem?.Dispose();
             ctsForSelectedTreeViewItem = new CancellationTokenSource();
-
             Entries.Clear();
 
             try
@@ -132,7 +135,6 @@ public partial class MainViewModel : ObservableRecipient
                     }
                     else
                     {
-                        // TODO: 
                         Entries.Clear();
                     }
                 }
@@ -166,20 +168,14 @@ public partial class MainViewModel : ObservableRecipient
 
     #region == Entry ListViews ==
 
-    public ObservableCollection<EntryItem> Entries
-    {
-        get; set
-        {
-            if (SetProperty(ref field, value))
-            {
-                EntryArchiveAllCommand.NotifyCanExecuteChanged();
-            }
-        }
-    } = [];
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(EntryArchiveAllCommand))]
+    public partial ObservableCollection<EntryItem> Entries { get; set; } = [];
 
     public FeedEntryItem? SelectedListViewItem
     {
-        get; set
+        get; 
+        set
         {
             if (field == value)
             {
@@ -271,8 +267,10 @@ public partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial bool IsSummaryExists { get; set; }
+
     [ObservableProperty]
     public partial bool IsContentText { get; set; }
+
     [ObservableProperty]
     public partial bool IsContentHtml { get; set; }
 
@@ -287,10 +285,13 @@ public partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial bool IsNoAltLinkExists { get; set; }
+
     [ObservableProperty]
     public partial bool IsImageLinkExists { get; set; }
+
     [ObservableProperty]
     public partial bool IsAudioLinkExists { get; set; }
+
     [ObservableProperty]
     public partial MediaSource? MediaSource { get; set; }
 
@@ -305,31 +306,15 @@ public partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial bool IsNotMediaPlayerVisible { get; set; }
+
     [ObservableProperty]
     public partial bool IsCommentPageLinkExists { get; set; }
 
-    /*
-    private bool _isContentBrowserVisible;
-    public bool IsContentBrowserVisible
-    {
-        get
-        {
-            return _isContentBrowserVisible;
-        }
-        set
-        {
-            if (_isContentBrowserVisible == value)
-                return;
-
-            _isContentBrowserVisible = value;
-            NotifyPropertyChanged(nameof(IsContentBrowserVisible));
-        }
-    }
-    */
-
     [ObservableProperty]
     public partial bool IsToggleInboxAppButtonEnabled { get; set; }
+    
     public string? InboxAppButtonLabel { get => field ?? "Inbox"; set => SetProperty(ref field, value); } = "Inbox".GetLocalized();
+    
     [ObservableProperty]
     public partial string ToggleInboxAppButtonIcon { get; set; } = "M19,15H15A3,3 0 0,1 12,18A3,3 0 0,1 9,15H5V5H19M19,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3Z";
 
@@ -433,15 +418,12 @@ public partial class MainViewModel : ObservableRecipient
     [ObservableProperty]
     public partial bool IsNotShowFeedError { get; set; } = true;
 
-    // Main error
-    private ErrorObject? _errorMain;
-    public ErrorObject? ErrorMain
-    {
-        get => _errorMain;
-        set => SetProperty(ref _errorMain, value);
-    }
+    [ObservableProperty]
+    public partial ErrorObject? ErrorMain { get; set; }
+
     [ObservableProperty]
     public partial string? ErrorMainTitle { get; set; }
+
     [ObservableProperty]
     public partial string? ErrorMainMessage { get; set; }
 
@@ -454,7 +436,7 @@ public partial class MainViewModel : ObservableRecipient
             }
             else if (value == false)
             {
-                _errorMain = null;
+                ErrorMain = null;
             }
 
             SetProperty(ref field, value);
@@ -475,32 +457,8 @@ public partial class MainViewModel : ObservableRecipient
 
     #region == Debug Event Window ==
 
-    private readonly StringBuilder _debugEventLogStringBuilder = new();
-
     [ObservableProperty]
     public partial string? DebugEventLog { get; set; }
-
-    private readonly Queue<string> _debugEvents = new(101);
-
-    public void OnDebugOutput(BaseClient sender, string data)
-    {
-        if (string.IsNullOrEmpty(data))
-        {
-            return;
-        }
-
-        if (!IsDebugWindowEnabled)
-        {
-            return;
-        }
-
-        //var que = App.MainWnd?.CurrentDispatcherQueue;
-        _dispatcherService.TryEnqueue(() =>
-        {
-            _debugEventLogStringBuilder.AppendLine(data);
-            DebugEventLog = _debugEventLogStringBuilder.ToString();
-        });
-    }
 
     #endregion
 
@@ -639,6 +597,7 @@ public partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial double WidthLeftPane { get; set; } = 256;
+
     [ObservableProperty]
     public partial double WidthListViewPane { get; set; } = 300;//256;
 
@@ -648,12 +607,16 @@ public partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial ElementTheme Theme { get; set; } = ElementTheme.Default;
+
     [ObservableProperty]
     public partial SystemBackdropOption Material { get; set; } = SystemBackdropOption.Mica;
+
     [ObservableProperty]
     public partial bool IsAcrylicSupported { get; set; } = false;
+
     [ObservableProperty]
     public partial bool IsBackdropEnabled { get; set; } = false;
+
     [ObservableProperty]
     public partial bool IsMicaSupported { get; set; } = false;
 
@@ -682,51 +645,6 @@ public partial class MainViewModel : ObservableRecipient
         }
     }
 
-    [RelayCommand]
-    private void SwitchTheme(ElementTheme? param)
-    {
-        if (param is null)
-        {
-            return;
-        }
-
-        if (Theme == param)
-        {
-            return;
-        }
-
-        if (App.MainWnd == null)
-        {
-            return;
-        }
-        //var mainWin = App.GetService<MainWindow>();
-
-        Theme = (ElementTheme)param;
-
-        if (App.MainWnd?.Content is FrameworkElement rootElement)
-        {
-            rootElement.RequestedTheme = Theme;
-
-            //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
-            App.MainWnd.SetCapitionButtonColorForWin11();
-        }
-    }
-
-    [RelayCommand]
-    private static void SwitchSystemBackdrop(string? backdrop)
-    {
-        if (backdrop == null)
-        {
-            return;
-        }
-
-        if (Enum.TryParse(backdrop, out SystemBackdropOption cacheBackdrop))
-        {
-            var mainWin = App.GetService<MainWindow>();
-            mainWin.SwitchBackdrop(cacheBackdrop);
-        }
-    }
-
     #endregion
 
     #region == Events ==
@@ -746,6 +664,8 @@ public partial class MainViewModel : ObservableRecipient
     private readonly IDispatcherService _dispatcherService;
 
     #endregion
+
+    private readonly StringBuilder _debugEventLogStringBuilder = new();
 
     private readonly CancellationTokenSource _cts = new();
     private CancellationTokenSource ctsForSelectedTreeViewItem = new();
@@ -1483,14 +1403,12 @@ public partial class MainViewModel : ObservableRecipient
                             }
                             else
                             {
-                                // Add
                                 Entries.Insert(0,ent);
                             }
                         }
                     }
                     else
                     {
-                        // Replace
                         Entries = new ObservableCollection<EntryItem>(res.SelectedEntries);
                     }
 
@@ -1894,9 +1812,78 @@ public partial class MainViewModel : ObservableRecipient
 
     #endregion
 
+
+    public void OnDebugOutput(BaseClient sender, string data)
+    {
+        if (string.IsNullOrEmpty(data))
+        {
+            return;
+        }
+
+        if (!IsDebugWindowEnabled)
+        {
+            return;
+        }
+
+        _dispatcherService.TryEnqueue(() =>
+        {
+            _debugEventLogStringBuilder.AppendLine(data);
+            DebugEventLog = _debugEventLogStringBuilder.ToString();
+        });
+    }
+
     #endregion
 
     #region == Commands ==
+
+    #region == Theme commands ==
+
+    [RelayCommand]
+    private void SwitchTheme(ElementTheme? param)
+    {
+        if (param is null)
+        {
+            return;
+        }
+
+        if (Theme == param)
+        {
+            return;
+        }
+
+        if (App.MainWnd == null)
+        {
+            return;
+        }
+        //var mainWin = App.GetService<MainWindow>();
+
+        Theme = (ElementTheme)param;
+
+        if (App.MainWnd?.Content is FrameworkElement rootElement)
+        {
+            rootElement.RequestedTheme = Theme;
+
+            //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
+            App.MainWnd.SetCapitionButtonColorForWin11();
+        }
+    }
+
+    [RelayCommand]
+    private static void SwitchSystemBackdrop(string? backdrop)
+    {
+        if (backdrop == null)
+        {
+            return;
+        }
+
+        if (Enum.TryParse(backdrop, out SystemBackdropOption cacheBackdrop))
+        {
+            var mainWin = App.GetService<MainWindow>();
+            mainWin.SwitchBackdrop(cacheBackdrop);
+        }
+    }
+
+    #endregion
 
     #region == Treeview commands ==
 
@@ -2579,8 +2566,6 @@ public partial class MainViewModel : ObservableRecipient
         }
 
         IsShowAllEntries = !IsShowAllEntries;
-
-        //
         Entries.Clear();
 
         if (SelectedTreeViewItem is NodeFeed feed)
@@ -2616,8 +2601,6 @@ public partial class MainViewModel : ObservableRecipient
         }
 
         IsShowInboxEntries = !IsShowInboxEntries;
-
-        //
         Entries.Clear();
 
         if (SelectedTreeViewItem is NodeFeed feed)
