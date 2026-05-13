@@ -1,4 +1,5 @@
-﻿using FeedDesk.Models;
+﻿using FeedDesk.Helpers;
+using FeedDesk.Models;
 using FeedDesk.Services.Contracts;
 using Microsoft.Data.Sqlite;
 using System;
@@ -34,155 +35,160 @@ public class DataAccessService : IDataAccessService
         // System.Data.SQLite
         //using (var connection = new SQLiteConnection(connectionStringBuilder.ConnectionString))
         // Microsoft.Data.Sqlite
-        using (var connection = new SqliteConnection(connectionStringBuilder.ConnectionString))
+
+        try
         {
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            if (!RuntimeHelper.IsMSIX)
+            {
+                Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception.");
+            }
+
+            connection.Open();
+
+            using var tableCmd = connection.CreateCommand();
+            tableCmd.Transaction = connection.BeginTransaction();
+
             try
             {
-                connection.Open();
+                tableCmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                tableCmd.ExecuteNonQuery();
 
-                using var tableCmd = connection.CreateCommand();
-                tableCmd.Transaction = connection.BeginTransaction();
-                try
-                {
-                    tableCmd.CommandText = "PRAGMA journal_mode = PERSIST;";
-                    tableCmd.ExecuteNonQuery();
+                tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS feeds (" +
+                    "feed_id TEXT NOT NULL PRIMARY KEY," +
+                    "url TEXT NOT NULL," +
+                    "name TEXT NOT NULL," +
+                    "title TEXT," +
+                    "description TEXT," +
+                    "updated TEXT," +
+                    "html_url TEXT" +
+                    ")";
+                tableCmd.ExecuteNonQuery();
 
-                    tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS feeds (" +
-                        "feed_id TEXT NOT NULL PRIMARY KEY," +
-                        "url TEXT NOT NULL," +
-                        "name TEXT NOT NULL," +
-                        "title TEXT," +
-                        "description TEXT," +
-                        "updated TEXT," +
-                        "html_url TEXT" +
-                        ")";
-                    tableCmd.ExecuteNonQuery();
+                tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS entries (" +
+                    "entry_id TEXT NOT NULL PRIMARY KEY," +
+                    "feed_id TEXT NOT NULL," +
+                    "url TEXT NOT NULL," +
+                    "title TEXT," +
+                    "published TEXT NOT NULL," +
+                    "updated TEXT NOT NULL," +
+                    "author TEXT," +
+                    "category TEXT," +
+                    "summary TEXT," +
+                    "content TEXT," +
+                    "content_type TEXT," +
+                    //"content_baseurl TEXT," +
+                    "source TEXT," +
+                    "source_url TEXT," +
+                    //"image_id TEXT," +
+                    "image_url TEXT," +
+                    "audio_url TEXT," +
+                    "comment_url TEXT," +
+                    "status TEXT," +
+                    "archived TEXT," +
+                    "CONSTRAINT fk_feeds FOREIGN KEY (feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE" +
+                    ")";
+                tableCmd.ExecuteNonQuery();
+                /*
+                tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS images (" +
+                    "image_id TEXT NOT NULL PRIMARY KEY," +
+                    "entry_id TEXT NOT NULL," +
+                    "image_url TEXT," +
+                    //"image_downloaded TEXT," +
+                    "image BLOB," +
+                    "CONSTRAINT fk_entries FOREIGN KEY (entry_id) REFERENCES entries(entry_id) ON DELETE CASCADE" +
+                    ")";
+                tableCmd.ExecuteNonQuery();
+                */
 
-                    tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS entries (" +
-                        "entry_id TEXT NOT NULL PRIMARY KEY," +
-                        "feed_id TEXT NOT NULL," +
-                        "url TEXT NOT NULL," +
-                        "title TEXT," +
-                        "published TEXT NOT NULL," +
-                        "updated TEXT NOT NULL," +
-                        "author TEXT," +
-                        "category TEXT," +
-                        "summary TEXT," +
-                        "content TEXT," +
-                        "content_type TEXT," +
-                        //"content_baseurl TEXT," +
-                        "source TEXT," +
-                        "source_url TEXT," +
-                        //"image_id TEXT," +
-                        "image_url TEXT," +
-                        "audio_url TEXT," +
-                        "comment_url TEXT," +
-                        "status TEXT," +
-                        "archived TEXT," +
-                        "CONSTRAINT fk_feeds FOREIGN KEY (feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE" +
-                        ")";
-                    tableCmd.ExecuteNonQuery();
-                    /*
-                    tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS images (" +
-                        "image_id TEXT NOT NULL PRIMARY KEY," +
-                        "entry_id TEXT NOT NULL," +
-                        "image_url TEXT," +
-                        //"image_downloaded TEXT," +
-                        "image BLOB," +
-                        "CONSTRAINT fk_entries FOREIGN KEY (entry_id) REFERENCES entries(entry_id) ON DELETE CASCADE" +
-                        ")";
-                    tableCmd.ExecuteNonQuery();
-                    */
+                //tableCmd.CommandText = "ALTER TABLE entries ADD COLUMN category TEXT;";
+                //tableCmd.ExecuteNonQuery();
 
-                    //tableCmd.CommandText = "ALTER TABLE entries ADD COLUMN category TEXT;";
-                    //tableCmd.ExecuteNonQuery();
-
-                    //
-                    //tableCmd.CommandText = "drop trigger if exists trigger_delete_old_entries";
-                    //tableCmd.ExecuteNonQuery();
-                    /*
-                    tableCmd.CommandText = "CREATE TRIGGER IF NOT EXISTS trigger_delete_old_entries AFTER INSERT ON entries";
-                    tableCmd.CommandText += " BEGIN";
-                    tableCmd.CommandText += " delete from entries where";
-                    tableCmd.CommandText += " entry_id = (select min(entry_id) from entries)";
-                    tableCmd.CommandText += " and (select count(*) from entries) > 1000;";
-                    tableCmd.CommandText += " END;";
-                    tableCmd.ExecuteNonQuery();
-                    */
-                    /*
-                    tableCmd.CommandText = "CREATE TRIGGER IF NOT EXISTS trigger_delete_old_entries AFTER INSERT ON entries";
-                    tableCmd.CommandText += " WHEN (SELECT COUNT(*) FROM entries) > 1000";
-                    tableCmd.CommandText += " BEGIN";
-                    tableCmd.CommandText += " DELETE FROM entries WHERE entry_id NOT IN (SELECT entry_id FROM entries ORDER BY published DESC LIMIT 1000);";
-                    tableCmd.CommandText += " END;";
-                    tableCmd.ExecuteNonQuery();
-                    */
-                    tableCmd.Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    tableCmd.Transaction.Rollback();
-
-                    res.IsError = true;
-                    res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                    res.Error.ErrCode = "";
-                    res.Error.ErrText = e.Message;
-                    res.Error.ErrDescription = "Exception while executing SQL queries";
-                    res.Error.ErrDatetime = DateTime.Now;
-                    res.Error.ErrPlace = "Transaction.Commit";
-                    res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
-
-                    return res;
-                }
-            }
-            catch (System.Reflection.TargetInvocationException ex)
-            {
-                res.IsError = true;
-                res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                res.Error.ErrCode = "";
-                res.Error.ErrText = ex.Message;
-                res.Error.ErrDescription = "TargetInvocationException while connecting to a SQL database file"; 
-                res.Error.ErrDatetime = DateTime.Now;
-                res.Error.ErrPlace = "connection.Open";
-                res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
-
-                return res;
-            }
-            catch (System.InvalidOperationException ex)
-            {
-                res.IsError = true;
-                res.Error.ErrType = ErrorObject.ErrTypes.DB;
-                res.Error.ErrCode = "";
-                res.Error.ErrText = ex.Message;
-                res.Error.ErrDescription = "InvalidOperationException while connecting to a SQL database file";
-                res.Error.ErrDatetime = DateTime.Now;
-                res.Error.ErrPlace = "connection.Open";
-                res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
-
-                return res;
+                //
+                //tableCmd.CommandText = "drop trigger if exists trigger_delete_old_entries";
+                //tableCmd.ExecuteNonQuery();
+                /*
+                tableCmd.CommandText = "CREATE TRIGGER IF NOT EXISTS trigger_delete_old_entries AFTER INSERT ON entries";
+                tableCmd.CommandText += " BEGIN";
+                tableCmd.CommandText += " delete from entries where";
+                tableCmd.CommandText += " entry_id = (select min(entry_id) from entries)";
+                tableCmd.CommandText += " and (select count(*) from entries) > 1000;";
+                tableCmd.CommandText += " END;";
+                tableCmd.ExecuteNonQuery();
+                */
+                /*
+                tableCmd.CommandText = "CREATE TRIGGER IF NOT EXISTS trigger_delete_old_entries AFTER INSERT ON entries";
+                tableCmd.CommandText += " WHEN (SELECT COUNT(*) FROM entries) > 1000";
+                tableCmd.CommandText += " BEGIN";
+                tableCmd.CommandText += " DELETE FROM entries WHERE entry_id NOT IN (SELECT entry_id FROM entries ORDER BY published DESC LIMIT 1000);";
+                tableCmd.CommandText += " END;";
+                tableCmd.ExecuteNonQuery();
+                */
+                tableCmd.Transaction.Commit();
             }
             catch (Exception e)
             {
+                tableCmd.Transaction.Rollback();
+
                 res.IsError = true;
                 res.Error.ErrType = ErrorObject.ErrTypes.DB;
                 res.Error.ErrCode = "";
-
-                if (e.InnerException != null)
-                {
-                    res.Error.ErrDescription = "InnerException while connecting to a SQL database file";
-                    res.Error.ErrText = e.InnerException.Message;
-                }
-                else
-                {
-                    res.Error.ErrDescription = "Exception while connecting to a SQL database file";
-                    res.Error.ErrText = e.Message;
-                }
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception while executing SQL queries";
                 res.Error.ErrDatetime = DateTime.Now;
-                res.Error.ErrPlace = "connection.Open";
+                res.Error.ErrPlace = "Transaction.Commit";
                 res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
 
                 return res;
             }
+        }
+        catch (System.Reflection.TargetInvocationException ex)
+        {
+            res.IsError = true;
+            res.Error.ErrType = ErrorObject.ErrTypes.DB;
+            res.Error.ErrCode = "";
+            res.Error.ErrText = ex.Message;
+            res.Error.ErrDescription = "TargetInvocationException while connecting to a SQL database file";
+            res.Error.ErrDatetime = DateTime.Now;
+            res.Error.ErrPlace = "connection.Open";
+            res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
+
+            return res;
+        }
+        catch (System.InvalidOperationException ex)
+        {
+            res.IsError = true;
+            res.Error.ErrType = ErrorObject.ErrTypes.DB;
+            res.Error.ErrCode = "";
+            res.Error.ErrText = ex.Message;
+            res.Error.ErrDescription = "InvalidOperationException while connecting to a SQL database file";
+            res.Error.ErrDatetime = DateTime.Now;
+            res.Error.ErrPlace = "connection.Open";
+            res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
+
+            return res;
+        }
+        catch (Exception e)
+        {
+            res.IsError = true;
+            res.Error.ErrType = ErrorObject.ErrTypes.DB;
+            res.Error.ErrCode = "";
+
+            if (e.InnerException != null)
+            {
+                res.Error.ErrDescription = "InnerException while connecting to a SQL database file";
+                res.Error.ErrText = e.InnerException.Message;
+            }
+            else
+            {
+                res.Error.ErrDescription = "Exception while connecting to a SQL database file";
+                res.Error.ErrText = e.Message;
+            }
+            res.Error.ErrDatetime = DateTime.Now;
+            res.Error.ErrPlace = "connection.Open";
+            res.Error.ErrPlaceParent = "DataAccess::InitializeDatabase";
+
+            return res;
         }
 
         return res;

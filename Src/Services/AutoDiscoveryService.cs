@@ -20,7 +20,7 @@ namespace FeedDesk.Services;
 
 #region == Result Classes for Service Discovery ==
 
-public class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string title, Uri? siteUri, string siteTitle)
+public class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string? title, Uri? siteUri, string siteTitle)
 {
     public enum FeedKinds
     {
@@ -31,7 +31,7 @@ public class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string title, Ur
 
     public Uri FeedUri { get; set; } = feedUri;
 
-    public string Title { get; set; } = title;
+    public string Title { get; set; } = title ?? string.Empty;
 
     public Uri? SiteUri { get; set; } = siteUri;
 
@@ -881,7 +881,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                                             }
 
                                             t ??= "";
-                                            FeedLink fl = new(_atomFeedUrl, FeedLink.FeedKinds.Atom, t, addr, siteTitle);
+                                            FeedLink fl = new(_atomFeedUrl, FeedLink.FeedKinds.Atom, WebUtility.HtmlDecode(t), addr, siteTitle);
 
                                             res.Feeds.Add(fl);
 
@@ -911,7 +911,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                                             }
 
                                             t ??= "";
-                                            FeedLink fl = new(_rssFeedUrl, FeedLink.FeedKinds.Rss, t, addr, siteTitle);
+                                            FeedLink fl = new(_rssFeedUrl, FeedLink.FeedKinds.Rss, WebUtility.HtmlDecode(t), addr, siteTitle);
 
                                             res.Feeds.Add(fl);
 
