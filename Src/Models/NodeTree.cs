@@ -308,6 +308,7 @@ public abstract class NodeTree : Node
             if (_isBusyChildrenCount > 0)
             {
                 SubNodeText = $"({_isBusyChildrenCount})";
+                //SubNodeText = _isBusyChildrenCount.ToString();
             }
             else
             {
