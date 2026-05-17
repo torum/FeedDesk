@@ -2758,15 +2758,16 @@ public partial class MainViewModel : ObservableRecipient
                     foreach (var hoge in dupeFeeds)
                     {
                         hoge.Parent?.Children.Remove(hoge);
-
+                        /*
                         if (!string.IsNullOrEmpty(s))
                         {
                             s += Environment.NewLine;
                         }
                         s += "Skipped " + hoge.EndPoint;
+                        */
                     }
 
-                    WarningMainTitle = "One or more feed(s) already exist(s)";
+                    WarningMainTitle = "One or more feed(s) already exist(s). Duplicated feeds are skipped.";
                     WarningMainMessage = s;
 
                     IsMainWarningInfoBarVisible = true;
@@ -2879,8 +2880,8 @@ public partial class MainViewModel : ObservableRecipient
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"OpmlExport: {ex.Message}");
-            (Application.Current as App)?.AppendErrorLog("OpmlExport", ex.Message);
+            Debug.WriteLine($"OpmlExport: {ex}");
+            (Application.Current as App)?.AppendErrorLog("Exception @OpmlExport", $"{ex.Message} {Environment.NewLine}StackTrace: {ex.StackTrace}, Source: {ex.Source}");
         }
     }
 

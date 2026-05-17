@@ -10,12 +10,11 @@ namespace FeedDesk.Services;
 
 public class FileDialogService : IFileDialogService
 {
-    FileOpenPicker? _fileOpenPicker;
-    FileSavePicker? _fileSavePicker;
 
     public async Task<StorageFile?> GetOpenOpmlFileDialog(IntPtr hwnd)
     {
-        _fileOpenPicker ??= new FileOpenPicker();
+        FileOpenPicker? _fileOpenPicker;
+        _fileOpenPicker = new FileOpenPicker();
 
         _fileOpenPicker.SuggestedStartLocation = PickerLocationId.Desktop;
         //_fileOpenPicker.FileTypeFilter.Add("*");
@@ -34,7 +33,8 @@ public class FileDialogService : IFileDialogService
 
     public async Task<StorageFile?> GetSaveOpmlFileDialog(nint hwnd)
     {
-        _fileSavePicker ??= new FileSavePicker();
+        FileSavePicker? _fileSavePicker;
+        _fileSavePicker = new FileSavePicker();
 
         _fileSavePicker.SuggestedStartLocation = PickerLocationId.Desktop;
 

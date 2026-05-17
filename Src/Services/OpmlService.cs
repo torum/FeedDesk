@@ -130,7 +130,7 @@ public class OpmlService : IOpmlService
 
         XmlElement eleHead = xdoc.CreateElement(string.Empty, "head", string.Empty);
         XmlElement eleTitle = xdoc.CreateElement(string.Empty, "title", string.Empty);
-        eleTitle.InnerText = "Exported from XmlClients at " + DateTime.Now.ToString();
+        eleTitle.InnerText = "Exported from FeedDesk at " + DateTime.Now.ToString();
         eleHead.AppendChild(eleTitle);
         eleRoot.AppendChild(eleHead);
 
