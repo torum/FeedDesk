@@ -36,7 +36,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         //Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
 
-        Client.Timeout = TimeSpan.FromSeconds(15); // 15 sec timeout here, but also 16 sec cancel timeout.
+        Client.Timeout = TimeSpan.FromSeconds(15); // 15 sec timeout here
 
         //Client.DefaultRequestVersion = new Version(2, 0);
     }
@@ -60,14 +60,17 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             return res;
         }
 
-        var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 15 sec http timeout.
-        var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
+        //var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 15 sec http timeout.
+        //var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
         try
         {
             await Task.Delay(10, CancellationToken.None);
             //Debug.WriteLine("GetAsync @GetEntries in FeedClientService ");
-            var HTTPResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false);
-            
+            //var HTTPResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false)
+            var HTTPResponseMessage = await Client.GetAsync(entriesUrl, token).ConfigureAwait(false);
+
+            token.ThrowIfCancellationRequested();
+
             if (HTTPResponseMessage.IsSuccessStatusCode)
             {
                 /*
@@ -672,7 +675,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             HttpReqException(res.Error, e.Message, "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
-        catch (TaskCanceledException e) // when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
+        catch (TaskCanceledException e) when (token.IsCancellationRequested)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
         {
             //throw new TimeoutException("HTTP request timed out. ");
 
@@ -683,7 +686,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
-            HttpReqException(res.Error, e.Message + " (Timeout 16 sec)", "Client.GetAsync", "FeedHttpClient:GetEntries");
+            HttpReqException(res.Error, e.Message + " (TaskCanceledException IsCancellationRequested)", "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
         catch (Exception e) when (e.InnerException is TimeoutException)
@@ -716,7 +719,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         }
         finally
         {
-            timoutCts.Dispose();
+            //timoutCts.Dispose();
         }
 
         return res;
