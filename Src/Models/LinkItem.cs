@@ -72,7 +72,7 @@ public abstract class LinkItem : ObservableObject
 
 }
 
-public partial class FeedLinkItem : LinkItem
+internal sealed partial class FeedLinkItem : LinkItem
 {
     public FeedLink FeedLinkData { get; set; }
 
@@ -95,7 +95,7 @@ public partial class FeedLinkItem : LinkItem
     }
 }
 
-public partial class ServiceDocumentLinkItem : LinkItem
+internal sealed partial class ServiceDocumentLinkItem : LinkItem
 {
     // TODO: Not really used?
     public bool IsSupported { get; set; }

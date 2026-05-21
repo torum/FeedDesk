@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FeedDesk.Services;
 
-public class DispatcherService : IDispatcherService
+internal sealed class DispatcherService : IDispatcherService
 {
     private readonly Microsoft.UI.Dispatching.DispatcherQueue _queue;
 

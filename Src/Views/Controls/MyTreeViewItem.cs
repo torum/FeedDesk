@@ -6,7 +6,7 @@ using DataPackageOperation = Windows.ApplicationModel.DataTransfer.DataPackageOp
 
 namespace FeedDesk.Views.Controls;
 
-internal partial class MyTreeViewItem : TreeViewItem
+internal sealed partial class MyTreeViewItem : TreeViewItem
 {
     protected override void OnDragEnter(DragEventArgs e)
     {

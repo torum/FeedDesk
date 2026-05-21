@@ -13,7 +13,7 @@ using System.Xml;
 
 namespace FeedDesk.Services;
 
-public partial class FeedClientService : BaseClient, IFeedClientService
+internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 {
     public BaseClient BaseClient => this;
 

@@ -85,7 +85,7 @@ public abstract class EntryItem : Node
 
     public ContentTypes ContentType { get; set; }
 
-    protected string _content = "";
+    private protected string _content = "";
     public string Content
     {
         get => _content;
@@ -554,7 +554,7 @@ public partial class FeedEntryItem : EntryItem
 
     }
 
-    public ReadStatus StatusTextToType(string status)
+    public static ReadStatus StatusTextToType(string status)
     {
         if (status == ReadStatus.rsNew.ToString())
         {
@@ -825,7 +825,7 @@ public partial class WPEntry : EntryFull
 }
 
 // StringWriter With Encoding.
-public partial class StringWriterWithEncoding : StringWriter
+internal sealed partial class StringWriterWithEncoding : StringWriter
 {
     public StringWriterWithEncoding(StringBuilder sb, Encoding encoding)
         : base(sb)

@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml.Input;
 
 namespace FeedDesk.Views;
 
-public sealed partial class FeedAddPage : Page
+internal sealed partial class FeedAddPage : Page
 {
     public FeedAddViewModel ViewModel
     {

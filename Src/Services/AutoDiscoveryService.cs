@@ -20,7 +20,7 @@ namespace FeedDesk.Services;
 
 #region == Result Classes for Service Discovery ==
 
-public class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string? title, Uri? siteUri, string siteTitle)
+internal sealed class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string? title, Uri? siteUri, string siteTitle)
 {
     public enum FeedKinds
     {
@@ -138,7 +138,7 @@ public class ServiceResultAuthRequired(Uri addr) : ServiceResultBase
 }
 
 // HTML Result Class that Holds Feeds and Service Links embedded in HTML. (BasedOn ServiceResultBase)
-public class ServiceResultHtmlPage : ServiceResultBase
+internal sealed class ServiceResultHtmlPage : ServiceResultBase
 {
     // eg, err while getting rsd document.
     public bool HasError;
@@ -180,7 +180,7 @@ public class ServiceResultHtmlPage : ServiceResultBase
 }
 
 // Feed Result Class That Holds Feed link info. (BasedOn ServiceResultBase)
-public class ServiceResultFeed : ServiceResultBase
+internal sealed class ServiceResultFeed : ServiceResultBase
 {
     public FeedLink? FeedlinkInfo;
 

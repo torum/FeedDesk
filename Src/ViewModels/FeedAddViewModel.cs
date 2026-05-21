@@ -13,7 +13,7 @@ using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
 
-public partial class FeedAddViewModel : ObservableRecipient
+internal sealed partial class FeedAddViewModel : ObservableRecipient
 {
     #region == Properties ==
 

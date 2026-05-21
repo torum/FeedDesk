@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace FeedDesk.Views;
 
-public sealed partial class SettingsPage : Page
+internal sealed partial class SettingsPage : Page
 {
     public MainViewModel ViewModel
     {

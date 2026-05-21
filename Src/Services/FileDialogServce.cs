@@ -8,7 +8,7 @@ using WinRT.Interop;
 
 namespace FeedDesk.Services;
 
-public class FileDialogService : IFileDialogService
+internal sealed class FileDialogService : IFileDialogService
 {
 
     public async Task<StorageFile?> GetOpenOpmlFileDialog(IntPtr hwnd)

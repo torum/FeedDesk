@@ -12,7 +12,7 @@ using Windows.ApplicationModel.DataTransfer;
 
 namespace FeedDesk.Views;
 
-public sealed partial class MainPage : Page
+internal sealed partial class MainPage : Page
 {
     private WaitDialog? _dialog;
 

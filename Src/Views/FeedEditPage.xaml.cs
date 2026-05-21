@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml;
 
 namespace FeedDesk.Views;
 
-public sealed partial class FeedEditPage : Page
+internal sealed partial class FeedEditPage : Page
 {
     public MainViewModel ViewModel
     {

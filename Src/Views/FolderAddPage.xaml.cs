@@ -6,7 +6,7 @@ using Windows.System;
 
 namespace FeedDesk.Views;
 
-public sealed partial class FolderAddPage : Page
+internal sealed partial class FolderAddPage : Page
 {
     public MainViewModel ViewModel
     {

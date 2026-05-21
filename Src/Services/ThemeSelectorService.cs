@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml;
 
 namespace FeedDesk.Services;
 
-public class ThemeSelectorService : IThemeSelectorService
+internal sealed class ThemeSelectorService : IThemeSelectorService
 {
     public ThemeSelectorService()
     {

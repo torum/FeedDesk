@@ -11,7 +11,7 @@ using static FeedDesk.Models.FeedEntryItem;
 
 namespace FeedDesk.Services;
 
-public class DataAccessService : IDataAccessService
+internal sealed class DataAccessService : IDataAccessService
 {
     private readonly SqliteConnectionStringBuilder connectionStringBuilder = [];
 
@@ -41,7 +41,7 @@ public class DataAccessService : IDataAccessService
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
             if (!RuntimeHelper.IsMSIX)
             {
-                Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception.");
+                Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception. (If you turn off \"my code only\" in debug option)");
             }
 
             connection.Open();
@@ -1062,7 +1062,7 @@ public class DataAccessService : IDataAccessService
                 var status = Convert.ToString(reader["entryStatus"]);
                 if (!string.IsNullOrEmpty(status))
                 {
-                    entry.Status = entry.StatusTextToType(status);
+                    entry.Status = StatusTextToType(status);
                 }
 
                 entry.Author = Convert.ToString(reader["entryAuthor"]) ?? "";
@@ -1334,7 +1334,7 @@ public class DataAccessService : IDataAccessService
                 var status = Convert.ToString(reader["entryStatus"]);
                 if (!string.IsNullOrEmpty(status))
                 {
-                    entry.Status = entry.StatusTextToType(status);
+                    entry.Status = StatusTextToType(status);
                 }
 
                 entry.Source = Convert.ToString(reader["entrySource"]) ?? "";

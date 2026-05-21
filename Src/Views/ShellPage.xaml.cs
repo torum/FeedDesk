@@ -8,7 +8,7 @@ using Windows.System;
 
 namespace FeedDesk.Views;
 
-public sealed partial class ShellPage : Page
+internal sealed partial class ShellPage : Page
 {
     public MainViewModel ViewModel { get; }
 

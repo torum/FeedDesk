@@ -290,7 +290,7 @@ public abstract class NodeTree : Node
         }
     }
 
-    protected int _isBusyChildrenCount = 0;
+    private protected int _isBusyChildrenCount = 0;
     public int IsBusyChildrenCount
     {
         get => _isBusyChildrenCount;

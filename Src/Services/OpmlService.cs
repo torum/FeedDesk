@@ -5,7 +5,7 @@ using System.Xml;
 
 namespace FeedDesk.Services;
 
-public class OpmlService : IOpmlService
+internal sealed class OpmlService : IOpmlService
 {
     // Import OPML
     public NodeFolder LoadOpml(XmlDocument xdoc)

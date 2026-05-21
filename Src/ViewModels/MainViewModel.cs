@@ -28,7 +28,7 @@ using WinRT.Interop;
 
 namespace FeedDesk.ViewModels;
 
-public partial class MainViewModel : ObservableRecipient
+internal sealed partial class MainViewModel : ObservableRecipient
 {
     #region == Flags ==
 
@@ -778,12 +778,13 @@ public partial class MainViewModel : ObservableRecipient
     {
         try
         {
+            _cts?.Cancel();
+
             _feedClientService.BaseClient.DebugOutput -= OnDebugOutput;
             _feedClientService?.BaseClient?.Dispose();
 
-            _cts?.Cancel();
-
-            _cts?.Dispose();
+            // let's not.
+            //_cts?.Dispose();
         }
         catch (Exception ex)
         {
@@ -845,6 +846,11 @@ public partial class MainViewModel : ObservableRecipient
         await Task.Delay(30);
 
         //Debug.WriteLine("Getting Entries from: " + feed.Name);
+
+        if (_cts.Token.IsCancellationRequested)
+        {
+            return res;
+        }
 
         // Get Entries from web.
         var resEntries = await _feedClientService.GetEntries(feed.EndPoint, feed.Id, _cts.Token);
@@ -978,8 +984,18 @@ public partial class MainViewModel : ObservableRecipient
         //});
         await Task.Delay(100);
 
+        if (_cts.Token.IsCancellationRequested)
+        {
+            return res;
+        }
+
         //var resInsert = await Task.FromResult(InsertEntriesLock(list));
         var resInsert = await Task.Run(() => _dataAccessService.InsertEntries(list, feed.Id, feed.Name, feed.Title, feed.Description, feed.Updated, feed.HtmlUri!), _cts.Token);
+
+        if (_cts.Token.IsCancellationRequested)
+        {
+            return res;
+        }
 
         // Result is DB Error
         if (!resInsert.IsError)
@@ -1124,12 +1140,6 @@ public partial class MainViewModel : ObservableRecipient
                             //_cts.Token.ThrowIfCancellationRequested();
                             if (_cts.Token.IsCancellationRequested)
                             {
-                                await _dispatcherService.EnqueueAsync(() =>
-                                {
-                                    feed.IsBusy = false;
-
-                                    EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                                });
                                 return;
                             }
 
@@ -1142,12 +1152,7 @@ public partial class MainViewModel : ObservableRecipient
                                 //_cts.Token.ThrowIfCancellationRequested();
                                 if (_cts.Token.IsCancellationRequested)
                                 {
-                                    await _dispatcherService.EnqueueAsync(() =>
-                                    {
-                                        feed.IsBusy = false;
 
-                                        EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                                    });
                                     return;
                                 }
 
@@ -1826,7 +1831,6 @@ public partial class MainViewModel : ObservableRecipient
     }
 
     #endregion
-
 
     public void OnDebugOutput(BaseClient sender, string data)
     {
