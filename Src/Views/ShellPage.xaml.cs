@@ -1,10 +1,12 @@
 ﻿using FeedDesk.ViewModels;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
+using WinRT;
 
 namespace FeedDesk.Views;
 
@@ -47,6 +49,9 @@ internal sealed partial class ShellPage : Page
         App.MainWnd.SetCapitionButtonColorForWin11();
     }
 
+    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
+    // https://github.com/dotnet/runtime/issues/121590
+    [DynamicWindowsRuntimeCast(typeof(SolidColorBrush))]
     private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
         var resource = args.WindowActivationState == WindowActivationState.Deactivated ? "WindowCaptionForegroundDisabled" : "WindowCaptionForeground";

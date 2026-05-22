@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
+using WinRT;
 
 namespace FeedDesk.Views;
 
@@ -49,6 +50,7 @@ internal sealed partial class MainPage : Page
         col2.Width = new GridLength(1.0, GridUnitType.Star);
     }
 
+    [DynamicWindowsRuntimeCast(typeof(Style))]
     public async void OnShowWaitDialog(bool isShow)
     {
         if (isShow)
@@ -99,6 +101,7 @@ internal sealed partial class MainPage : Page
         DebugTextBox.Text = string.Empty;    
     }
 
+    [DynamicWindowsRuntimeCast(typeof(TreeViewItem))]
     private void TreeViewItem_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (sender is TreeViewItem tvi)
@@ -125,6 +128,7 @@ internal sealed partial class MainPage : Page
     }
     */
 
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     private void ListViewEntryItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
         // right click select.
@@ -242,6 +246,7 @@ internal sealed partial class MainPage : Page
         ViewModel.SaveServiceXml();
     }
 
+    [DynamicWindowsRuntimeCast(typeof(TreeViewItem))]
     private void TreeViewItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
         if (sender is TreeViewItem item)
@@ -269,6 +274,8 @@ internal sealed partial class MainPage : Page
         DetailsPaneScrollViewer.ChangeView(0, 0, 1);
     }
 
+    [DynamicWindowsRuntimeCast(typeof(ListView))]
+    [DynamicWindowsRuntimeCast(typeof(ListViewItem))]
     private async void ListViewEntryItem_KeyUp(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
         if (sender is not ListView listView)
@@ -300,6 +307,8 @@ internal sealed partial class MainPage : Page
         }
     }
 
+    [DynamicWindowsRuntimeCast(typeof(ListView))]
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     private async void ListViewEntryItem_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         //ListView listView = (ListView)sender;

@@ -9,6 +9,7 @@ using FeedDesk.Services.Contracts;
 using FeedDesk.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,6 +25,7 @@ using System.Xml;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Media.Core;
+using WinRT;
 using WinRT.Interop;
 
 namespace FeedDesk.ViewModels;
@@ -1857,6 +1859,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
     #region == Theme commands ==
 
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     [RelayCommand]
     private void SwitchTheme(ElementTheme? param)
     {

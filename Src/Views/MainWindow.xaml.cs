@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
@@ -29,6 +30,7 @@ public partial class MainWindow : Window
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
 
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     public MainWindow() 
     {
         InitializeComponent();
@@ -64,6 +66,7 @@ public partial class MainWindow : Window
         }
     }
 
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     public void SetCapitionButtonColorForWin11()
     {
         var currentTheme = ((FrameworkElement)Content).ActualTheme;
@@ -92,6 +95,10 @@ public partial class MainWindow : Window
         }
     }
 
+    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
+    // https://github.com/dotnet/runtime/issues/121590
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     private void LoadSettings()
     {
         var filePath = App.AppConfigFilePath;
@@ -487,6 +494,9 @@ public partial class MainWindow : Window
         }
     }
 
+    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
+    // https://github.com/dotnet/runtime/issues/121590
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     private void Window_SizeChanged(object sender, WindowSizeChangedEventArgs args)
     {
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
@@ -527,6 +537,10 @@ public partial class MainWindow : Window
         (Application.Current as App)?.SaveErrorLog();
     }
 
+    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
+    // https://github.com/dotnet/runtime/issues/121590
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     private void SaveSettings()
     {
         var vm = App.GetService<MainViewModel>();

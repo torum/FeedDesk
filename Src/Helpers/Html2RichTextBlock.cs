@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net;
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
@@ -11,6 +8,11 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net;
+using WinRT;
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
 // Code originaly adapted from https://blogs.msdn.microsoft.com/tess/2013/05/13/displaying-html-content-in-a-richtextblock/
@@ -77,6 +79,9 @@ public class HtmlProperties : DependencyObject
 
     private static RichTextBlock? _currentObject;
 
+    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
+    // https://github.com/dotnet/runtime/issues/121590
+    [DynamicWindowsRuntimeCast(typeof(RichTextBlock))]
     private static void HtmlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var richText = d as RichTextBlock;
@@ -607,6 +612,8 @@ public class HtmlProperties : DependencyObject
         //OnImageTapped?.Invoke(sender, tappedRoutedEventArgs);
     }
 
+
+    [DynamicWindowsRuntimeCast(typeof(Image))]
     private static void ImageFailed(object sender, ExceptionRoutedEventArgs e)
     {
         Debug.WriteLine($"Image failed to load: {e.ErrorMessage}");
@@ -616,6 +623,8 @@ public class HtmlProperties : DependencyObject
         }
     }
 
+    [DynamicWindowsRuntimeCast(typeof(Image))]
+    [DynamicWindowsRuntimeCast(typeof(BitmapImage))]
     private static void ImageOpened(object sender, RoutedEventArgs e)
     {
         try
