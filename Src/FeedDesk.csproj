@@ -15,18 +15,22 @@
 	  <SelfContained>true</SelfContained>
 
 	  <IncludeSymbols>True</IncludeSymbols>
+	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
 	  <WindowsPackageType>MSIX</WindowsPackageType>
 
-	  <VersionPrefix>1.1.4.0</VersionPrefix>
-	  <FileVersion>1.1.4.0</FileVersion>
-	  <AssemblyVersion>1.1.4.0</AssemblyVersion>
+	  <VersionPrefix>1.1.5.0</VersionPrefix>
+	  <FileVersion>1.1.5.0</FileVersion>
+	  <AssemblyVersion>1.1.5.0</AssemblyVersion>
 
 	  <!-- Workaround for MS bug: https://github.com/microsoft/WindowsAppSDK/issues/5817 -->
 	  <AppxFilterOutUnusedLanguagesResourceFileMaps>false</AppxFilterOutUnusedLanguagesResourceFileMaps>
 
 	  <AppxPackageIncludePrivateSymbols>true</AppxPackageIncludePrivateSymbols>
-
+	  <NativeDebugSymbols>true</NativeDebugSymbols>
+	  <StripSymbols>false</StripSymbols>
+	  <DebugType>full</DebugType>
+	  
 	  <IsAotCompatible>true</IsAotCompatible>
 	  <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
 	  <TrimmerSingleWarn>false</TrimmerSingleWarn>
@@ -77,6 +81,10 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.0-prerelease.251115.2" />
+	  <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="1.7.260518100">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
     <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.1.3" />
     <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.1.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
