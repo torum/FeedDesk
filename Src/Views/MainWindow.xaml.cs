@@ -6,7 +6,6 @@ using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
@@ -31,12 +30,13 @@ public partial class MainWindow : Window
     private ElementTheme theme = ElementTheme.Default;
 
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
-    public MainWindow() 
+    public MainWindow()
     {
         InitializeComponent();
 
         this.Title = "AppDisplayName".GetLocalized();
-        this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "FeedDesk3.ico"));
+        this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Icons\\FeedDesk3.ico"));
+
 
         this.ExtendsContentIntoTitleBar = true;
 
@@ -122,7 +122,7 @@ public partial class MainWindow : Window
             vm.IsBackdropEnabled = true;
         }
 
-        if (!File.Exists(filePath)) 
+        if (!File.Exists(filePath))
         {
             // Sets default.
 

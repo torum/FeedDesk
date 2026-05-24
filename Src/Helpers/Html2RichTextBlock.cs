@@ -1,6 +1,5 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.UI;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
@@ -36,7 +35,7 @@ public class HtmlProperties : DependencyObject
     public static void SetHtml(DependencyObject obj, string value) => obj.SetValue(HtmlProperty, value);
 
     public static string GetHtml(DependencyObject obj) => (string)obj.GetValue(HtmlProperty);
-    
+
     /*
     public static Func<Span>? H1SpanFactory
     {

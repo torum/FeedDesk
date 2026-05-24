@@ -1,5 +1,5 @@
-﻿using System.Xml;
-using FeedDesk.Models;
+﻿using FeedDesk.Models;
+using System.Xml;
 
 namespace FeedDesk.Services.Contracts;
 

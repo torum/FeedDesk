@@ -8,7 +8,7 @@ namespace FeedDesk.Services.Contracts;
 
 public interface IFeedClientService
 {
-    BaseClient BaseClient {get;}
+    BaseClient BaseClient { get; }
 
     Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token);
 }

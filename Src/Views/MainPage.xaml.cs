@@ -6,9 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using Windows.ApplicationModel.DataTransfer;
 using WinRT;
 
 namespace FeedDesk.Views;
@@ -70,7 +68,7 @@ internal sealed partial class MainPage : Page
                 _dialog.Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style;
                 _dialog.Title = "WaitDialog_Title".GetLocalized();
             }
-            
+
             await _dialog.ShowAsync();
         }
         else
@@ -98,7 +96,7 @@ internal sealed partial class MainPage : Page
 
     public void OnDebugClear()
     {
-        DebugTextBox.Text = string.Empty;    
+        DebugTextBox.Text = string.Empty;
     }
 
     [DynamicWindowsRuntimeCast(typeof(TreeViewItem))]

@@ -21,7 +21,7 @@ public abstract class Node : ObservableObject
         }
     } = "";
 
-    protected Node(){}
+    protected Node() { }
 
     protected Node(string name)
     {

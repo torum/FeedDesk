@@ -1,11 +1,7 @@
 ﻿using FeedDesk.ViewModels;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Windows.System;
 using WinRT;
 
 namespace FeedDesk.Views;
@@ -15,7 +11,7 @@ internal sealed partial class ShellPage : Page
     public MainViewModel ViewModel { get; }
 
     public Frame NavFrame => NavigationFrame;
-    
+
     public ShellPage()
     {
         ViewModel = App.GetService<MainViewModel>(); ;

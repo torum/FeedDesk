@@ -21,7 +21,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
     {
         //Client.BaseAddress = ;
         Client.DefaultRequestHeaders.Clear();
-        
+
         //Client.DefaultRequestHeaders.ConnectionClose = false; // false is the default behavior.
         //Client.DefaultRequestHeaders.ConnectionClose = true; 
 
@@ -306,7 +306,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                                     res.Updated = date.UtcDateTime;
                                 }
-                                catch 
+                                catch
                                 {
                                     Debug.WriteLine(">> Exception @RSS 1.0 Parse rss:channel/dc:date");
                                 }
@@ -814,7 +814,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             foreach (XmlNode auth in entryAuthors)
             {
                 if (string.IsNullOrEmpty(entryAuthor))
-                    {
+                {
                     entryAuthor = auth.InnerText;
                 }
                 else
@@ -833,7 +833,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 foreach (XmlNode auth in entryDcAuthors)
                 {
                     if (string.IsNullOrEmpty(entryDcAuthor))
-                        {
+                    {
                         entryDcAuthor = auth.InnerText;
                     }
                     else
@@ -853,7 +853,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 foreach (XmlNode auth in entryItunesAuthors)
                 {
                     if (string.IsNullOrEmpty(entryItunesAuthor))
-                        {
+                    {
                         entryItunesAuthor = auth.InnerText;
                     }
                     else
@@ -891,7 +891,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         {
                             entItem.SourceUri = new Uri(urlSource);
                         }
-                        catch 
+                        catch
                         {
                             Debug.WriteLine(">> Exception entItem.SourceUri = new Uri(urlSource);");
                         }
@@ -909,7 +909,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             foreach (XmlNode cat in entryCategories)
             {
                 if (string.IsNullOrEmpty(entryCategory))
-                    {
+                {
                     entryCategory = cat.InnerText;
                 }
                 else
@@ -1019,7 +1019,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             {
                                 entItem.ImageUri = new Uri(url);
                             }
-                            catch 
+                            catch
                             {
                                 Debug.WriteLine(">> Exception entItem.ImageUri = new Uri(url);");
                             }
@@ -1172,7 +1172,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             foreach (XmlNode auth in entryAuthors)
             {
                 if (string.IsNullOrEmpty(entryAuthor))
-                    {
+                {
                     entryAuthor = auth.InnerText;
                 }
                 else
@@ -1195,7 +1195,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             foreach (XmlNode cat in entryCategories)
             {
                 if (string.IsNullOrEmpty(entryCategory))
-                    {
+                {
                     entryCategory = cat.InnerText;
                 }
                 else
@@ -1493,7 +1493,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 if (authName != null)
                 {
                     if (string.IsNullOrEmpty(entryAuthor))
-                        {
+                    {
                         entryAuthor = authName.InnerText;
                     }
                     else
@@ -1995,7 +1995,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             {
                 if (cont.Attributes["type"] != null)
                 {
-                    var contype = cont.Attributes["type"]!.Value; 
+                    var contype = cont.Attributes["type"]!.Value;
                     if (!string.IsNullOrEmpty(contype))
                     {
                         //entry.ContentTypeString = contype;

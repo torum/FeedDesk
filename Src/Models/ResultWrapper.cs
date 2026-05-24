@@ -15,19 +15,19 @@ public class ErrorObject
     public ErrTypes ErrType { get; set; }
 
     // HTTP error code?
-    public string ErrCode { get; set; } 
+    public string ErrCode { get; set; }
 
     // eg Error title, or type of Exception, .
     public string ErrDescription { get; set; }
 
     // Raw exception error messages, API error text translated via dictionary.
-    public string ErrText { get; set;}
+    public string ErrText { get; set; }
 
     // eg method name, or PATH info for REST
     public string ErrPlace { get; set; }
 
     // class name or site address 
-    public string ErrPlaceParent { get; set; }  
+    public string ErrPlaceParent { get; set; }
 
     //
     public DateTime ErrDatetime { get; set; }
@@ -51,17 +51,17 @@ public abstract class ResultWrapper
     public bool IsError = false;
 }
 
-public class SqliteDataAccessResultWrapper: ResultWrapper
+public class SqliteDataAccessResultWrapper : ResultWrapper
 {
     public int AffectedCount = 0;
 }
 
-public class SqliteDataAccessInsertResultWrapper: SqliteDataAccessResultWrapper
+public class SqliteDataAccessInsertResultWrapper : SqliteDataAccessResultWrapper
 {
     public List<EntryItem> InsertedEntries = [];
 }
 
-public class SqliteDataAccessSelectResultWrapper: SqliteDataAccessResultWrapper
+public class SqliteDataAccessSelectResultWrapper : SqliteDataAccessResultWrapper
 {
     public int UnreadCount = 0;
 
@@ -109,7 +109,7 @@ public class HttpClientEntryItemCollectionResultWrapper : ResultWrapper
     {
         get; set;
     }
-    
+
     // category (s)
 
     public List<EntryItem> Entries = [];

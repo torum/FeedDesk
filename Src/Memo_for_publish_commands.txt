@@ -30,12 +30,12 @@ FeedDesk_1.1.1.0_arm64.msixupload
 
 (B) Unpackaged single self-contained exe file.
 ----
-dotnet publish -c Release -r win-x64 /p:PlatformTarget=x64 /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishAot=false /p:PublishSingleFile=true /p:WindowsPackageType=None /p:AppxPackage=false /p:EnableMsixTooling=true /p:WindowsAppSDKSelfContained=true --self-contained true
+dotnet publish -c Release -r win-x64 /p:PlatformTarget=x64 /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishAot=false /p:WindowsPackageType=None /p:AppxPackage=false /p:EnableMsixTooling=true /p:WindowsAppSDKSelfContained=true /p:PublishSingleFile=true /p:GenerateAppxPackageOnBuild=false --self-contained true
 ----
 
 (C) Unpackaged Aot compiled.
 ----
-dotnet publish -c Release -r win-x64 /p:PublishAot=true /p:WindowsPackageType=None /p:WindowsAppSDKSelfContained=true /p:AppxPackage=false /p:EnableMsixTooling=false --self-contained true
+dotnet publish -c Release -r win-x64 /p:PlatformTarget=x64 /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:PublishAot=true /p:WindowsPackageType=None /p:AppxPackage=false /p:EnableMsixTooling=true /p:WindowsAppSDKSelfContained=true /p:PublishSingleFile=true /p:GenerateAppxPackageOnBuild=false --self-contained true
 Or simply
 dotnet publish -c Release -r win-x64 /p:PublishAot=true --self-contained true
 ----

@@ -14,7 +14,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
-using Windows.Media.Protection.PlayReady;
 
 namespace FeedDesk.Services;
 
@@ -143,7 +142,7 @@ internal sealed class ServiceResultHtmlPage : ServiceResultBase
     // eg, err while getting rsd document.
     public bool HasError;
     public string ErrTitle { get; set; } = "";
-    public string ErrDescription {get; set; } = "";
+    public string ErrDescription { get; set; } = "";
 
     public ObservableCollection<FeedLink> Feeds
     {
@@ -968,7 +967,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
             //var parser = new XmlParser();
             //var document = await parser.ParseDocumentAsync(source);
             var document = new System.Xml.XmlDocument();
-            
+
             document.Load(source);
 
             var isOK = false;

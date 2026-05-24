@@ -9,7 +9,6 @@ using FeedDesk.Services.Contracts;
 using FeedDesk.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -35,7 +34,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
     #region == Flags ==
 
     [ObservableProperty]
-    public partial bool IsTreeWorking { get; set;}
+    public partial bool IsTreeWorking { get; set; }
 
     [ObservableProperty]
     public partial bool IsBackEnabled { get; set; }
@@ -66,7 +65,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
     public NodeTree? SelectedTreeViewItem
     {
-        get; 
+        get;
         set
         {
             if (field == value)
@@ -176,7 +175,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
     public FeedEntryItem? SelectedListViewItem
     {
-        get; 
+        get;
         set
         {
             if (field == value)
@@ -186,7 +185,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
             field = value;
             OnPropertyChanged();
-            
+
             if (field == null)
             {
                 IsEntryDetailVisible = false;
@@ -314,9 +313,9 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
     [ObservableProperty]
     public partial bool IsToggleInboxAppButtonEnabled { get; set; }
-    
+
     public string? InboxAppButtonLabel { get => field ?? "Inbox"; set => SetProperty(ref field, value); } = "Inbox".GetLocalized();
-    
+
     [ObservableProperty]
     public partial string ToggleInboxAppButtonIcon { get; set; } = "M19,15H15A3,3 0 0,1 12,18A3,3 0 0,1 9,15H5V5H19M19,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3Z";
 
@@ -360,7 +359,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
     // NEW. For ComboBox.
     public static ObservableCollection<Models.EntryArchivingStatus> EntryArchiveStatusList { get; } = [
-        new Models.EntryArchivingStatus(EntryArchivingStatusKeys.Inbox, "Inbox"), 
+        new Models.EntryArchivingStatus(EntryArchivingStatusKeys.Inbox, "Inbox"),
         new Models.EntryArchivingStatus(EntryArchivingStatusKeys.All, "All") ];
     // TODO: Archived,Read,Unread
 
@@ -411,11 +410,14 @@ internal sealed partial class MainViewModel : ObservableRecipient
     [ObservableProperty]
     public partial ErrorObject? ErrorObj { get; set; }
 
-    public bool IsShowFeedError { get; set
+    public bool IsShowFeedError
+    {
+        get; set
         {
             SetProperty(ref field, value);
             IsNotShowFeedError = !value;
-        } } = false;
+        }
+    } = false;
 
     [ObservableProperty]
     public partial bool IsNotShowFeedError { get; set; } = true;
@@ -429,7 +431,9 @@ internal sealed partial class MainViewModel : ObservableRecipient
     [ObservableProperty]
     public partial string? ErrorMainMessage { get; set; }
 
-    public bool IsMainErrorInfoBarVisible { get; set
+    public bool IsMainErrorInfoBarVisible
+    {
+        get; set
         {
             if (value && (ErrorMain != null))
             {
@@ -442,7 +446,8 @@ internal sealed partial class MainViewModel : ObservableRecipient
             }
 
             SetProperty(ref field, value);
-        } } = false;
+        }
+    } = false;
 
     #endregion
 
@@ -1276,7 +1281,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
                     {
                         return;
                     }
-                    await dispatcher.EnqueueAsync( () =>
+                    await dispatcher.EnqueueAsync(() =>
                     {
                         // set's error
                         feed.ErrorDatabase = res.Error;
@@ -1315,7 +1320,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
                     {
                         return;
                     }
-                    await dispatcher.EnqueueAsync( () =>
+                    await dispatcher.EnqueueAsync(() =>
                     {
                         folder.IsBusy = false;
                         EntryArchiveAllCommand.NotifyCanExecuteChanged();
@@ -1344,7 +1349,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
                     {
                         return;
                     }
-                    await dispatcher.EnqueueAsync( () =>
+                    await dispatcher.EnqueueAsync(() =>
                     {
                         // show error
                         ErrorObj = res.Error;
@@ -1382,7 +1387,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
             {
                 return;
             }
-            await dispatcher.EnqueueAsync( () =>
+            await dispatcher.EnqueueAsync(() =>
             {
                 // Update the count
                 nt.EntryNewCount = res.UnreadCount;
@@ -1391,7 +1396,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
                 if (nt == SelectedTreeViewItem)
                 {
                     // TODO:inbox only no baai....
-                    
+
                     if (Entries.Count > 0)
                     {
                         //
@@ -1407,7 +1412,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
                             }
                             else
                             {
-                                Entries.Insert(0,ent);
+                                Entries.Insert(0, ent);
                             }
                         }
                     }
@@ -1911,7 +1916,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
     [RelayCommand]
     private static void FeedAdd()
-    {    
+    {
         var shell = App.GetService<ShellPage>();
         shell.NavFrame.Navigate(typeof(FeedAddPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
     }
@@ -1933,7 +1938,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
             return;
         }
 
-        var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feedlink.FeedUri.AbsoluteUri, feedlink.FeedUri, feedlink.Title, feedlink.SiteTitle, "", new DateTime(), feedlink.SiteUri), _cts.Token);
+        var resInsert = await Task.Run(() => _dataAccessService.InsertFeed(feedlink.FeedUri.AbsoluteUri, feedlink.FeedUri, feedlink.Title, feedlink.SiteTitle, "", new DateTime(), feedlink.SiteUri), _cts.Token);
 
         var dispatcher = _dispatcherService;// App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
@@ -2087,7 +2092,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
         NodeTree? targetNode = null;
         NameToAddFolder = string.Empty;
 
-        if (SelectedTreeViewItem is null) 
+        if (SelectedTreeViewItem is null)
         {
             targetNode = Root;
         }
@@ -2654,7 +2659,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
     #region == OPML ex/import commands ==
 
     [RelayCommand(CanExecute = nameof(CanOpmlImport))]
-    public async Task OpmlImport()
+    private async Task OpmlImport()
     {
         try
         {
@@ -2670,7 +2675,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
         }
     }
 
-    public async Task OpmlImportAsync()
+    private async Task OpmlImportAsync()
     {
         var dispatcher = _dispatcherService;//App.MainWnd?.CurrentDispatcherQueue;
         if (dispatcher is null)
@@ -2821,8 +2826,8 @@ internal sealed partial class MainViewModel : ObservableRecipient
             else
             {
                 //
-                var resInsert = await Task.Run(()=>_dataAccessService.InsertFeed(feed.Id, feed.EndPoint, feed.Name, feed.Title, "", new DateTime(), feed.HtmlUri!), _cts.Token);
-                
+                var resInsert = await Task.Run(() => _dataAccessService.InsertFeed(feed.Id, feed.EndPoint, feed.Name, feed.Title, "", new DateTime(), feed.HtmlUri!), _cts.Token);
+
                 // Result is DB Error
                 if (resInsert.IsError)
                 {
@@ -2858,7 +2863,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
     }
 
     [RelayCommand(CanExecute = nameof(CanOpmlExport))]
-    public async Task OpmlExport()
+    private async Task OpmlExport()
     {
         try
         {

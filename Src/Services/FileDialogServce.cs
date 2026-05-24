@@ -22,7 +22,7 @@ internal sealed class FileDialogService : IFileDialogService
         _fileOpenPicker.FileTypeFilter.Add(".xml");
         _fileOpenPicker.FileTypeFilter.Add(".txt");
         _fileOpenPicker.SettingsIdentifier = "OpmlFileIdentifier";
-        
+
         //var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         InitializeWithWindow.Initialize(_fileOpenPicker, hwnd);
 

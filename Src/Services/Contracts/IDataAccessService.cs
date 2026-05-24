@@ -16,7 +16,7 @@ public interface IDataAccessService
     SqliteDataAccessResultWrapper DeleteFeed(string feedId);
 
     SqliteDataAccessSelectResultWrapper SelectEntriesByFeedId(string feedId, bool IsUnarchivedOnly = true);
-    
+
     SqliteDataAccessSelectResultWrapper SelectEntriesByFeedIds(List<string> feedIds, bool IsUnarchivedOnly = true);
 
 

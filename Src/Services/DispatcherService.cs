@@ -1,9 +1,6 @@
 ﻿using CommunityToolkit.WinUI;
 using FeedDesk.Services.Contracts;
-using Microsoft.UI.Dispatching;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FeedDesk.Services;

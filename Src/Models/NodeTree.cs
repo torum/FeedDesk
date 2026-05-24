@@ -374,10 +374,10 @@ public abstract class NodeTree : Node
         }
     } = [];
 
-    protected NodeTree(){}
+    protected NodeTree() { }
 
     // TODO: Parent should be ....
-    protected NodeTree(string name): base(name)
+    protected NodeTree(string name) : base(name)
     {
         //BindingOperations.EnableCollectionSynchronization(_children, new object());
     }
@@ -385,7 +385,7 @@ public abstract class NodeTree : Node
     public bool ContainsChild(NodeTree nt)
     {
         if (ContainsChildLoop(Children, nt))
-            {
+        {
             return true;
         }
         else
@@ -435,11 +435,13 @@ public partial class ExplorerItemTemplateSelector : DataTemplateSelector
     {
         //return base.SelectTemplateCore(item, null);
 
-        if (item is null) {
+        if (item is null)
+        {
             return base.SelectTemplateCore(item);
         }
 
-        if (item is not NodeTree) {
+        if (item is not NodeTree)
+        {
             return base.SelectTemplateCore(item);
         }
 

@@ -7,9 +7,7 @@ using FeedDesk.Views;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace FeedDesk.ViewModels;
 
@@ -456,7 +454,7 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient
     {
         if (SelectedLinkItem == null)
         {
-            return; 
+            return;
         }
 
         if (SelectedLinkItem is FeedLinkItem fli)

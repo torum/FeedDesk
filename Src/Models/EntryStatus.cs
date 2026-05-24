@@ -2,7 +2,7 @@
 
 public enum EntryArchivingStatusKeys
 {
-    Inbox,  All
+    Inbox, All
 }
 //Archived, Read, Unread,
 

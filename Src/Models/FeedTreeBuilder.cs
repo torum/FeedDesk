@@ -6,7 +6,8 @@ namespace FeedDesk.Models;
 
 internal sealed partial class FeedTreeBuilder : NodeRoot
 {
-    public FeedTreeBuilder() {
+    public FeedTreeBuilder()
+    {
         Name = "NodeRoot";
     }
 
@@ -19,7 +20,7 @@ internal sealed partial class FeedTreeBuilder : NodeRoot
             return;
 
         var accountList = doc.SelectNodes("//Accounts");
-        if (accountList == null) 
+        if (accountList == null)
             return;
 
         foreach (XmlNode a in accountList)
@@ -38,7 +39,7 @@ internal sealed partial class FeedTreeBuilder : NodeRoot
                     var userName = s.Attributes?["UserName"]?.Value;
                     var userPassword = s.Attributes?["UserPassword"]?.Value;
                     var endpoint = s.Attributes?["EndPoint"]?.Value;
-                    var api = (s.Attributes?["Api"] != null) ? s.Attributes?["Api"]?.Value : "Unknown"; 
+                    var api = (s.Attributes?["Api"] != null) ? s.Attributes?["Api"]?.Value : "Unknown";
                     var tp = (s.Attributes?["Type"] != null) ? s.Attributes?["Type"]?.Value : "Unknown";
 
                     var selecteds = string.IsNullOrEmpty(s.Attributes?["Selected"]?.Value) ? "" : s.Attributes?["Selected"]?.Value;
@@ -656,7 +657,7 @@ internal sealed partial class FeedTreeBuilder : NodeRoot
 
                     root.AppendChild(feed);
                 }
-                else 
+                else
                 {
                     XmlElement service = doc.CreateElement(string.Empty, "Service", string.Empty);
 

@@ -1,7 +1,6 @@
 ﻿using FeedDesk.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Collections.Generic;
 using DataPackageOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation;
 
 namespace FeedDesk.Views.Controls;
@@ -110,7 +109,7 @@ internal sealed partial class MyTreeViewItem : TreeViewItem
     {
         if (MainPage.DraggedItems.Count <= 0)
         {
-            e.Handled = true; 
+            e.Handled = true;
             e.AcceptedOperation = DataPackageOperation.None;
             base.OnDrop(e);
             return;
@@ -124,8 +123,8 @@ internal sealed partial class MyTreeViewItem : TreeViewItem
         {
             // ok
         }
-        else if (draggedItem is NodeFolder && draggedOverItem is NodeFolder) 
-        { 
+        else if (draggedItem is NodeFolder && draggedOverItem is NodeFolder)
+        {
             // OK
         }
         else

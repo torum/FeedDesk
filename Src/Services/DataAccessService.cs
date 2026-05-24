@@ -904,7 +904,7 @@ internal sealed class DataAccessService : IDataAccessService
             connection.Open();
 
             using var cmd = connection.CreateCommand();
-            
+
             cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
             cmd.ExecuteNonQuery();
 
@@ -939,7 +939,7 @@ internal sealed class DataAccessService : IDataAccessService
                 }
 
                 s = Convert.ToString(reader["entryPublished"]);
-                if (!string.IsNullOrEmpty(s)) 
+                if (!string.IsNullOrEmpty(s))
                 {
                     try
                     {
@@ -1077,7 +1077,7 @@ internal sealed class DataAccessService : IDataAccessService
                     else
                         entry.IsArchived = false;
                 }
-                
+
                 if (entry.IsArchived)
                 {
                     if (entry.Status == ReadStatus.rsNew)
@@ -1086,7 +1086,7 @@ internal sealed class DataAccessService : IDataAccessService
                     if (entry.Status == ReadStatus.rsNewVisited)
                         entry.Status = ReadStatus.rsNormalVisited;
                 }
-                
+
                 if (!entry.IsArchived)
                 {
                     res.UnreadCount++;

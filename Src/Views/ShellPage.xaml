@@ -24,7 +24,7 @@
 
             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
 
-                <Image x:Name="AppTitleBarIcon" Source="/FeedDesk3.ico" HorizontalAlignment="Left" Width="16" Height="16" Margin="8,0,0,0"/>
+                <Image x:Name="AppTitleBarIcon" Source="/Icons/FeedDesk3.ico" HorizontalAlignment="Left" Width="16" Height="16" Margin="8,0,0,0"/>
                 <TextBlock x:Name="AppTitleBarText" VerticalAlignment="Center" TextWrapping="NoWrap" Style="{StaticResource CaptionTextBlockStyle}" Margin="6, 0, 0, 0" Visibility="Collapsed"/>
                 
             </StackPanel>

@@ -28,7 +28,7 @@ public partial class App
     public static readonly string AppName = "FeedDesk";//_resourceLoader.GetString("AppName");
     public static string AppDataFolder { get; } = EnvDataFolder + Path.DirectorySeparatorChar + AppDeveloper + Path.DirectorySeparatorChar + AppName;
     public static string AppConfigFilePath { get; } = Path.Combine(AppDataFolder, AppName + ".config");
-    
+
     // ErrorLog
 #if DEBUG
     public bool IsSaveErrorLog = true;
@@ -241,7 +241,7 @@ public partial class App
         }
 
         if (_errortxt.Length <= 0) return;
-        
+
         _errortxt.AppendLine("");
         var dt = DateTime.Now;
         _errortxt.AppendLine($"Saved at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
@@ -254,4 +254,4 @@ public partial class App
     }
 
     #endregion
-} 
+}
