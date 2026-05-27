@@ -53,6 +53,11 @@ internal sealed partial class MainPage : Page
     {
         if (isShow)
         {
+            if (XamlRoot is null)
+            {
+                return;
+            }
+
             if (_dialog == null)
             {
                 _dialog = new WaitDialog();
@@ -68,8 +73,17 @@ internal sealed partial class MainPage : Page
                 _dialog.Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style;
                 _dialog.Title = "WaitDialog_Title".GetLocalized();
             }
+            else
+            {
+                if (_dialog.IsShowing)
+                {
+                    return;
+                }
+            }
 
+            _dialog.IsShowing = true;
             await _dialog.ShowAsync();
+            _dialog.IsShowing = false;
         }
         else
         {
