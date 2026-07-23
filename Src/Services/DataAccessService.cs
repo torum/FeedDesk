@@ -41,7 +41,8 @@ internal sealed class DataAccessService : IDataAccessService
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
             if (!RuntimeHelper.IsMSIX)
             {
-                Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception. (If you turn off \"my code only\" in debug option)");
+                // https://github.com/dotnet/efcore/issues/38275
+                //Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception. (If you turn off \"my code only\" in debug option)");
             }
 
             connection.Open();

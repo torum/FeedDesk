@@ -870,42 +870,38 @@ internal sealed partial class MainViewModel : ObservableRecipient
             return res;
         }
 
-        // Result is HTTP Error
         if (!resEntries.IsError)
         {
-            //await dispatcher.EnqueueAsync(() =>
-            //{
-            // Clear Node Error
-            feed.ErrorHttp = null;
-            if (feed == SelectedTreeViewItem)
-            {
-                // Hide any Error Message
-                ErrorObj = null;
-                IsShowFeedError = false;
-            }
-
-            feed.LastFetched = DateTime.Now;
-            feed.Title = resEntries.Title;
-            feed.Description = resEntries.Description;
-            feed.HtmlUri = resEntries.HtmlUri;
-            feed.Updated = resEntries.Updated;
-
             if (dispatcher is null)
             {
                 return res;
             }
             await dispatcher.EnqueueAsync(() =>
             {
+                // Clear Node Error
+                feed.ErrorHttp = null;
+                if (feed == SelectedTreeViewItem)
+                {
+                    // Hide any Error Message
+                    ErrorObj = null;
+                    IsShowFeedError = false;
+                }
+
+                feed.LastFetched = DateTime.Now;
+                feed.Title = resEntries.Title;
+                feed.Description = resEntries.Description;
+                feed.HtmlUri = resEntries.HtmlUri;
+                feed.Updated = resEntries.Updated;
+
                 feed.Status = NodeFeed.DownloadStatus.Normal;
                 feed.IsBusy = false;
+
+                if (feed == SelectedTreeViewItem)
+                {
+                    //EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                }
             });
-
-            if (feed == SelectedTreeViewItem)
-            {
-                //EntryArchiveAllCommand.NotifyCanExecuteChanged();
-            }
-            //});
-
+            
             if (resEntries.Entries.Count > 0)
             {
                 //await SaveEntryListAsync(resEntries.Entries, feed);
@@ -919,6 +915,7 @@ internal sealed partial class MainViewModel : ObservableRecipient
         }
         else
         {
+            // Result is HTTP Error
             if (dispatcher is null)
             {
                 return res;
@@ -950,7 +947,6 @@ internal sealed partial class MainViewModel : ObservableRecipient
                 feed.IsBusy = false;
             });
 
-
             return res;
         }
     }
@@ -973,7 +969,6 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
         //Debug.WriteLine("Saving entries: " + feed.Name);
 
-
         // Update Node Downloading Status
         await dispatcher.EnqueueAsync(() =>
         {
@@ -982,12 +977,13 @@ internal sealed partial class MainViewModel : ObservableRecipient
 
             // reset errors here.
             feed.ErrorDatabase = null;
+
+            if (feed == SelectedTreeViewItem)
+            {
+                //EntryArchiveAllCommand.NotifyCanExecuteChanged();
+            }
         });
 
-        if (feed == SelectedTreeViewItem)
-        {
-            //EntryArchiveAllCommand.NotifyCanExecuteChanged();
-        }
         //});
         await Task.Delay(100);
 
@@ -1551,15 +1547,11 @@ internal sealed partial class MainViewModel : ObservableRecipient
             await dispatcher.EnqueueAsync(() =>
             {
                 feed.IsBusy = true;
-            });
-
-            if (feed == SelectedTreeViewItem)
-            {
-                await dispatcher.EnqueueAsync(() =>
+                if (feed == SelectedTreeViewItem)
                 {
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                });
-            }
+                }
+            });
 
             List<string> list =
             [
