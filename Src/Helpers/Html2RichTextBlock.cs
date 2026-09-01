@@ -231,7 +231,7 @@ public class HtmlProperties : DependencyObject
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
             //var link = GenerateHyperLink(node);
-            var link = node.ChildNodes.Count >= 1 && (node.FirstChild.Name.ToLower() == "img")
+            var link = node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLower() == "img")
                         ? GenerateImageWithHyperLink(node)
                         : GenerateHyperLink(node);
             if (link is not null)
@@ -388,7 +388,7 @@ public class HtmlProperties : DependencyObject
                 case "img":
                     return GenerateImage(node);
                 case "a":
-                    return node.ChildNodes.Count >= 1 && (node.FirstChild.Name.ToLower() == "img")
+                    return node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLower() == "img")
                         ? GenerateImageWithHyperLink(node)
                         : GenerateHyperLink(node);
                 case "ul":
@@ -455,12 +455,12 @@ public class HtmlProperties : DependencyObject
             if (node.Attributes["src"] != null)
             {
                 var inlineUiContainer = new InlineUIContainer();
-                var sourceUri = WebUtility.HtmlDecode(node.Attributes["src"].Value);
+                var sourceUri = WebUtility.HtmlDecode(node?.Attributes["src"]?.Value);
 
-                if (sourceUri.StartsWith("http"))
+                if (sourceUri?.StartsWith("http") == true)
                 {
-                    var sourceWidth = WebUtility.HtmlDecode(node.Attributes["width"]?.Value);
-                    var sourceHeight = WebUtility.HtmlDecode(node.Attributes["height"]?.Value);
+                    var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
+                    var sourceHeight = WebUtility.HtmlDecode(node?.Attributes["height"]?.Value);
 
                     var image = new Image
                     {
@@ -538,12 +538,12 @@ public class HtmlProperties : DependencyObject
             if (node.Attributes["src"] != null)
             {
                 var inlineUiContainer = new InlineUIContainer();
-                var sourceUri = WebUtility.HtmlDecode(node.Attributes["src"].Value);
+                var sourceUri = WebUtility.HtmlDecode(node?.Attributes["src"]?.Value);
 
-                if (sourceUri.StartsWith("http"))
+                if (sourceUri?.StartsWith("http") == true)
                 {
-                    var sourceWidth = WebUtility.HtmlDecode(node.Attributes["width"]?.Value);
-                    var sourceHeight = WebUtility.HtmlDecode(node.Attributes["height"]?.Value);
+                    var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
+                    var sourceHeight = WebUtility.HtmlDecode(node?.Attributes["height"]?.Value);
 
                     var image = new Image
                     {
@@ -587,7 +587,7 @@ public class HtmlProperties : DependencyObject
                     span.Inlines.Add(inlineUiContainer);
                     span.Inlines.Add(new LineBreak());
                 }
-                else if (sourceUri.StartsWith("mailto:"))
+                else if (sourceUri?.StartsWith("mailto:") == true)
                 {
                     span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({sourceUri})" });
                 }
@@ -687,22 +687,22 @@ public class HtmlProperties : DependencyObject
         {
             if (node.Attributes["href"] != null)
             {
-                var href = node.Attributes["href"].Value;
+                var href = node?.Attributes["href"]?.Value;
                 if (!string.IsNullOrEmpty(href))
                 {
-                    if (href.StartsWith("http"))
+                    if (href?.StartsWith("http") == true)
                     {
                         var hyperlinkButton = new Hyperlink();
                         hyperlinkButton.NavigateUri = new Uri(href, UriKind.Absolute);
-                        hyperlinkButton.Inlines.Add(new Run { Text = CleanText(node.InnerText) });
+                        hyperlinkButton.Inlines.Add(new Run { Text = CleanText(node?.InnerText ?? "") });
                         var span = new Span();
                         span.Inlines.Add(hyperlinkButton);
                         return span;
                     }
-                    else if (href.StartsWith("mailto:"))
+                    else if (href?.StartsWith("mailto:") == true)
                     {
                         var span = new Span();
-                        span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({CleanText(node.InnerText)}) " });
+                        span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({CleanText(node?.InnerText ?? "")}) " });
                         return span;
                     }
                     else
@@ -711,7 +711,7 @@ public class HtmlProperties : DependencyObject
                         Debug.WriteLine("GenerateHyperLink Relative Uri!!");
 
                         var span = new Span();
-                        span.Inlines.Add(new Run { Text = $" Url (relative): [{CleanText(node.InnerText)}]({href}) " });
+                        span.Inlines.Add(new Run { Text = $" Url (relative): [{CleanText(node?.InnerText ?? "")}]({href}) " });
                         return span;
                     }
                 }
@@ -758,17 +758,17 @@ public class HtmlProperties : DependencyObject
             {
                 var src = string.Empty;
                 if (node.Attributes["src"] != null)
-                    src = node.Attributes["src"].Value;
+                    src = node?.Attributes["src"]?.Value;
                 var title = string.Empty;
-                if (node.Attributes["title"] != null)
-                    title = node.Attributes["title"].Value;
+                if (node?.Attributes["title"] != null)
+                    title = node?.Attributes["title"]?.Value;
 
                 if (!string.IsNullOrEmpty(src))
                 {
                     var span = new Span();
                     span.Inlines.Add(new LineBreak());
 
-                    if (src.StartsWith("http"))
+                    if (src?.StartsWith("http") == true)
                     {
                         var hyperlinkButton = new Hyperlink();
                         hyperlinkButton.NavigateUri = new Uri(src, UriKind.Absolute);
@@ -787,7 +787,7 @@ public class HtmlProperties : DependencyObject
                     {
                         // md like..
                         //span.Inlines.Add(new Run { Text = CleanText($"[Inline frame (embedded page) (relative url): {CleanText(title)}]({src})") });
-                        span.Inlines.Add(new Run { Text = CleanText($"Inline frame (embedded page) (relative URL): [{CleanText(title)}]({src})") });
+                        span.Inlines.Add(new Run { Text = CleanText($"Inline frame (embedded page) (relative URL): [{CleanText(title ?? "")}]({src})") });
                     }
 
                     span.Inlines.Add(new LineBreak());
