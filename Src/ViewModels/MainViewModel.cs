@@ -29,7 +29,7 @@ using WinRT.Interop;
 
 namespace FeedDesk.ViewModels;
 
-internal sealed partial class MainViewModel : ObservableRecipient
+public sealed partial class MainViewModel : ObservableRecipient
 {
     #region == Flags ==
 

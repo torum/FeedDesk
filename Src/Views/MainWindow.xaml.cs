@@ -37,27 +37,23 @@ public partial class MainWindow : Window
         this.Title = "AppDisplayName".GetLocalized();
         this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Icons\\FeedDesk3.ico"));
 
-
         this.ExtendsContentIntoTitleBar = true;
 
         LoadSettings();
 
         // It's important to set content as early as here in order to set theme.
         // But make sure to call LoadSettings() before in order to apply settings value for contents.
-        this.Content = App.GetService<ShellPage>();
+        var shell = App.GetService<ShellPage>();
+        this.Content = shell;
 
         // It is necessary to set theme here after the content is set.
-        if (this.Content is ShellPage root)
-        {
-            root.RequestedTheme = theme;
+        shell.RequestedTheme = theme;
 
-            // Don't do this. This right here interfear the color change in active state change.
-            //SetCapitionButtonColorForWin11();
+        // Don't do this. This right here interfear the color change in active state change.
+        //SetCapitionButtonColorForWin11();
 
-            // Call shelPage now that shellpage is careated.
-            root.InitWhenMainWindowIsReady(this);
-        }
-
+        // Call shelPage now that shellpage is careated.
+        shell.SetTitleBar(this);
 
         if (this.AppWindow.Presenter is OverlappedPresenter presenter)
         {

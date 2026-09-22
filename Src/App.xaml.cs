@@ -152,7 +152,7 @@ public partial class App
         //MainWnd.Content = App.GetService<ShellPage>();
 
         //MainWindow?.Activate(); // Activate won't work..
-        MainWnd.AppWindow.Show();
+        MainWnd.AppWindow.Show(true);
     }
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)

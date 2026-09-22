@@ -4,7 +4,7 @@ using static FeedDesk.Models.ErrorObject;
 
 namespace FeedDesk.Models;
 
-internal sealed partial class FeedTreeBuilder : NodeRoot
+public sealed partial class FeedTreeBuilder : NodeRoot
 {
     public FeedTreeBuilder()
     {

@@ -19,7 +19,7 @@ namespace FeedDesk.Services;
 
 #region == Result Classes for Service Discovery ==
 
-internal sealed class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string? title, Uri? siteUri, string siteTitle)
+public sealed class FeedLink(Uri feedUri, FeedLink.FeedKinds feedKind, string? title, Uri? siteUri, string siteTitle)
 {
     public enum FeedKinds
     {

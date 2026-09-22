@@ -6,15 +6,15 @@ using WinRT;
 
 namespace FeedDesk.Views;
 
-internal sealed partial class ShellPage : Page
+public sealed partial class ShellPage : Page
 {
     public MainViewModel ViewModel { get; }
 
     public Frame NavFrame => NavigationFrame;
 
-    public ShellPage()
+    public ShellPage(MainViewModel vm)
     {
-        ViewModel = App.GetService<MainViewModel>(); ;
+        ViewModel = vm;//App.GetService<MainViewModel>(); ;
 
         InitializeComponent();
 
@@ -25,10 +25,10 @@ internal sealed partial class ShellPage : Page
         this.ActualThemeChanged += this.This_ActualThemeChanged;
     }
 
-    public void InitWhenMainWindowIsReady(MainWindow wnd)
+    public void SetTitleBar(MainWindow wnd)
     {
         // MainWindow is null when ShellPage is created because of the order of creation.
-        // Instead, InitWhenMainWindowIsReady() is called when mainWindow is created.
+        // Instead, call this when mainWindow is created.
 
         wnd.SetTitleBar(AppTitleBar);
 
