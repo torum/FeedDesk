@@ -291,20 +291,20 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
         try
         {
-            var HTTPResponse = await _httpClient.GetAsync(addr);
+            var httpResponse = await _httpClient.GetAsync(addr);
 
-            UpdateStatus(string.Format("<< HTTP status {0} returned.", HTTPResponse.StatusCode.ToString()));
+            UpdateStatus(string.Format("<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
 
-            if (HTTPResponse.IsSuccessStatusCode)
+            if (httpResponse.IsSuccessStatusCode)
             {
-                if (HTTPResponse.Content == null)
+                if (httpResponse.Content == null)
                 {
                     UpdateStatus("<< Content is emptty.");
                     var re = new ServiceResultErr("Received no content.", "Content empty.");
                     return re;
                 }
 
-                var contenTypeString = HTTPResponse.Content.Headers.GetValues("Content-Type").FirstOrDefault();
+                var contenTypeString = httpResponse.Content.Headers.GetValues("Content-Type").FirstOrDefault();
 
                 if (!string.IsNullOrEmpty(contenTypeString))
                 {
@@ -316,7 +316,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing the HTML document ...");
 
                         // HTML parse.
-                        var res = await ParseHtml(HTTPResponse.Content, addr, isFeed);
+                        var res = await ParseHtml(httpResponse.Content, addr, isFeed);
 
                         if (res is ServiceResultHtmlPage srhp)
                         {
@@ -346,7 +346,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing XML document to determine the what this is ...");
 
                         // XML parse.
-                        var xml = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var xml = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return xml;
                     }
@@ -355,7 +355,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing RSS feed ...");
 
                         // XML parse.
-                        var feed = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var feed = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return feed;
                     }
@@ -364,7 +364,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing RSS/RDF feed ...");
 
                         // XML parse.
-                        var feed = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var feed = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return feed;
                     }
@@ -391,7 +391,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing RSD document ...");
 
                         /*
-                        var source = await HTTPResponse.Content.ReadAsStreamAsync();
+                        var source = await httpResponse.Content.ReadAsStreamAsync();
                         var parser = new XmlParser();
                         var document = await parser.ParseDocumentAsync(source);
 
@@ -402,7 +402,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         */
                         var resRsd = new ServiceResultRsd
                         {
-                            Rsd = await ParseRsdAsync(HTTPResponse.Content)
+                            Rsd = await ParseRsdAsync(httpResponse.Content)
                         };
 
                         return (resRsd as ServiceResultBase);
@@ -415,7 +415,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing Atom feed ...");
 
                         // RSS parse.
-                        var feed = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var feed = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return feed;
                         /*
@@ -431,7 +431,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         UpdateStatus("- (Wrong Content-Type) Parsing Atom feed ...");
 
-                        var feed = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var feed = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return feed;
                     }
@@ -490,7 +490,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                 //If 401 Unauthorized,
                 // A user may or may not enter an AtomPub endpoint which require auth to get service document.
-                if (HTTPResponse.StatusCode == HttpStatusCode.Unauthorized)
+                if (httpResponse.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     UpdateStatus("- Authorization is required. ");
 
@@ -541,22 +541,22 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
             UpdateStatus(">> HTTP GET " + addr.AbsoluteUri);
 
-            var HTTPResponse = await _httpClient.SendAsync(webreq);
+            var httpResponse = await _httpClient.SendAsync(webreq);
 
-            //var HTTPResponse = await _httpClient.GetAsync(addr);
+            //var httpResponse = await _httpClient.GetAsync(addr);
 
-            UpdateStatus(string.Format("<< HTTP status {0} returned.", HTTPResponse.StatusCode.ToString()));
+            UpdateStatus(string.Format("<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
 
-            if (HTTPResponse.IsSuccessStatusCode)
+            if (httpResponse.IsSuccessStatusCode)
             {
-                if (HTTPResponse.Content == null)
+                if (httpResponse.Content == null)
                 {
                     UpdateStatus("<< Content is emptty.");
                     var re = new ServiceResultErr("Received no content.", "Content empty.");
                     return re;
                 }
 
-                var contenTypeString = HTTPResponse.Content.Headers.GetValues("Content-Type").FirstOrDefault();
+                var contenTypeString = httpResponse.Content.Headers.GetValues("Content-Type").FirstOrDefault();
 
                 if (!string.IsNullOrEmpty(contenTypeString))
                 {
@@ -578,7 +578,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing XML document to determine the what this is ...");
 
                         // XML parse.
-                        var xml = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var xml = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return xml;
                     }
@@ -604,12 +604,12 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         // AtomPub endpoint.
                         UpdateStatus("- Atom Publishing Protocol Service document returned.");
 
-                        var ap = await Task.Run(() => ParseAtomServiceDocument(HTTPResponse.Content, addr, userName, apiKey, authType));
+                        var ap = await Task.Run(() => ParseAtomServiceDocument(httpResponse.Content, addr, userName, apiKey, authType));
                         return ap;
                     }
                     else if (contenTypeString.StartsWith("application/rsd+xml"))
                     {
-                        //await ParseRsd(HTTPResponse.Content);
+                        //await ParseRsd(httpResponse.Content);
 
                         UpdateStatus("- RSD (No need to be authenticated). Something went wrong.");
 
@@ -622,7 +622,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         UpdateStatus("- Parsing Atom feed ...");
 
                         // XML parse.
-                        var feed = await Task.Run(() => ParseXml(HTTPResponse.Content, addr));
+                        var feed = await Task.Run(() => ParseXml(httpResponse.Content, addr));
 
                         return feed;
                     }
@@ -681,7 +681,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                 //If 401 Unauthorized,
                 // A user may or may not enter an AtomPub endpoint which require auth to get service document.
-                if (HTTPResponse.StatusCode == HttpStatusCode.Unauthorized)
+                if (httpResponse.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     UpdateStatus("- Authorization failed. ");
 
@@ -1436,19 +1436,19 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
         try
         {
-            var HTTPResponse = await _httpClient.GetAsync(addr);
+            var httpResponse = await _httpClient.GetAsync(addr);
 
-            UpdateStatus(string.Format("<< HTTP status {0} returned.", HTTPResponse.StatusCode.ToString()));
+            UpdateStatus(string.Format("<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
 
-            if (HTTPResponse.IsSuccessStatusCode)
+            if (httpResponse.IsSuccessStatusCode)
             {
-                if (HTTPResponse.Content != null)
+                if (httpResponse.Content != null)
                 {
                     UpdateStatus(string.Format("- Parsing RSD document."));
 
-                    return await ParseRsdAsync(HTTPResponse.Content);
+                    return await ParseRsdAsync(httpResponse.Content);
                     /*
-                    var source = await HTTPResponse.Content.ReadAsStreamAsync();
+                    var source = await httpResponse.Content.ReadAsStreamAsync();
                     var parser = new XmlParser();
                     var document = await parser.ParseDocumentAsync(source);
 
@@ -1466,7 +1466,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
             else
             {
                 UpdateStatus("Could not retrieve RSD document. ");
-                var rle = new SearviceDocumentLinkErr("HTTP error while getting RSD document", $"{HTTPResponse.StatusCode}");
+                var rle = new SearviceDocumentLinkErr("HTTP error while getting RSD document", $"{httpResponse.StatusCode}");
                 return rle;
             }
         }

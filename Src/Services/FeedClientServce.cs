@@ -66,25 +66,25 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         {
             await Task.Delay(10, CancellationToken.None);
             //Debug.WriteLine("GetAsync @GetEntries in FeedClientService ");
-            //var HTTPResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false)
-            var HTTPResponseMessage = await Client.GetAsync(entriesUrl, token).ConfigureAwait(false);
+            //var httpResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false)
+            var httpResponseMessage = await Client.GetAsync(entriesUrl, token).ConfigureAwait(false);
 
             token.ThrowIfCancellationRequested();
 
-            if (HTTPResponseMessage.IsSuccessStatusCode)
+            if (httpResponseMessage.IsSuccessStatusCode)
             {
                 /*
-                var s = await HTTPResponseMessage.Content.ReadAsStringAsync();
+                var s = await httpResponseMessage.Content.ReadAsStringAsync();
                 ToDebugWindow(">> HTTP Request: GET "
                     + entriesUrl.AbsoluteUri
                     + Environment.NewLine
-                    + "<< HTTP Response " + HTTPResponseMessage.StatusCode.ToString()
+                    + "<< HTTP Response " + httpResponseMessage.StatusCode.ToString()
                     + Environment.NewLine + s + Environment.NewLine
                     + Environment.NewLine);
                 */
 
                 /*
-                var str = await HTTPResponseMessage.Content.ReadAsStringAsync();
+                var str = await httpResponseMessage.Content.ReadAsStringAsync();
                 Debug.WriteLine(str);
                 */
 
@@ -92,14 +92,14 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 ToDebugWindow(">> HTTP Request: GET "
                     + entriesUrl.AbsoluteUri
                     + Environment.NewLine
-                    + "<< HTTP Response " + HTTPResponseMessage.StatusCode.ToString()
+                    + "<< HTTP Response " + httpResponseMessage.StatusCode.ToString()
                     + Environment.NewLine);
                 */
 
                 try
                 {
                     //Debug.WriteLine("ReadAsStreamAsync @GetEntries in FeedClientService ");
-                    var source = await HTTPResponseMessage.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+                    var source = await httpResponseMessage.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
 
                     // Load XML
                     var xdoc = new XmlDocument();
@@ -604,23 +604,23 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                     Debug.WriteLine("<< Exception: " + e.Message);
 
-                    HttpReqException(res.Error, e.Message, "HTTPResponseMessage.Content.ReadAsStreamAsync()", "FeedHttpClient:GetEntries");
+                    HttpReqException(res.Error, e.Message, "httpResponseMessage.Content.ReadAsStreamAsync()", "FeedHttpClient:GetEntries");
                     res.IsError = true;
                 }
             }
             // HTTP non 200 status code.
             else
             {
-                Debug.WriteLine($"{HTTPResponseMessage.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
+                Debug.WriteLine($"{httpResponseMessage.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
 
-                var contents = await HTTPResponseMessage.Content.ReadAsStringAsync(token);
+                var contents = await httpResponseMessage.Content.ReadAsStringAsync(token);
 
                 if (contents != null)
                 {
                     ToDebugWindow(">> HTTP Request: GET "
                         + entriesUrl.AbsoluteUri
                         + Environment.NewLine
-                        + "<< HTTP Response: " + HTTPResponseMessage.StatusCode.ToString()
+                        + "<< HTTP Response: " + httpResponseMessage.StatusCode.ToString()
                         + Environment.NewLine);
                     //+ contents + Environment.NewLine);
                 }
@@ -629,12 +629,12 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     ToDebugWindow(">> HTTP Request: GET "
                         + entriesUrl.AbsoluteUri
                         + Environment.NewLine
-                        + "<< HTTP Response: " + HTTPResponseMessage.StatusCode.ToString()
+                        + "<< HTTP Response: " + httpResponseMessage.StatusCode.ToString()
                         + Environment.NewLine);
                     //+ contents + Environment.NewLine);
                 }
 
-                NonSuccessStatusCode(res.Error, HTTPResponseMessage.StatusCode.ToString(), "Client.GetAsync", "FeedHttpClient.GetEntries");
+                NonSuccessStatusCode(res.Error, httpResponseMessage.StatusCode.ToString(), "Client.GetAsync", "FeedHttpClient.GetEntries");
                 res.IsError = true;
 
                 return res;

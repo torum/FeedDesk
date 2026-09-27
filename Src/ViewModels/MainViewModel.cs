@@ -31,6 +31,56 @@ namespace FeedDesk.ViewModels;
 
 public sealed partial class MainViewModel : ObservableRecipient
 {
+    private readonly CancellationTokenSource _cts = new();
+    private readonly StringBuilder _debugEventLogStringBuilder = new();
+    private CancellationTokenSource ctsForSelectedTreeViewItem = new();
+
+    private readonly IFileDialogService _fileDialogService;
+    private readonly IDataAccessService _dataAccessService;
+    private readonly IFeedClientService _feedClientService;
+    private readonly IOpmlService _opmlService;
+    private readonly IDispatcherService _dispatcherService;
+
+    #region == Events ==
+
+    public event EventHandler<bool>? ShowWaitDialog;
+
+    //public event EventHandler<string>? DebugOutput;
+
+    #endregion
+
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService, IDispatcherService dispatcherService)
+    {
+        _fileDialogService = fileDialogService;
+        _dataAccessService = dataAccessService;
+        _feedClientService = feedClientService;
+        _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
+        _opmlService = opmlService;
+        _dispatcherService = dispatcherService;
+
+        InitializeFeedTree();
+        InitializeDatabase();
+
+        if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+        {
+            IsAcrylicSupported = true;
+            IsBackdropEnabled = true;
+        }
+        if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+        {
+            IsMicaSupported = true;
+            IsBackdropEnabled = true;
+        }
+
+#if DEBUG
+        //IsDebugWindowEnabled = true;
+#else
+        IsDebugWindowEnabled = false;
+#endif
+    }
+
+    #region == Properties ==
+
     #region == Flags ==
 
     [ObservableProperty]
@@ -654,58 +704,7 @@ public sealed partial class MainViewModel : ObservableRecipient
 
     #endregion
 
-    #region == Events ==
-
-    public event EventHandler<bool>? ShowWaitDialog;
-
-    //public event EventHandler<string>? DebugOutput;
-
     #endregion
-
-    #region == Services ==
-
-    private readonly IFileDialogService _fileDialogService;
-    private readonly IDataAccessService _dataAccessService;
-    private readonly IFeedClientService _feedClientService;
-    private readonly IOpmlService _opmlService;
-    private readonly IDispatcherService _dispatcherService;
-
-    #endregion
-
-    private readonly StringBuilder _debugEventLogStringBuilder = new();
-
-    private readonly CancellationTokenSource _cts = new();
-    private CancellationTokenSource ctsForSelectedTreeViewItem = new();
-
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService, IDispatcherService dispatcherService)
-    {
-        _fileDialogService = fileDialogService;
-        _dataAccessService = dataAccessService;
-        _feedClientService = feedClientService;
-        _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
-        _opmlService = opmlService;
-        _dispatcherService = dispatcherService;
-
-        InitializeFeedTree();
-        InitializeDatabase();
-
-        if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
-        {
-            IsAcrylicSupported = true;
-            IsBackdropEnabled = true;
-        }
-        if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
-        {
-            IsMicaSupported = true;
-            IsBackdropEnabled = true;
-        }
-
-#if DEBUG
-        //IsDebugWindowEnabled = true;
-#else
-        IsDebugWindowEnabled = false;
-#endif
-    }
 
     #region == Methods ==
 
