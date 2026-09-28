@@ -2,6 +2,8 @@
 
 A desktop feed reader. (work in progress)
 
+For better or worse, no AI is being used in this project.
+
 ## Download app
 from the [Microsoft Store](https://www.microsoft.com/store/apps/9PGDGKFSV6L9). 
 The store package natively supports x64, x86, and arm64 architectures through Native AoT compilation.
