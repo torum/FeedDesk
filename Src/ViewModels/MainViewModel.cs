@@ -29,11 +29,11 @@ using WinRT.Interop;
 
 namespace FeedDesk.ViewModels;
 
-public sealed partial class MainViewModel : ObservableRecipient
+public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
     private readonly StringBuilder _debugEventLogStringBuilder = new();
-    private CancellationTokenSource ctsForSelectedTreeViewItem = new();
+    private CancellationTokenSource _ctsForSelectedTreeViewItem = new();
 
     private readonly IFileDialogService _fileDialogService;
     private readonly IDataAccessService _dataAccessService;
@@ -133,9 +133,9 @@ public sealed partial class MainViewModel : ObservableRecipient
             OnPropertyChanged();
 
             // Reset token.
-            ctsForSelectedTreeViewItem?.Cancel();
-            ctsForSelectedTreeViewItem?.Dispose();
-            ctsForSelectedTreeViewItem = new CancellationTokenSource();
+            _ctsForSelectedTreeViewItem?.Cancel();
+            _ctsForSelectedTreeViewItem?.Dispose();
+            _ctsForSelectedTreeViewItem = new CancellationTokenSource();
             Entries.Clear();
 
             try
@@ -182,7 +182,7 @@ public sealed partial class MainViewModel : ObservableRecipient
                         //Entries.Clear();
 
                         //LoadEntries(nfeed);
-                        _ = LoadEntriesAsync(nfeed, ctsForSelectedTreeViewItem.Token); // Fire and forget
+                        _ = LoadEntriesAsync(nfeed, _ctsForSelectedTreeViewItem.Token); // Fire and forget
                     }
                     else
                     {
@@ -197,7 +197,7 @@ public sealed partial class MainViewModel : ObservableRecipient
                     //Entries.Clear();
 
                     //LoadEntries(folder);
-                    _ = LoadEntriesAsync(folder, ctsForSelectedTreeViewItem.Token);// Fire and forget
+                    _ = LoadEntriesAsync(folder, _ctsForSelectedTreeViewItem.Token);// Fire and forget
                 }
 
                 // notify at last.
@@ -448,7 +448,7 @@ public sealed partial class MainViewModel : ObservableRecipient
                 return;
             }
 
-            _ = LoadEntriesAsync(nt, ctsForSelectedTreeViewItem.Token);// Fire and forget
+            _ = LoadEntriesAsync(nt, _ctsForSelectedTreeViewItem.Token);// Fire and forget
         }
     }
 
@@ -1697,7 +1697,7 @@ public sealed partial class MainViewModel : ObservableRecipient
                             if (!folder.IsInboxOnly)
                             {
                                 //await LoadEntriesAsync(folder);
-                                //await LoadEntriesAsync(folder, ctsForSelectedTreeViewItem.Token);
+                                //await LoadEntriesAsync(folder, _ctsForSelectedTreeViewItem.Token);
                             }
                         }
                     }
@@ -1847,6 +1847,15 @@ public sealed partial class MainViewModel : ObservableRecipient
             _debugEventLogStringBuilder.AppendLine(data);
             DebugEventLog = _debugEventLogStringBuilder.ToString();
         });
+    }
+
+    public void Dispose()
+    {
+        _ctsForSelectedTreeViewItem?.Cancel();
+        _ctsForSelectedTreeViewItem?.Dispose();
+
+        _cts.Cancel();
+        _cts.Dispose();
     }
 
     #endregion
@@ -2337,7 +2346,7 @@ public sealed partial class MainViewModel : ObservableRecipient
         {
             if (SelectedTreeViewItem.IsPendingReload)
             {
-                await LoadEntriesAsync(SelectedTreeViewItem, ctsForSelectedTreeViewItem.Token);
+                await LoadEntriesAsync(SelectedTreeViewItem, _ctsForSelectedTreeViewItem.Token);
             }
             else
             {
@@ -2421,7 +2430,7 @@ public sealed partial class MainViewModel : ObservableRecipient
         {
             if (tvn.IsPendingReload)
             {
-                await LoadEntriesAsync(tvn, ctsForSelectedTreeViewItem.Token);
+                await LoadEntriesAsync(tvn, _ctsForSelectedTreeViewItem.Token);
             }
             else
             {
@@ -2590,13 +2599,13 @@ public sealed partial class MainViewModel : ObservableRecipient
         {
             feed.IsInboxOnly = !IsShowAllEntries;
             //Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
-            await LoadEntriesAsync(feed, ctsForSelectedTreeViewItem.Token);
+            await LoadEntriesAsync(feed, _ctsForSelectedTreeViewItem.Token);
         }
         else if (SelectedTreeViewItem is NodeFolder folder)
         {
             folder.IsInboxOnly = !IsShowAllEntries;
             //Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
-            await LoadEntriesAsync(folder, ctsForSelectedTreeViewItem.Token);
+            await LoadEntriesAsync(folder, _ctsForSelectedTreeViewItem.Token);
         }
     }
 
@@ -2625,13 +2634,13 @@ public sealed partial class MainViewModel : ObservableRecipient
         {
             feed.IsInboxOnly = IsShowInboxEntries;
             //Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
-            await LoadEntriesAsync(feed, ctsForSelectedTreeViewItem.Token);
+            await LoadEntriesAsync(feed, _ctsForSelectedTreeViewItem.Token);
         }
         else if (SelectedTreeViewItem is NodeFolder folder)
         {
             folder.IsInboxOnly = IsShowInboxEntries;
             //Task.Run(() => LoadEntriesAsync(SelectedTreeViewItem), _cts.Token);
-            await LoadEntriesAsync(folder, ctsForSelectedTreeViewItem.Token);
+            await LoadEntriesAsync(folder, _ctsForSelectedTreeViewItem.Token);
         }
     }
 

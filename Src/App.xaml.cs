@@ -37,6 +37,8 @@ public partial class App
 #endif
     public string LogFilePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
     private readonly StringBuilder _errortxt = new();
+    private Task? _appHostStartTask;
+    private Task? _appHostStopTask;
 
     //public const string BackdropSettingsKey = "AppSystemBackdropOption";
 
@@ -153,6 +155,42 @@ public partial class App
 
         //MainWindow?.Activate(); // Activate won't work..
         MainWnd.AppWindow.Show(true);
+
+        MainWnd.Closed += (sender, e) =>
+        {
+            _appHostStopTask = StopAppHostAsync();
+        };
+        _appHostStartTask = StartAppHostAsync();
+    }
+
+    private async Task StartAppHostAsync()
+    {
+        try
+        {
+            await Host.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            AppendErrorLog("AppHost.StartAsync", ex.ToString());
+            SaveErrorLog();
+        }
+    }
+
+    private async Task StopAppHostAsync()
+    {
+        if (_appHostStartTask != null)
+        {
+            await _appHostStartTask;
+        }
+        try
+        {
+            await Host.StopAsync();
+        }
+        catch (Exception ex)
+        {
+            AppendErrorLog("AppHost.StopAsync", ex.ToString());
+            SaveErrorLog();
+        }
     }
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)

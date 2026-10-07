@@ -13,6 +13,20 @@ namespace FeedDesk.ViewModels;
 
 internal sealed partial class FeedAddViewModel : ObservableRecipient
 {
+    #region == Services ==
+
+    private readonly IAutoDiscoveryService _serviceDiscovery;
+    private readonly IDispatcherService _dispatcherService;
+
+    #endregion
+
+    public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery, IDispatcherService dispatcherService)
+    {
+        _serviceDiscovery = serviceDiscovery;
+        _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
+        _dispatcherService = dispatcherService;
+    }
+
     #region == Properties ==
 
     public bool IsBusy
@@ -96,20 +110,6 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient
     }
 
     #endregion
-
-    #region == Services ==
-
-    private readonly IAutoDiscoveryService _serviceDiscovery;
-    private readonly IDispatcherService _dispatcherService;
-
-    #endregion
-
-    public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery, IDispatcherService dispatcherService)
-    {
-        _serviceDiscovery = serviceDiscovery;
-        _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
-        _dispatcherService = dispatcherService;
-    }
 
     #region == Methods ==
 

@@ -15,16 +15,6 @@ internal sealed partial class MainPage : Page
 {
     private WaitDialog? _dialog;
 
-    public MainViewModel ViewModel
-    {
-        get;
-    }
-
-    public static List<NodeTree> DraggedItems
-    {
-        get; set;
-    } = [];
-
     public MainPage()
     {
         ViewModel = App.GetService<MainViewModel>();
@@ -32,8 +22,6 @@ internal sealed partial class MainPage : Page
         InitializeComponent();
 
         //
-        ViewModel.ShowWaitDialog += (sender, arg) => { OnShowWaitDialog(arg); };
-
         //ViewModel.DebugOutput += (sender, arg) => { OnDebugOutput(arg); };
         //ViewModel.DebugClear += () => OnDebugClear();
 
@@ -46,7 +34,30 @@ internal sealed partial class MainPage : Page
         //col2.Width = new GridLength(ViewModel.WidthDetailPane, GridUnitType.Pixel);
         col1.Width = new GridLength(ViewModel.WidthListViewPane, GridUnitType.Pixel);
         col2.Width = new GridLength(1.0, GridUnitType.Star);
+
+        Loaded += Page_Loaded;
+        Unloaded += Page_Unloaded;
     }
+
+    private void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowWaitDialog += (sender, arg) => { OnShowWaitDialog(arg); };
+    }
+
+    private void Page_Unloaded(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowWaitDialog -= (sender, arg) => { OnShowWaitDialog(arg); };
+    }
+
+    public MainViewModel ViewModel
+    {
+        get;
+    }
+
+    public static List<NodeTree> DraggedItems
+    {
+        get; set;
+    } = [];
 
     [DynamicWindowsRuntimeCast(typeof(Style))]
     public async void OnShowWaitDialog(bool isShow)
