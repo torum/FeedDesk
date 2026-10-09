@@ -147,20 +147,13 @@ public partial class App
             Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().Activated += App_Activated;
         }
 
-        //MainWnd = new(); // < No
+        _appHostStartTask = StartAppHostAsync();
         MainWnd = GetService<MainWindow>();
-
-        // Too late here. In order to set themes, sets content in MainWindow constructor.
-        //MainWnd.Content = App.GetService<ShellPage>();
-
-        //MainWindow?.Activate(); // Activate won't work..
-        MainWnd.AppWindow.Show(true);
-
         MainWnd.Closed += (sender, e) =>
         {
             _appHostStopTask = StopAppHostAsync();
         };
-        _appHostStartTask = StartAppHostAsync();
+        MainWnd.AppWindow.Show(true);
     }
 
     private async Task StartAppHostAsync()

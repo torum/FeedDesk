@@ -38,11 +38,16 @@ internal sealed class DataAccessService : IDataAccessService
 
         try
         {
+            // Known issue. I personaly reported the issue to Microsoft.
+            // https://github.com/dotnet/efcore/issues/38275
+            // It is not a problem for packaged apps, but it is a problem for unpackaged apps. Database initialization succeeds with the exceptions, but it the debugger stops at the exception.
+            // The issue is that Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() which results in System.InvalidOperationException "Operation is not valid due to the current state of the object."
+            // To avoid the debugger stopping here, change the Visual Studio exception settings for System.InvalidOperationException and System.Reflection.TargetInvocationException so it does not break when thrown; avoid disabling thrown-exception breaks globally if you still need them for other exceptions.
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
             if (!RuntimeHelper.IsMSIX)
             {
                 // https://github.com/dotnet/efcore/issues/38275
-                //Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception. (If you turn off \"my code only\" in debug option)");
+                Debug.WriteLine("* Microsoft.Data.Sqlite SqliteConnection() calls Windows.Storage.ApplicationData.Current.get() results in System.InvalidOperationException \"Operation is not valid due to the current state of the object.\" Since we are in unpackaged, we can safely ignore the exception. (If you turn off \"my code only\" in debug option)");
             }
 
             connection.Open();
