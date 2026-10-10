@@ -739,7 +739,10 @@ public partial class MainWindow : Window
 
         try
         {
-            doc.Save(filePath);
+            //doc.Save(filePath);
+            var temporaryPath = filePath + ".tmp";
+            doc.Save(temporaryPath);
+            File.Move(temporaryPath, filePath, overwrite: true);
         }
         catch (Exception ex)
         {

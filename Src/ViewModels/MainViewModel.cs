@@ -814,7 +814,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         var xdoc = Root.AsXmlDoc();
 
-        xdoc.Save(filePath);
+        //xdoc.Save(filePath);
+        var temporaryPath = filePath + ".tmp";
+        xdoc.Save(temporaryPath);
+        File.Move(temporaryPath, filePath, overwrite: true);
     }
 
     #endregion
