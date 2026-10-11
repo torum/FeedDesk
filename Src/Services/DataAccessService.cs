@@ -1029,6 +1029,7 @@ internal sealed class DataAccessService : IDataAccessService
             cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
             cmd.ExecuteNonQuery();
 
+            /*
             if (IsUnarchivedOnly)
             {
                 //cmd.CommandText = String.Format("SELECT * FROM entries INNER JOIN feeds USING (feed_id) WHERE feed_id = '{0}' AND archived = '{1}' ORDER BY published DESC LIMIT 1000", feedId, bool.FalseString);
@@ -1038,6 +1039,31 @@ internal sealed class DataAccessService : IDataAccessService
             else
             {
                 cmd.CommandText = String.Format("SELECT feeds.name as feedName, entries.title as entryTitle, entries.entry_id as entryId, entries.url as entryUrl, entries.published as entryPublished, entries.updated as entryUpdated, entries.summary as entrySummary, entries.content as entryContent, entries.content_type as entryContentType, entries.image_url as entryImageUri, entries.audio_url as entryAudioUri, entries.source as entrySource, entries.source_url as entrySourceUri, entries.author as entryAuthor, entries.category as entryCategory, entries.comment_url as entryCommentUri, entries.archived as entryArchived, entries.status as entryStatus FROM entries INNER JOIN feeds USING (feed_id) WHERE feed_id = '{0}' ORDER BY published DESC LIMIT 5000", feedId);
+            }
+            */
+            const string selectSql = """
+                SELECT feeds.name AS feedName, entries.title AS entryTitle,
+                       entries.entry_id AS entryId, entries.url AS entryUrl,
+                       entries.published AS entryPublished, entries.updated AS entryUpdated,
+                       entries.summary AS entrySummary, entries.content AS entryContent,
+                       entries.content_type AS entryContentType, entries.image_url AS entryImageUri,
+                       entries.audio_url AS entryAudioUri, entries.source AS entrySource,
+                       entries.source_url AS entrySourceUri, entries.author AS entryAuthor,
+                       entries.category AS entryCategory, entries.comment_url AS entryCommentUri,
+                       entries.archived AS entryArchived, entries.status AS entryStatus
+                FROM entries INNER JOIN feeds USING (feed_id)
+                WHERE feed_id = $feedId
+                """;
+
+            cmd.CommandText = IsUnarchivedOnly
+                ? selectSql + " AND archived = $archived ORDER BY published DESC LIMIT 1000"
+                : selectSql + " ORDER BY published DESC LIMIT 5000";
+
+            cmd.Parameters.AddWithValue("$feedId", feedId);
+
+            if (IsUnarchivedOnly)
+            {
+                cmd.Parameters.AddWithValue("$archived", bool.FalseString);
             }
 
             using var reader = cmd.ExecuteReader();
