@@ -721,6 +721,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         }
         catch (TaskCanceledException e) when (token.IsCancellationRequested)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
         {
+            requestCts.Token.ThrowIfCancellationRequested();
             //throw new TimeoutException("HTTP request timed out. ");
 
             Debug.WriteLine($"<< TaskCanceledException ({entriesUrl}) : {e.Message}");
@@ -749,6 +750,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         }
         catch (Exception e)
         {
+            requestCts.Token.ThrowIfCancellationRequested();
             Debug.WriteLine("<< HTTP error: " + entriesUrl.AbsoluteUri + " - " + e.Message);
 
             ToDebugWindow("<< HTTP error:"

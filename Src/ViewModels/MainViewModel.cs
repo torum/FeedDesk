@@ -866,18 +866,35 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             pending = _activeRefreshTasks.ToArray();
         }
 
+        Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Waiting for {pending.Length} background operations");
+
         try
         {
-            await Task.WhenAll(pending).ConfigureAwait(false);
+            await Task.WhenAll(pending)
+                .WaitAsync(TimeSpan.FromSeconds(16))
+                .ConfigureAwait(false);
+
+            Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Background operations completed");
+        }
+        catch (TimeoutException)
+        {
+            Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Timed out waiting for background operations");
+
+            foreach (var task in pending)
+            {
+                if (!task.IsCompleted)
+                {
+                    Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Still pending: task {task.Id}, status={task.Status}");
+                }
+            }
         }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested)
         {
-            // Expected when shutdown cancels active feed requests.
+            Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Background operations canceled during shutdown");
         }
         catch (Exception ex)
         {
-            // All tasks have finished; log the failure and allow host shutdown.
-            Debug.WriteLine($"Feed refresh failed during shutdown: {ex}");
+            Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Background operation failed: {ex}");
         }
     }
 
@@ -955,6 +972,8 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     private async Task RefreshFeedAsync(NodeFeed feed, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         await _dispatcherService.EnqueueAsync(() =>
         {
             feed.IsBusy = true;
@@ -964,6 +983,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var request = new FeedRefreshRequest(feed.Id, feed.EndPoint, feed.Name);
             var result = await _feedRefreshService.RefreshAsync(request,
                 stage => _dispatcherService.EnqueueAsync(() =>
@@ -1041,6 +1061,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
         finally
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _dispatcherService.TryEnqueue(() =>
             {
                 feed.IsBusy = false;
@@ -1352,10 +1373,15 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             _ = task.ContinueWith(
                 completed =>
                 {
+                    int remaining;
+
                     lock (_activeRefreshTasksLock)
                     {
                         _activeRefreshTasks.Remove(completed);
+                        remaining = _activeRefreshTasks.Count;
                     }
+
+                    Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Refresh task {completed.Id} finished: {completed.Status}; {remaining} remain");
 
                     if (completed.IsFaulted)
                     {
@@ -2605,37 +2631,42 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private async Task FeedRefreshAll()
     {
         IsTreeWorking = true;
-
         DebugEventLog = string.Empty;
         Root.IsBusy = true;
-        await Task.Delay(100);
 
-        var tasks = await GetAllEntriesAndSaveTaskAsync(Root);
+        try
+        {
+            await Task.Delay(100);
 
-        if (tasks.Count <= 0)
+            var tasks = await GetAllEntriesAndSaveTaskAsync(Root);
+
+            if (tasks.Count <= 0)
+            {
+                return;
+            }
+
+            await Task.WhenAll(tasks);
+
+            if ((SelectedTreeViewItem is NodeFolder) || (SelectedTreeViewItem is NodeFeed))
+            {
+                if (SelectedTreeViewItem.IsPendingReload)
+                {
+                    await LoadEntriesAsync(SelectedTreeViewItem, _ctsForSelectedTreeViewItem.Token);
+                }
+            }
+
+            await Task.Delay(100);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            // Expected when shutdown cancels the refresh.
+        }
+        finally
         {
             IsTreeWorking = false;
             Root.IsBusy = false;
             EntryArchiveAllCommand.NotifyCanExecuteChanged();
-            return;
         }
-
-        await Task.WhenAll(tasks);
-
-        if ((SelectedTreeViewItem is NodeFolder) || (SelectedTreeViewItem is NodeFeed))
-        {
-            if (SelectedTreeViewItem.IsPendingReload)
-            {
-                await LoadEntriesAsync(SelectedTreeViewItem, _ctsForSelectedTreeViewItem.Token);
-            }
-        }
-
-        await Task.Delay(100);
-
-        IsTreeWorking = false;
-        Root.IsBusy = false;
-
-        EntryArchiveAllCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanFeedRefreshAll()
@@ -2654,70 +2685,97 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
 
         var tvn = SelectedTreeViewItem;
+        NodeFolder? busyFolder = null;
 
-        if (tvn is NodeFeed feed)
+        try
         {
-            IsTreeWorking = true;
-            /*
-            feed.IsBusy = true;
-            EntryArchiveAllCommand.NotifyCanExecuteChanged();
-
-            var list = await GetEntriesAsync(feed);
-
-            if (list.Count > 0)
+            if (tvn is NodeFeed feed)
             {
-                await SaveEntriesAsync(list, feed);
+                IsTreeWorking = true;
+                /*
+                feed.IsBusy = true;
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
+
+                var list = await GetEntriesAsync(feed);
+
+                if (list.Count > 0)
+                {
+                    await SaveEntriesAsync(list, feed);
+                }
+                feed.IsBusy = false;
+                */
+                await RefreshFeedAsync(feed, _cts.Token);
+
+                if (_cts.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                IsTreeWorking = false;
             }
-            feed.IsBusy = false;
-            */
-            await RefreshFeedAsync(feed, _cts.Token);
-
-            if (_cts.IsCancellationRequested)
+            else if (tvn is NodeFolder folder)
             {
+                IsTreeWorking = true;
+
+                //await dispatcher.EnqueueAsync(async () =>
+                //{
+                folder.IsBusy = true;
+                await Task.Delay(100);
+                //EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                //});
+
+                var tasks = await GetAllEntriesAndSaveTaskAsync(folder);
+                if (_cts.IsCancellationRequested)
+                {
+                    return;
+                }
+                await Task.WhenAll(tasks);
+
+                //await dispatcher.EnqueueAsync(async () =>
+                //{
+                folder.IsBusy = false;
+                await Task.Delay(100);
+                //EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                //});
+
+                IsTreeWorking = false;
+            }
+            else
+            {
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 return;
             }
 
-            IsTreeWorking = false;
-        }
-        else if (tvn is NodeFolder folder)
-        {
-            IsTreeWorking = true;
-
-            //await dispatcher.EnqueueAsync(async () =>
-            //{
-            folder.IsBusy = true;
-            await Task.Delay(100);
-            //EntryArchiveAllCommand.NotifyCanExecuteChanged();
-            //});
-
-            var tasks = await GetAllEntriesAndSaveTaskAsync(folder);
-
-            await Task.WhenAll(tasks);
-
-            //await dispatcher.EnqueueAsync(async () =>
-            //{
-            folder.IsBusy = false;
-            await Task.Delay(100);
-            //EntryArchiveAllCommand.NotifyCanExecuteChanged();
-            //});
-
-            IsTreeWorking = false;
-        }
-        else
-        {
-            EntryArchiveAllCommand.NotifyCanExecuteChanged();
-            return;
-        }
-
-        if (tvn == SelectedTreeViewItem)
-        {
-            if (tvn.IsPendingReload)
+            if (tvn == SelectedTreeViewItem)
             {
-                await LoadEntriesAsync(tvn, _ctsForSelectedTreeViewItem.Token);
+                if (tvn.IsPendingReload)
+                {
+                    if (_cts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    await LoadEntriesAsync(tvn, _ctsForSelectedTreeViewItem.Token);
+                }
             }
         }
+        catch (OperationCanceledException) when (_ctsForSelectedTreeViewItem.IsCancellationRequested)
+        {
+            // Shutdown cancellation is expected.
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            // Shutdown cancellation is expected.
+        }
+        finally
+        {
+            if (busyFolder is not null)
+            {
+                busyFolder.IsBusy = false;
+            }
 
-        EntryArchiveAllCommand.NotifyCanExecuteChanged();
+            IsTreeWorking = false;
+            EntryArchiveAllCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private bool CanFeedRefresh()

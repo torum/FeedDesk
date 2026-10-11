@@ -26,6 +26,7 @@ public sealed class FeedRefreshService : IFeedRefreshService
     //public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, CancellationToken cancellationToken)
     public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, Func<FeedRefreshStage, Task> reportStageAsync, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         await reportStageAsync(FeedRefreshStage.Downloading);
         cancellationToken.ThrowIfCancellationRequested();
 

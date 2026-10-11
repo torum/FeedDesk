@@ -13,11 +13,13 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 using Windows.Storage;
+using Windows.UI.WindowManagement;
 using WinRT;
+using WinRT.Interop;
 
 namespace FeedDesk;
 
-public partial class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     // Window position and size
     // TODO: Change this lator.1920x1080
@@ -55,14 +57,48 @@ public partial class MainWindow : Window
         // Call shelPage now that shellpage is careated.
         shell.SetTitleBar(this);
 
+        this.Closed += Window_Closed;
+
+        this.AppWindow.Closing += AppWindow_Closing;
+
         if (this.AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.PreferredMinimumWidth = 600;
             presenter.PreferredMinimumHeight = 780;
         }
 
-        this.Closed += Window_Closed;
     }
+
+    private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
+    {
+        Debug.WriteLine("Shutdown: AppWindow_Closing");
+
+        if (App.Current is not App app)
+        {
+            return;
+        }
+        if (app.IsAppHostStopping)
+        {
+            return;
+        }
+
+        // Keep the window and dispatcher alive while cleanup runs.
+        args.Cancel = true;
+
+        if (app.IsShutdownCloseStarted)
+        {
+            return;
+        }
+
+        app.IsShutdownCloseStarted = true;
+        app.IsAppHostStopping = true;
+
+        app.AppHostStopTask = app.StopAppHostAndCloseWindowAsync();
+        await app.AppHostStopTask;
+        AppWindow.Closing -= AppWindow_Closing;
+        this.Close();
+    }
+
 
     [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     public void SetCapitionButtonColorForWin11()
@@ -521,6 +557,8 @@ public partial class MainWindow : Window
 
     private void Window_Closed(object sender, WindowEventArgs args)
     {
+        Debug.WriteLine("Shutdown: Window_Closed");
+
         /*
         var vm = App.GetService<MainViewModel>();
 

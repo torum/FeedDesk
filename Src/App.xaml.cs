@@ -6,14 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using WinRT;
 
 
@@ -43,6 +44,48 @@ public partial class App
     private readonly Lock _errorLogLock = new();
     private Task? _appHostStartTask;
     private Task? _appHostStopTask;
+
+    public Task? AppHostStopTask
+    {
+        get => _appHostStopTask;
+        set => _appHostStopTask = value;
+    }
+    private bool _isAppHostStopping = false;
+    public bool IsAppHostStopping
+    {
+        get => (Current as App)?._isAppHostStopping ?? false;
+        set
+        {
+            if (Current is App app)
+            {
+                app._isAppHostStopping = value;
+            }
+        }
+    }
+    private bool _allowWindowClose;
+    public bool IsAllowWindowClose
+    {
+        get => (Current as App)?._allowWindowClose ?? false;
+        set
+        {
+            if (Current is App app)
+            {
+                app._allowWindowClose = value;
+            }
+        }
+    }
+    private bool _shutdownCloseStarted;
+    public bool IsShutdownCloseStarted
+    {
+        get => (Current as App)?._shutdownCloseStarted ?? false;
+        set
+        {
+            if (Current is App app)
+            {
+                app._shutdownCloseStarted = value;
+            }
+        }
+    }
 
     //public const string BackdropSettingsKey = "AppSystemBackdropOption";
 
@@ -171,11 +214,15 @@ public partial class App
 
         _appHostStartTask = StartAppHostAsync();
         MainWnd = GetService<MainWindow>();
-        MainWnd.Closed += (sender, e) =>
+        /*
+        MainWnd.AppWindow.Closing += (sender, e) =>
         {
             _appHostStopTask = StopAppHostAsync();
         };
-        MainWnd.AppWindow.Show(true);
+        */
+        //MainWnd.AppWindow.Show(true);
+        MainWnd.Activate();
+        MainWnd.AppWindow.MoveInZOrderAtTop();
     }
 
     private async Task StartAppHostAsync()
@@ -191,26 +238,113 @@ public partial class App
         }
     }
 
+    public async Task StopAppHostAndCloseWindowAsync()
+    {
+        var progressRing = new ProgressRing
+        {
+            IsActive = true,
+            Width = 32,
+            Height = 32
+        };
+
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12
+        };
+        content.Children.Add(progressRing);
+        content.Children.Add(new TextBlock
+        {
+            Text = "Stopping background operations…",
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        var dialog = new ContentDialog
+        {
+            Title = "Closing FeedDesk",
+            Content = content,
+            XamlRoot = MainWnd!.Content.XamlRoot
+        };
+
+        // Prevent the user from dismissing the dialog before cleanup finishes.
+        dialog.Closing += (_, e) =>
+        {
+            if (!_allowWindowClose)
+            {
+                e.Cancel = true;
+            }
+        };
+
+        var dialogOperation = dialog.ShowAsync();
+
+        try
+        {
+            await StopAppHostAsync();
+        }
+        catch (Exception ex)
+        {
+            LogShutdownTimestamp($"Shutdown failed: {ex}");
+            AppendErrorLog("App shutdown", ex.ToString());
+            SaveErrorLog();
+        }
+        finally
+        {
+            _allowWindowClose = true;
+
+            try
+            {
+                dialog.Hide();
+                await dialogOperation;
+            }
+            finally
+            {
+                //MainWnd?.Close();
+            }
+        }
+    }
+
+    private static void LogShutdownTimestamp(string message)
+    {
+        Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] {message}");
+    }
+
     private async Task StopAppHostAsync()
     {
+        LogShutdownTimestamp("Shutdown: started");
+
         if (_appHostStartTask != null)
         {
+            LogShutdownTimestamp("Shutdown: waiting for Host.StartAsync");
             await _appHostStartTask;
+            LogShutdownTimestamp("Shutdown: Host.StartAsync completed");
         }
 
+        _isAppHostStopping = true;
+
+        LogShutdownTimestamp("Shutdown: saving window settings");
         MainWnd?.SaveSettings();
+
         var vm = GetService<MainViewModel>();
+
+        LogShutdownTimestamp("Shutdown: saving feed tree");
         vm.SaveServiceXml();
 
+        LogShutdownTimestamp("Shutdown: canceling background operations");
         vm.BeginShutdown();
 
         try
         {
+            LogShutdownTimestamp("Shutdown: Host.StopAsync started");
             await Host.StopAsync();
-            await vm.WaitForBackgroundOperationsAsync(); // Await tracked refresh tasks.
+            LogShutdownTimestamp("Shutdown: Host.StopAsync completed");
+
+            LogShutdownTimestamp("Shutdown: waiting for background operations");
+            await vm.WaitForBackgroundOperationsAsync();
+            LogShutdownTimestamp("Shutdown: background operations completed");
         }
         catch (Exception ex)
         {
+            LogShutdownTimestamp($"Shutdown: exception: {ex}");
             AppendErrorLog("AppHost.StopAsync", ex.ToString());
             SaveErrorLog();
         }
@@ -218,26 +352,44 @@ public partial class App
         {
             try
             {
+                LogShutdownTimestamp("Shutdown: Host.Dispose started");
                 Host.Dispose();
+                LogShutdownTimestamp("Shutdown: Host.Dispose completed");
             }
             catch (Exception ex)
             {
-                _ = ex;
+                LogShutdownTimestamp($"Shutdown: Host.Dispose exception: {ex}");
                 Debug.WriteLine($"Exception disposing Host: {ex}");
-                //AppendErrorLog("AppHost.Dispose", ex.ToString());
-                //SaveErrorLog();
             }
         }
     }
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)
     {
-        CurrentDispatcherQueue?.TryEnqueue(() =>
+        LogShutdownTimestamp($"Activation received; kind={e.Kind}; stopping={_isAppHostStopping}");
+
+        if (_isAppHostStopping)
         {
-            MainWnd?.Activate();
-            // TODO:
-            //MainWindow?.BringToFront();
-        });
+            LogShutdownTimestamp("Activation ignored because shutdown is in progress");
+            return;
+        }
+
+        var wasQueued = CurrentDispatcherQueue?.TryEnqueue(() =>
+        {
+            var window = MainWnd;
+            if (window is null)
+            {
+                LogShutdownTimestamp("Activation dispatched, but MainWnd is null");
+                return;
+            }
+
+            window.Activate();
+            LogShutdownTimestamp("Activation handled; MainWnd.Activate called");
+        }) ?? false;
+
+        LogShutdownTimestamp(wasQueued
+            ? "Activation callback queued"
+            : "Activation callback could not be queued");
     }
 
     #region == UnhandledException ==
