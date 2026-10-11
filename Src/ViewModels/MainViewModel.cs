@@ -40,6 +40,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private readonly IFeedClientService _feedClientService;
     private readonly IOpmlService _opmlService;
     private readonly IDispatcherService _dispatcherService;
+    private readonly IFeedRefreshService _feedRefreshService;
 
     #region == Events ==
 
@@ -49,11 +50,12 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #endregion
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IOpmlService opmlService, IDispatcherService dispatcherService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IFeedRefreshService feedRefreshService, IOpmlService opmlService, IDispatcherService dispatcherService)
     {
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
         _feedClientService = feedClientService;
+        _feedRefreshService = feedRefreshService;
         _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
@@ -842,6 +844,103 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #region == Entries Refreshing Methods ==
 
+    private async Task RefreshFeedAsync(NodeFeed feed, CancellationToken cancellationToken)
+    {
+        await _dispatcherService.EnqueueAsync(() =>
+        {
+            feed.IsBusy = true;
+            feed.Status = NodeFeed.DownloadStatus.Downloading;
+            feed.ErrorDatabase = null;
+        });
+
+        try
+        {
+            var request = new FeedRefreshRequest(feed.Id, feed.EndPoint, feed.Name);
+            var result = await _feedRefreshService.RefreshAsync(request,
+                stage => _dispatcherService.EnqueueAsync(() =>
+                {
+                    feed.Status = stage switch
+                    {
+                        FeedRefreshStage.Downloading => NodeFeed.DownloadStatus.Downloading,
+                        FeedRefreshStage.Saving => NodeFeed.DownloadStatus.Saving,
+                        _ => throw new ArgumentOutOfRangeException(nameof(stage))
+                    };
+                }),
+                cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await _dispatcherService.EnqueueAsync(() =>
+            {
+                feed.LastFetched = result.FetchedAt;
+
+                if (result.FetchResult.IsError)
+                {
+                    feed.ErrorHttp = result.FetchResult.Error;
+                    feed.EntryNewCount = 0;
+                    feed.IsPendingReload = false;
+
+                    if (feed == SelectedTreeViewItem)
+                    {
+                        ErrorObj = feed.ErrorHttp;
+                        IsShowFeedError = true;
+                    }
+
+                    feed.Status = NodeFeed.DownloadStatus.Error;
+                    return;
+                }
+
+                feed.ErrorHttp = null;
+                feed.Title = result.FetchResult.Title;
+                feed.Description = result.FetchResult.Description;
+                feed.HtmlUri = result.FetchResult.HtmlUri;
+                feed.Updated = result.FetchResult.Updated;
+
+                if (feed == SelectedTreeViewItem)
+                {
+                    ErrorObj = null;
+                    IsShowFeedError = false;
+                }
+
+                if (result.SaveResult is { IsError: true } saveResult)
+                {
+                    feed.ErrorDatabase = saveResult.Error;
+
+                    if (feed == SelectedTreeViewItem)
+                    {
+                        ErrorObj = feed.ErrorDatabase;
+                        IsShowFeedError = true;
+                    }
+
+                    feed.Status = NodeFeed.DownloadStatus.Error;
+                    return;
+                }
+
+                feed.ErrorDatabase = null;
+
+                if (result.SaveResult is { AffectedCount: > 0 } successfulSave)
+                {
+                    UpdateEntryAncestors(feed, successfulSave.AffectedCount);
+                }
+                else
+                {
+                    feed.IsPendingReload = false;
+                }
+
+                feed.Status = NodeFeed.DownloadStatus.Normal;
+            });
+        }
+        finally
+        {
+            _dispatcherService.TryEnqueue(() =>
+            {
+                feed.IsBusy = false;
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
+            });
+        }
+    }
+
+    /*
     // gets entries recursively and save to db.
     private async Task<List<EntryItem>> GetEntriesAsync(NodeFeed feed)
     {
@@ -1100,6 +1199,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             return res;
         }
     }
+    */
 
     private static void UpdateEntryAncestors(NodeFeed feed, int newCount)
     {
@@ -1135,89 +1235,87 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         if (nt.Children.Count <= 0) return tasks;
         foreach (var c in nt.Children)
         {
-            if ((c is NodeEntryCollection) || (c is NodeFeed))
+            if (c is NodeFeed feed && feed.Api == ApiTypes.AtFeed)
             {
-                if (c is NodeFeed feed)
+                var now = DateTime.Now;
+                var last = feed.LastFetched;
+                if ((last > now.AddMinutes(-1)) && (last <= now))
                 {
-                    var now = DateTime.Now;
-                    var last = feed.LastFetched;
-                    if ((last > now.AddMinutes(-1)) && (last <= now))
+                    Debug.WriteLine("Skipping " + feed.Name + ": " + last.ToString());
+                }
+                else
+                {
+                    tasks.Add(Task.Run(async () =>
                     {
-                        Debug.WriteLine("Skipping " + feed.Name + ": " + last.ToString());
-                    }
-                    else
-                    {
-                        tasks.Add(Task.Run(async () =>
+                        /*
+                        Debug.WriteLine($"Getting {feed.Name} @GetAllEntriesAndSaveTaskAsync");
+
+                        await _dispatcherService.EnqueueAsync(() =>
                         {
-                            Debug.WriteLine($"Getting {feed.Name} @GetAllEntriesAndSaveTaskAsync");
+                            feed.IsBusy = true;
 
-                            await _dispatcherService.EnqueueAsync(() =>
-                            {
-                                feed.IsBusy = true;
+                            EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                        });
 
-                                EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                            });
+                        var list = await GetEntriesAsync(feed);
 
-                            var list = await GetEntriesAsync(feed);
+                        //_cts.Token.ThrowIfCancellationRequested();
+                        if (_cts.Token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        if (list.Count > 0)
+                        {
+                            var res = await SaveEntriesAsync(list, feed);
+
+                            //await Task.Delay(100);
 
                             //_cts.Token.ThrowIfCancellationRequested();
                             if (_cts.Token.IsCancellationRequested)
                             {
+
                                 return;
                             }
 
-                            if (list.Count > 0)
+                            if (res.Count > 0)
                             {
-                                var res = await SaveEntriesAsync(list, feed);
-
-                                //await Task.Delay(100);
-
-                                //_cts.Token.ThrowIfCancellationRequested();
-                                if (_cts.Token.IsCancellationRequested)
-                                {
-
-                                    return;
-                                }
-
-                                if (res.Count > 0)
-                                {
-                                    // pending flag.. < done in SaveEntriesAsync.
+                                // pending flag.. < done in SaveEntriesAsync.
 
 
-                                    // reload entries if selected.
-                                    //await CheckParentSelectedAndLoadEntriesIfNotBusyAsync(feed); ;
-                                }
-                                else
-                                {
-                                    ///
-                                    //await CheckParentSelectedAndNotifyAsync(feed); ;
-                                }
+                                // reload entries if selected.
+                                //await CheckParentSelectedAndLoadEntriesIfNotBusyAsync(feed); ;
                             }
                             else
                             {
-                                feed.IsPendingReload = false;
-                                //
-                                //await CheckParentSelectedAndNotifyAsync(feed);
+                                ///
+                                //await CheckParentSelectedAndNotifyAsync(feed); ;
                             }
+                        }
+                        else
+                        {
+                            feed.IsPendingReload = false;
+                            //
+                            //await CheckParentSelectedAndNotifyAsync(feed);
+                        }
 
-                            await _dispatcherService.EnqueueAsync(() =>
-                            {
-                                feed.IsBusy = false;
+                        await _dispatcherService.EnqueueAsync(() =>
+                        {
+                            feed.IsBusy = false;
 
-                                EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                            });
+                            EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                        });
+                        */
+                        await RefreshFeedAsync(feed, _cts.Token);
 
-                            await Task.Delay(100);
+                        if (_cts.IsCancellationRequested)
+                        {
+                            return;
+                        }
 
-                            //await CheckParentSelectedAndLoadEntriesIfPendingAsync(feed);
+                        await Task.Delay(100);
 
-                            //App.MainWnd?.CurrentDispatcherQueue?.TryEnqueue(() =>
-                            //{
-                            //    EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                            //});
-
-                        }, _cts.Token));
-                    }
+                    }, _cts.Token));
                 }
             }
 
@@ -2464,7 +2562,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         if (tvn is NodeFeed feed)
         {
             IsTreeWorking = true;
-
+            /*
             feed.IsBusy = true;
             EntryArchiveAllCommand.NotifyCanExecuteChanged();
 
@@ -2475,6 +2573,13 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 await SaveEntriesAsync(list, feed);
             }
             feed.IsBusy = false;
+            */
+            await RefreshFeedAsync(feed, _cts.Token);
+
+            if (_cts.IsCancellationRequested)
+            {
+                return;
+            }
 
             IsTreeWorking = false;
         }
