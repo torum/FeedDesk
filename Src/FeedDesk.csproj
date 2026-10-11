@@ -39,6 +39,7 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
 	</PropertyGroup>
+
 	<ItemGroup>
 		<None Remove="FeedDesk3.ico" />
 		<None Remove="Memo_for_publish_commands.txt" />
@@ -104,6 +105,9 @@
 	<ItemGroup>
 		<Folder Include="Views\" />
 		<Folder Include="ViewModels\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="Services\Contracts\IFeedTreePersistenceService.cs" />
 	</ItemGroup>
 	<PropertyGroup Label="Globals">
 		<WebView2EnableCsWinRTProjection>True</WebView2EnableCsWinRTProjection>

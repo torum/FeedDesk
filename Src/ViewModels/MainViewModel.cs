@@ -41,6 +41,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private readonly IOpmlService _opmlService;
     private readonly IDispatcherService _dispatcherService;
     private readonly IFeedRefreshService _feedRefreshService;
+    private readonly IFeedTreePersistenceService _feedTreePersistenceService;
 
     #region == Events ==
 
@@ -50,7 +51,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #endregion
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IFeedRefreshService feedRefreshService, IOpmlService opmlService, IDispatcherService dispatcherService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService)
     {
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
@@ -59,6 +60,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
+        _feedTreePersistenceService = feedTreePersistenceService;
 
         InitializeFeedTree();
         InitializeDatabase();
@@ -726,6 +728,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     private void InitializeFeedTree()
     {
+        /*
         var filePath = Path.Combine(App.AppDataFolder, "Searvies.xml");
         if (RuntimeHelper.IsMSIX)
         {
@@ -760,6 +763,34 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
                 Debug.WriteLine("Exception while loading service.xml:" + ex);
             }
+        }
+        */
+        try
+        {
+            var document = _feedTreePersistenceService.Load();
+            if (document is null)
+            {
+                return;
+            }
+
+            Root.LoadXmlDoc(document);
+            IsFeedTreeLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMain = new ErrorObject
+            {
+                ErrType = ErrorObject.ErrTypes.XML,
+                ErrCode = "",
+                ErrText = ex.Message,
+                ErrDescription = "Error loading \"Searvies.xml\"",
+                ErrDatetime = DateTime.Now,
+                ErrPlace = "MainViewModel::InitializeFeedTree",
+                ErrPlaceParent = "MainViewModel()"
+            };
+            IsMainErrorInfoBarVisible = true;
+
+            Debug.WriteLine("Exception while loading service.xml:" + ex);
         }
     }
 
@@ -825,7 +856,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             return;
         }
-
+        /*
         var filePath = Path.Combine(App.AppDataFolder, "Searvies.xml");
         if (RuntimeHelper.IsMSIX)
         {
@@ -838,6 +869,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         var temporaryPath = filePath + ".tmp";
         xdoc.Save(temporaryPath);
         File.Move(temporaryPath, filePath, overwrite: true);
+        */
+        var document = Root.AsXmlDoc();
+        _feedTreePersistenceService.Save(document);
     }
 
     #endregion

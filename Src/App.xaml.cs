@@ -102,6 +102,7 @@ public partial class App
                 services.AddSingleton<IOpmlService, OpmlService>();
                 services.AddSingleton<IDispatcherService>(new DispatcherService(CurrentDispatcherQueue));
                 services.AddSingleton<IFeedRefreshService, FeedRefreshService>();
+                services.AddSingleton<IFeedTreePersistenceService, FeedTreePersistenceService>();
 
                 // Views and ViewModels
                 services.AddSingleton<SettingsPage>();
