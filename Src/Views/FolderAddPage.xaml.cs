@@ -8,15 +8,15 @@ namespace FeedDesk.Views;
 
 internal sealed partial class FolderAddPage : Page
 {
-    public MainViewModel ViewModel
-    {
-        get;
-    }
-
     public FolderAddPage()
     {
         ViewModel = App.GetService<MainViewModel>();
         this.InitializeComponent();
+    }
+
+    public MainViewModel ViewModel
+    {
+        get;
     }
 
     private void Page_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

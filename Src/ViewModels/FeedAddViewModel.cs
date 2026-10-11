@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace FeedDesk.ViewModels;
 
-internal sealed partial class FeedAddViewModel : ObservableRecipient
+internal sealed partial class FeedAddViewModel : ObservableRecipient, IDisposable
 {
     #region == Services ==
 
@@ -23,8 +23,9 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient
     public FeedAddViewModel(IAutoDiscoveryService serviceDiscovery, IDispatcherService dispatcherService)
     {
         _serviceDiscovery = serviceDiscovery;
-        _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
         _dispatcherService = dispatcherService;
+
+        _serviceDiscovery.StatusUpdate += new AutoDiscoveryStatusUpdateEventHandler(OnStatusUpdate);//new ServiceDiscovery.ServiceDiscoveryStatusUpdate(OnStatusUpdate);
     }
 
     #region == Properties ==
@@ -130,6 +131,11 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient
     private void GoToServiceFoundPage()
     {
         SelectedTabIndex = 3;
+    }
+
+    public void Dispose()
+    {
+        _serviceDiscovery.StatusUpdate -= OnStatusUpdate;
     }
 
     #endregion

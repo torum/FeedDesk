@@ -4,6 +4,13 @@ namespace FeedDesk.Models;
 
 public abstract class Node : ObservableObject
 {
+    protected Node() { }
+
+    protected Node(string name)
+    {
+        Name = name;
+    }
+
     public string Name
     {
         get;
@@ -21,10 +28,4 @@ public abstract class Node : ObservableObject
         }
     } = "";
 
-    protected Node() { }
-
-    protected Node(string name)
-    {
-        Name = name;
-    }
 }

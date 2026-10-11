@@ -34,6 +34,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly StringBuilder _debugEventLogStringBuilder = new();
     private CancellationTokenSource _ctsForSelectedTreeViewItem = new();
+    private volatile bool _isShuttingDown;
+    private readonly Lock _activeRefreshTasksLock = new();
+    private readonly HashSet<Task> _activeRefreshTasks = new();
 
     private readonly IFileDialogService _fileDialogService;
     private readonly IDataAccessService _dataAccessService;
@@ -47,8 +50,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     public event EventHandler<bool>? ShowWaitDialog;
 
-    //public event EventHandler<string>? DebugOutput;
-
     #endregion
 
     public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService)
@@ -57,10 +58,11 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         _dataAccessService = dataAccessService;
         _feedClientService = feedClientService;
         _feedRefreshService = feedRefreshService;
-        _feedClientService.BaseClient.DebugOutput += OnDebugOutput;
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
         _feedTreePersistenceService = feedTreePersistenceService;
+
+        //_feedClientService.BaseClient.DebugOutput += OnDebugOutput;
 
         InitializeFeedTree();
         InitializeDatabase();
@@ -830,25 +832,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #region == Finalization ==
 
-    public void CleanUp()
-    {
-        try
-        {
-            _ctsForSelectedTreeViewItem.Cancel();
-            _cts?.Cancel();
-
-            _feedClientService.BaseClient.DebugOutput -= OnDebugOutput;
-            _feedClientService?.BaseClient?.Dispose();
-
-            // let's not.
-            //_cts?.Dispose();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("Error while CleanUp() : " + ex);
-        }
-    }
-
     public void SaveServiceXml()
     {
         // This may be a bad idea.
@@ -872,6 +855,98 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         */
         var document = Root.AsXmlDoc();
         _feedTreePersistenceService.Save(document);
+    }
+
+    public async Task WaitForBackgroundOperationsAsync()
+    {
+        Task[] pending;
+
+        lock (_activeRefreshTasksLock)
+        {
+            pending = _activeRefreshTasks.ToArray();
+        }
+
+        try
+        {
+            await Task.WhenAll(pending).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            // Expected when shutdown cancels active feed requests.
+        }
+        catch (Exception ex)
+        {
+            // All tasks have finished; log the failure and allow host shutdown.
+            Debug.WriteLine($"Feed refresh failed during shutdown: {ex}");
+        }
+    }
+
+    public void BeginShutdown()
+    {
+        lock (_activeRefreshTasksLock)
+        {
+            _isShuttingDown = true;
+        }
+
+        try
+        {
+            if (!_ctsForSelectedTreeViewItem.IsCancellationRequested)
+            {
+                _ctsForSelectedTreeViewItem.Cancel();
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ex;
+            Debug.WriteLine($"Exception canceling _ctsForSelectedTreeViewItem during BeginShutdown(): {ex}");
+            //AppendErrorLog("BeginShutdown", ex.ToString());
+            //SaveErrorLog();
+        }
+
+        try
+        {
+            if (!_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ex;
+            Debug.WriteLine($"Exception canceling _cts during BeginShutdown(): {ex}");
+            //AppendErrorLog("BeginShutdown", ex.ToString());
+            //SaveErrorLog();
+        }
+    }
+
+    private static void CancelAndDispose(CancellationTokenSource? cts, string name)
+    {
+        try
+        {
+            cts?.Cancel();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Exception canceling {name} during Dispose(): {ex}");
+        }
+        finally
+        {
+            cts?.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        //_feedClientService.BaseClient.DebugOutput -= OnDebugOutput;
+        if (_ctsForSelectedTreeViewItem is not null)
+        {
+            CancelAndDispose(_ctsForSelectedTreeViewItem, nameof(_ctsForSelectedTreeViewItem));
+        }
+
+        if (_cts is not null)
+        {
+            CancelAndDispose(_cts, nameof(_cts));
+        }
     }
 
     #endregion
@@ -1261,6 +1336,40 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
     }
 
+    // Starts a tracked refresh operation, adding it to the list of active refresh tasks in order to wait for shutting down.
+    private Task StartTrackedRefresh(Func<Task> operation)
+    {
+        lock (_activeRefreshTasksLock)
+        {
+            if (_isShuttingDown || _cts.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
+
+            var task = Task.Run(operation, _cts.Token);
+            _activeRefreshTasks.Add(task);
+
+            _ = task.ContinueWith(
+                completed =>
+                {
+                    lock (_activeRefreshTasksLock)
+                    {
+                        _activeRefreshTasks.Remove(completed);
+                    }
+
+                    if (completed.IsFaulted)
+                    {
+                        Debug.WriteLine(completed.Exception);
+                    }
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
+            return task;
+        }
+    }
+
     // update all feeds recursive loop.
     private async Task<List<Task>> GetAllEntriesAndSaveTaskAsync(NodeTree nt)
     {
@@ -1279,67 +1388,21 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 }
                 else
                 {
+                    tasks.Add(StartTrackedRefresh(async () =>
+                    {
+                        // Existing refresh body:
+                        await RefreshFeedAsync(feed, _cts.Token);
+
+                        if (_cts.IsCancellationRequested)
+                            return;
+
+                        await Task.Delay(100);
+                    }));
+
+                    /*
                     tasks.Add(Task.Run(async () =>
                     {
-                        /*
-                        Debug.WriteLine($"Getting {feed.Name} @GetAllEntriesAndSaveTaskAsync");
 
-                        await _dispatcherService.EnqueueAsync(() =>
-                        {
-                            feed.IsBusy = true;
-
-                            EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                        });
-
-                        var list = await GetEntriesAsync(feed);
-
-                        //_cts.Token.ThrowIfCancellationRequested();
-                        if (_cts.Token.IsCancellationRequested)
-                        {
-                            return;
-                        }
-
-                        if (list.Count > 0)
-                        {
-                            var res = await SaveEntriesAsync(list, feed);
-
-                            //await Task.Delay(100);
-
-                            //_cts.Token.ThrowIfCancellationRequested();
-                            if (_cts.Token.IsCancellationRequested)
-                            {
-
-                                return;
-                            }
-
-                            if (res.Count > 0)
-                            {
-                                // pending flag.. < done in SaveEntriesAsync.
-
-
-                                // reload entries if selected.
-                                //await CheckParentSelectedAndLoadEntriesIfNotBusyAsync(feed); ;
-                            }
-                            else
-                            {
-                                ///
-                                //await CheckParentSelectedAndNotifyAsync(feed); ;
-                            }
-                        }
-                        else
-                        {
-                            feed.IsPendingReload = false;
-                            //
-                            //await CheckParentSelectedAndNotifyAsync(feed);
-                        }
-
-                        await _dispatcherService.EnqueueAsync(() =>
-                        {
-                            feed.IsBusy = false;
-
-                            EntryArchiveAllCommand.NotifyCanExecuteChanged();
-                        });
-                        */
                         await RefreshFeedAsync(feed, _cts.Token);
 
                         if (_cts.IsCancellationRequested)
@@ -1350,6 +1413,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                         await Task.Delay(100);
 
                     }, _cts.Token));
+                    */
                 }
             }
 
@@ -1381,6 +1445,32 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
 
         return res;
+    }
+
+    // Wraps a background task with error handling and cancellation support.
+    private async Task ObserveBackgroundTaskAsync(Task task, string operation, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when the selection changes or the app closes.
+        }
+        catch (OperationCanceledException) when (_isShuttingDown)
+        {
+            // Expected: refresh was canceled during app shutdown.
+        }
+        catch (ObjectDisposedException) when (_isShuttingDown)
+        {
+            // Expected: the shared HTTP client was disposed during shutdown.
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"{operation} failed: {ex}");
+            (Application.Current as App)?.AppendErrorLog(operation, ex.ToString());
+        }
     }
 
     // Loads node's all (including children) entries from database.
@@ -2027,23 +2117,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #endregion
 
-    private static async Task ObserveBackgroundTaskAsync(Task task, string operation, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await task;
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            // Expected when the selection changes or the app closes.
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"{operation} failed: {ex}");
-            (Application.Current as App)?.AppendErrorLog(operation, ex.ToString());
-        }
-    }
-
+    /*
     public void OnDebugOutput(BaseClient sender, string data)
     {
         if (string.IsNullOrEmpty(data))
@@ -2062,15 +2136,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             DebugEventLog = _debugEventLogStringBuilder.ToString();
         });
     }
-
-    public void Dispose()
-    {
-        _ctsForSelectedTreeViewItem?.Cancel();
-        _ctsForSelectedTreeViewItem?.Dispose();
-
-        _cts.Cancel();
-        _cts.Dispose();
-    }
+    */
 
     #endregion
 
@@ -2562,10 +2628,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             {
                 await LoadEntriesAsync(SelectedTreeViewItem, _ctsForSelectedTreeViewItem.Token);
             }
-            else
-            {
-                Debug.WriteLine($"No updates({SelectedTreeViewItem.Name}) @FeedRefreshAll");
-            }
         }
 
         await Task.Delay(100);
@@ -2652,10 +2714,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             if (tvn.IsPendingReload)
             {
                 await LoadEntriesAsync(tvn, _ctsForSelectedTreeViewItem.Token);
-            }
-            else
-            {
-                Debug.WriteLine($"No updates({tvn.Name}) @FeedRefresh");
             }
         }
 

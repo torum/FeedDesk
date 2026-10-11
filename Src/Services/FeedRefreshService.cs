@@ -27,17 +27,21 @@ public sealed class FeedRefreshService : IFeedRefreshService
     public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, Func<FeedRefreshStage, Task> reportStageAsync, CancellationToken cancellationToken)
     {
         await reportStageAsync(FeedRefreshStage.Downloading);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var fetchResult = await _feedClientService.GetEntries(request.EndPoint, request.FeedId, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
         var fetchedAt = DateTime.Now;
 
         if (fetchResult.IsError || fetchResult.Entries.Count == 0)
         {
             return new FeedRefreshResult(fetchedAt, fetchResult, null);
         }
-
         cancellationToken.ThrowIfCancellationRequested();
+
         await reportStageAsync(FeedRefreshStage.Saving);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var saveResult = await Task.Run(
             () => _dataAccessService.InsertEntries(
@@ -50,6 +54,7 @@ public sealed class FeedRefreshService : IFeedRefreshService
                 fetchResult.HtmlUri),
             cancellationToken);
 
+        cancellationToken.ThrowIfCancellationRequested();
         return new FeedRefreshResult(fetchedAt, fetchResult, saveResult);
     }
 }

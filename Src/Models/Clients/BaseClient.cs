@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace FeedDesk.Models.Clients;
 
-public abstract class BaseClient : IDisposable
+public abstract class BaseClient
 {
+    public abstract Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token);
+
+    /*
     private static readonly Lock _locker = new();
     private static volatile HttpClient? _client;
     //private static readonly HttpClient _client = new();
@@ -39,13 +42,25 @@ public abstract class BaseClient : IDisposable
     {
         if (disposing)
         {
-            _client?.Dispose();
+            _client?.CancelPendingRequests();
+            try
+            {
+                _client?.Dispose();
 
-            _client = null;
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message + " @BaseClient::Dispose");
+                ToDebugWindow("<< " + e.ToString() + " @BaseClient::Dispose: " + e.Message + Environment.NewLine);
+            }
+            finally
+            {
+                _client = null;
+            }
         }
     }
+    */
 
-    public abstract Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token);
 
     #region == Events ==
 
@@ -61,7 +76,7 @@ public abstract class BaseClient : IDisposable
         //var nowait = Task.Run(() => { });
         DebugOutput?.Invoke(this, data);
     }
-
+    /*
     private async Task<byte[]> GetImage(Uri imageUri)
     {
         var res = Array.Empty<byte>();
@@ -91,7 +106,7 @@ public abstract class BaseClient : IDisposable
 
         return res;
     }
-
+    */
     #region == Fill ErrorObject ==
 
     protected static ErrorObject InvalidUriScheme(ErrorObject err, string scheme, string errPlaceParent)

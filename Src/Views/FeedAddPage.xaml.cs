@@ -6,16 +6,17 @@ namespace FeedDesk.Views;
 
 internal sealed partial class FeedAddPage : Page
 {
-    public FeedAddViewModel ViewModel
-    {
-        get;
-    }
-
     public FeedAddPage()
     {
         ViewModel = App.GetService<FeedAddViewModel>();
         this.InitializeComponent();
     }
+
+    public FeedAddViewModel ViewModel
+    {
+        get;
+    }
+
 
     private void UrlTextBox_EnterInvoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
     {

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +16,14 @@ namespace FeedDesk.Services;
 
 internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 {
+    internal const string HttpClientName = "FeedDesk";
+    private readonly IHttpClientFactory _httpClientFactory;
     public BaseClient BaseClient => this;
 
-    public FeedClientService()
+    public FeedClientService(IHttpClientFactory httpClientFactory)
     {
+        _httpClientFactory = httpClientFactory;
+        /*
         //Client.BaseAddress = ;
         Client.DefaultRequestHeaders.Clear();
 
@@ -39,6 +44,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         Client.Timeout = TimeSpan.FromSeconds(15); // 15 sec timeout here
 
         //Client.DefaultRequestVersion = new Version(2, 0);
+        */
     }
 
     public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token)
@@ -60,31 +66,45 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             return res;
         }
 
-        //var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 15 sec http timeout.
-        //var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
+        //using var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 15 sec http timeout.
+        //using var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, token);
+
         try
         {
-            await Task.Delay(10, CancellationToken.None);
+            await Task.Delay(10, requestCts.Token);
+            /*
             //Debug.WriteLine("GetAsync @GetEntries in FeedClientService ");
             //var httpResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false)
-            var httpResponseMessage = await Client.GetAsync(entriesUrl, token).ConfigureAwait(false);
+            //var httpResponseMessage = await Client.GetAsync(entriesUrl, token).ConfigureAwait(false);
+            using var httpResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false);
 
-            token.ThrowIfCancellationRequested();
+            aggregateCts.Token.ThrowIfCancellationRequested();
+            */
 
-            if (httpResponseMessage.IsSuccessStatusCode)
+            using var client = _httpClientFactory.CreateClient(HttpClientName);
+
+            // Do not cancel in-progress TLS handshake. It would throw ObjectDisposedException and is anoying.
+            // Use timeoutCts ONLY for GetAsync, and use requestCts for the rest of the operations.
+            using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token).ConfigureAwait(false);//timeoutCts ONLY
+
+            requestCts.Token.ThrowIfCancellationRequested();
+
+            if (response.IsSuccessStatusCode)
             {
                 /*
-                var s = await httpResponseMessage.Content.ReadAsStringAsync();
+                var s = await response.Content.ReadAsStringAsync();
                 ToDebugWindow(">> HTTP Request: GET "
                     + entriesUrl.AbsoluteUri
                     + Environment.NewLine
-                    + "<< HTTP Response " + httpResponseMessage.StatusCode.ToString()
+                    + "<< HTTP Response " + response.StatusCode.ToString()
                     + Environment.NewLine + s + Environment.NewLine
                     + Environment.NewLine);
                 */
 
                 /*
-                var str = await httpResponseMessage.Content.ReadAsStringAsync();
+                var str = await response.Content.ReadAsStringAsync();
                 Debug.WriteLine(str);
                 */
 
@@ -92,156 +112,371 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 ToDebugWindow(">> HTTP Request: GET "
                     + entriesUrl.AbsoluteUri
                     + Environment.NewLine
-                    + "<< HTTP Response " + httpResponseMessage.StatusCode.ToString()
+                    + "<< HTTP Response " + response.StatusCode.ToString()
                     + Environment.NewLine);
                 */
-
+                /*
                 try
                 {
-                    //Debug.WriteLine("ReadAsStreamAsync @GetEntries in FeedClientService ");
-                    var source = await httpResponseMessage.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
 
-                    // Load XML
-                    var xdoc = new XmlDocument();
+                }
+                */
+                //Debug.WriteLine("ReadAsStreamAsync @GetEntries in FeedClientService ");
+                //var source = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+                using var source = await response.Content.ReadAsStreamAsync(requestCts.Token).ConfigureAwait(false);
+
+                requestCts.Token.ThrowIfCancellationRequested();
+
+                // Load XML
+                var xdoc = new XmlDocument();
+                try
+                {
+                    requestCts.Token.ThrowIfCancellationRequested();
+                    var settings = new XmlReaderSettings
+                    {
+                        DtdProcessing = DtdProcessing.Parse
+                    };
+                    
+                    //XmlReader reader = XmlReader.Create(source, settings);
+                    using var reader = XmlReader.Create(source, settings);
+                    requestCts.Token.ThrowIfCancellationRequested();
+                    xdoc.Load(reader);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    // If cancellation closed the response stream during the read,
+                    // report cancellation rather than invalid XML.
+                    requestCts.Token.ThrowIfCancellationRequested();
+
+                    Debug.WriteLine($"<< Exception xdoc.Load GetEntries FeedHttpClient ({entriesUrl.AbsoluteUri}): {e.Message}");
+
+                    ToDebugWindow("<< Invalid XML document returned from: " + entriesUrl.AbsoluteUri
+                        + Environment.NewLine
+                        + e.Message
+                        + Environment.NewLine);
+
+                    InvalidXml(res.Error, e.Message, "XmlDocument.Load", "FeedHttpClient: GetEntries");
+                    res.IsError = true;
+
+                    return res;
+                }
+
+                if (xdoc.DocumentElement == null)
+                {
+                    return res;
+                }
+
+                requestCts.Token.ThrowIfCancellationRequested();
+
+                // RSS 2.0
+                if (xdoc.DocumentElement.LocalName.Equals("rss"))
+                {
+                    XmlNamespaceManager NsMgr = new(xdoc.NameTable);
+                    NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
+                    NsMgr.AddNamespace("itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd");
+                    NsMgr.AddNamespace("content", "http://purl.org/rss/1.0/modules/content/");
+                    NsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
+
+                    XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("channel/title");
+                    res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
+
+                    XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("channel/description");
+                    res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
+
+                    XmlNode? feedLinkUri = xdoc.DocumentElement.SelectSingleNode("channel/link");
                     try
                     {
-                        var settings = new XmlReaderSettings
-                        {
-                            DtdProcessing = DtdProcessing.Parse
-                        };
-
-                        XmlReader reader = XmlReader.Create(source, settings);
-
-                        xdoc.Load(reader);
+                        if (feedLinkUri != null)
+                            if (!string.IsNullOrEmpty(feedLinkUri.InnerText))
+                                if (feedLinkUri.InnerText.StartsWith("http"))
+                                    res.HtmlUri = new Uri(feedLinkUri.InnerText);
                     }
                     catch (Exception e)
                     {
-                        Debug.WriteLine($"<< Exception xdoc.Load GetEntries FeedHttpClient ({entriesUrl.AbsoluteUri}): {e.Message}");
+                        Debug.WriteLine(">> Exception @RSS 2.0 new Uri(feedLinkUri): " + res.Title);
 
-                        ToDebugWindow("<< Invalid XML document returned from: " + entriesUrl.AbsoluteUri
-                            + Environment.NewLine
-                            + e.Message
-                            + Environment.NewLine);
-
-                        InvalidXml(res.Error, e.Message, "XmlDocument.Load", "FeedHttpClient: GetEntries");
-                        res.IsError = true;
-
-                        return res;
+                        ToDebugWindow(">> Exception @RSS 2.0 new Uri(feedLinkUri)"
+                            + Environment.NewLine +
+                            "RSS feed (" + res.Title + ") contain invalid entry Uri: " + e.Message +
+                            Environment.NewLine);
                     }
 
-                    if (xdoc.DocumentElement == null)
+                    XmlNode? feedPudDate = xdoc.DocumentElement.SelectSingleNode("channel/pubDate");
+                    if (feedPudDate != null)
                     {
-                        return res;
-                    }
-
-                    // RSS 2.0
-                    if (xdoc.DocumentElement.LocalName.Equals("rss"))
-                    {
-                        XmlNamespaceManager NsMgr = new(xdoc.NameTable);
-                        NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
-                        NsMgr.AddNamespace("itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd");
-                        NsMgr.AddNamespace("content", "http://purl.org/rss/1.0/modules/content/");
-                        NsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
-
-                        XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("channel/title");
-                        res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
-
-                        XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("channel/description");
-                        res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
-
-                        XmlNode? feedLinkUri = xdoc.DocumentElement.SelectSingleNode("channel/link");
-                        try
+                        var s = feedPudDate.InnerText;
+                        if (!string.IsNullOrEmpty(s))
                         {
-                            if (feedLinkUri != null)
-                                if (!string.IsNullOrEmpty(feedLinkUri.InnerText))
-                                    if (feedLinkUri.InnerText.StartsWith("http"))
-                                        res.HtmlUri = new Uri(feedLinkUri.InnerText);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine(">> Exception @RSS 2.0 new Uri(feedLinkUri): " + res.Title);
-
-                            ToDebugWindow(">> Exception @RSS 2.0 new Uri(feedLinkUri)"
-                                + Environment.NewLine +
-                                "RSS feed (" + res.Title + ") contain invalid entry Uri: " + e.Message +
-                                Environment.NewLine);
-                        }
-
-                        XmlNode? feedPudDate = xdoc.DocumentElement.SelectSingleNode("channel/pubDate");
-                        if (feedPudDate != null)
-                        {
-                            var s = feedPudDate.InnerText;
-                            if (!string.IsNullOrEmpty(s))
+                            try
                             {
+                                DateTimeOffset dtf = DateTimeParser.ParseDateTimeRFC822(s);
+                                res.Published = dtf.ToUniversalTime().DateTime;
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine("Exception @ParseDateTimeRFC822 in the RSS 2.0 feed " + "(" + res.Title + ")" + " : " + e.Message);
+
+                                ToDebugWindow(">> Exception @FeedClient@ParseDateTimeRFC822()"
+                                    + Environment.NewLine +
+                                    "RSS feed entry(" + res.Title + ") contain invalid feed pubDate (DateTimeRFC822 expected): " + e.Message +
+                                    Environment.NewLine);
+
+                                // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
                                 try
                                 {
-                                    DateTimeOffset dtf = DateTimeParser.ParseDateTimeRFC822(s);
-                                    res.Published = dtf.ToUniversalTime().DateTime;
-                                }
-                                catch (Exception e)
-                                {
-                                    Debug.WriteLine("Exception @ParseDateTimeRFC822 in the RSS 2.0 feed " + "(" + res.Title + ")" + " : " + e.Message);
-
-                                    ToDebugWindow(">> Exception @FeedClient@ParseDateTimeRFC822()"
-                                        + Environment.NewLine +
-                                        "RSS feed entry(" + res.Title + ") contain invalid feed pubDate (DateTimeRFC822 expected): " + e.Message +
-                                        Environment.NewLine);
-
-                                    // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
-                                    try
+                                    if (DateTime.TryParse(s, out DateTime tmp))
                                     {
-                                        if (DateTime.TryParse(s, out DateTime tmp))
+                                        res.Published = tmp.ToUniversalTime();
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+
+                    XmlNode? feedLastBuildDate = xdoc.DocumentElement.SelectSingleNode("channel/lastBuildDate");
+                    if (feedLastBuildDate != null)
+                    {
+                        var s = feedLastBuildDate.InnerText;
+                        if (!string.IsNullOrEmpty(s))
+                        {
+                            try
+                            {
+                                DateTimeOffset dtf = DateTimeParser.ParseDateTimeRFC822(s);
+
+                                res.Updated = dtf.ToUniversalTime().DateTime;
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine("Exception @ParseDateTimeRFC822 in the RSS 2.0 feed " + "(" + res.Title + ")" + " : " + e.Message);
+
+                                ToDebugWindow(">> Exception @FeedClient@ParseDateTimeRFC822()"
+                                    + Environment.NewLine +
+                                    "RSS feed entry(" + res.Title + ") contain invalid feed lastBuildDate (DateTimeRFC822 expected): " + e.Message +
+                                    Environment.NewLine);
+
+                                // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
+                                try
+                                {
+                                    if (DateTime.TryParse(s, out DateTime tmp))
+                                    {
+                                        res.Updated = tmp.ToUniversalTime();
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+
+                    XmlNodeList? entryList;
+                    entryList = xdoc.SelectNodes("//rss/channel/item");
+                    if (entryList == null)
+                    {
+                        res.Entries = list;
+                        return res;
+                    }
+
+                    requestCts.Token.ThrowIfCancellationRequested();
+                    var i = 0;
+                    foreach (XmlNode l in entryList)
+                    {
+                        if (i >= 1000)
+                            continue;
+                        i++;
+
+                        FeedEntryItem ent = new("", feedId, this);
+
+                        FillEntryItemFromXmlRss(ent, l, NsMgr, entriesUrl);
+
+                        if (!string.IsNullOrEmpty(ent.EntryId))
+                            list.Add(ent);
+                    }
+
+                    // 
+                    //await GetImages(list);
+                }
+                // RSS 1.0
+                else if (xdoc.DocumentElement.LocalName.Equals("RDF"))
+                {
+                    XmlNamespaceManager NsMgr = new(xdoc.NameTable);
+                    NsMgr.AddNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+                    NsMgr.AddNamespace("rss", "http://purl.org/rss/1.0/");
+                    NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
+                    NsMgr.AddNamespace("hatena", "http://www.hatena.ne.jp/info/xmlns#");
+                    NsMgr.AddNamespace("content", "http://purl.org/rss/1.0/modules/content/");
+                    NsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
+
+                    XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("rss:channel/rss:title", NsMgr);
+                    res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
+
+                    XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("rss:channel/rss:description", NsMgr);
+                    res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
+
+                    XmlNode? feedLinkUri = xdoc.DocumentElement.SelectSingleNode("rss:channel/rss:link", NsMgr);
+                    try
+                    {
+                        if (feedLinkUri != null)
+                            if (!string.IsNullOrEmpty(feedLinkUri.InnerText))
+                                res.HtmlUri = new Uri(feedLinkUri.InnerText);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(">> Exception @RSS 1.0 new Uri(feedLinkUri)");
+
+                        ToDebugWindow(">> Exception @RSS 1.0 new Uri(feedLinkUri)"
+                            + Environment.NewLine +
+                            "RSS feed (" + res.Title + ") contain invalid entry Uri: " + e.Message +
+                            Environment.NewLine);
+                    }
+
+                    XmlNode? feedLastBuildDate = xdoc.DocumentElement.SelectSingleNode("rss:channel/dc:date", NsMgr);
+                    if (feedLastBuildDate != null)
+                    {
+                        var s = feedLastBuildDate.InnerText;
+                        if (!string.IsNullOrEmpty(s))
+                        {
+                            try
+                            {
+                                var date = DateTimeOffset.Parse(s);
+
+                                res.Updated = date.UtcDateTime;
+                            }
+                            catch
+                            {
+                                Debug.WriteLine(">> Exception @RSS 1.0 Parse rss:channel/dc:date");
+                            }
+                        }
+                    }
+
+                    XmlNodeList? entryList = xdoc.SelectNodes("//rdf:RDF/rss:item", NsMgr);
+                    if (entryList == null)
+                    {
+                        res.Entries = list;
+                        return res;
+                    }
+
+                    requestCts.Token.ThrowIfCancellationRequested();
+                    var i = 0;
+                    foreach (XmlNode l in entryList)
+                    {
+                        if (i >= 1000)
+                            continue;
+                        i++;
+                        FeedEntryItem ent = new("", feedId, this);
+
+                        FillEntryItemFromXmlRdf(ent, l, NsMgr, entriesUrl);
+
+                        if (!string.IsNullOrEmpty(ent.EntryId))
+                            list.Add(ent);
+                    }
+
+                    // 
+                    //await GetImages(list);
+                }
+                // Atom 0.3 or 1.0
+                else if (xdoc.DocumentElement.LocalName.Equals("feed"))
+                {
+                    // Atom 1.0
+                    if (xdoc.DocumentElement.NamespaceURI.Equals("http://www.w3.org/2005/Atom"))
+                    {
+                        XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
+                        atomNsMgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
+                        atomNsMgr.AddNamespace("app", "http://www.w3.org/2007/app");
+                        atomNsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
+
+                        XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("atom:title", atomNsMgr);
+                        res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
+
+                        XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("atom:subtitle", atomNsMgr);
+                        res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
+
+                        XmlNodeList? feedLinkUris = xdoc.DocumentElement.SelectNodes("atom:link", atomNsMgr);
+                        string relAttr;
+                        string hrefAttr;
+                        string typeAttr;
+                        Uri? altUri = null;
+                        if (feedLinkUris != null)
+                        {
+                            foreach (XmlNode u in feedLinkUris)
+                            {
+                                if (u.Attributes != null)
+                                {
+                                    relAttr = (u.Attributes["rel"] != null) ? u.Attributes["rel"]!.Value : "";
+                                    hrefAttr = (u.Attributes["href"] != null) ? u.Attributes["href"]!.Value : "";
+                                    typeAttr = (u.Attributes["type"] != null) ? u.Attributes["type"]!.Value : "";
+
+                                    if (!string.IsNullOrEmpty(hrefAttr))
+                                    {
+                                        if (relAttr.Equals("alternate") || relAttr == "")
                                         {
-                                            res.Published = tmp.ToUniversalTime();
+                                            if ((typeAttr == "text/html") || typeAttr == "")
+                                            {
+                                                try
+                                                {
+                                                    //altUri = new Uri(hrefAttr);
+                                                    if (hrefAttr.StartsWith("http"))
+                                                    {
+                                                        // Absolute uri.
+                                                        altUri = new Uri(hrefAttr);
+                                                    }
+                                                    else
+                                                    {
+                                                        // Relative uri (probably...)
+                                                        // Uri(baseUri, relativeUriString)
+                                                        altUri = new Uri(entriesUrl, hrefAttr);
+                                                    }
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Debug.WriteLine("Exception @new Uri(altUri) @ FeedClient Atom1.0" + "(" + res.Title + ")" + " : " + e.Message);
+
+                                                    ToDebugWindow(">> Exception @FeedClient@new Uri(altUri)"
+                                                        + Environment.NewLine +
+                                                        "Atom feed (" + res.Title + ") contain invalid atom:altUri: " + e.Message +
+                                                        Environment.NewLine);
+                                                }
+                                            }
                                         }
                                     }
-                                    catch { }
                                 }
                             }
                         }
+                        res.HtmlUri = altUri;
 
-                        XmlNode? feedLastBuildDate = xdoc.DocumentElement.SelectSingleNode("channel/lastBuildDate");
-                        if (feedLastBuildDate != null)
+                        XmlNode? feedUpdated = xdoc.DocumentElement.SelectSingleNode("atom:updated", atomNsMgr);
+                        if (feedUpdated != null)
                         {
-                            var s = feedLastBuildDate.InnerText;
-                            if (!string.IsNullOrEmpty(s))
+                            if (!string.IsNullOrEmpty(feedUpdated.InnerText))
                             {
                                 try
                                 {
-                                    DateTimeOffset dtf = DateTimeParser.ParseDateTimeRFC822(s);
-
-                                    res.Updated = dtf.ToUniversalTime().DateTime;
+                                    res.Updated = XmlConvert.ToDateTime(feedUpdated.InnerText, XmlDateTimeSerializationMode.Utc);
                                 }
                                 catch (Exception e)
                                 {
-                                    Debug.WriteLine("Exception @ParseDateTimeRFC822 in the RSS 2.0 feed " + "(" + res.Title + ")" + " : " + e.Message);
+                                    Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + " : " + e.Message);
 
-                                    ToDebugWindow(">> Exception @FeedClient@ParseDateTimeRFC822()"
+                                    ToDebugWindow(">> Exception @FeedClient@ XmlConvert.ToDateTime()"
                                         + Environment.NewLine +
-                                        "RSS feed entry(" + res.Title + ") contain invalid feed lastBuildDate (DateTimeRFC822 expected): " + e.Message +
+                                        "Atom feed(" + res.Title + ") contain invalid feed atom:updated: " + e.Message +
                                         Environment.NewLine);
-
-                                    // TODO: really shouldn't to cover these invalid format, but...for the usability stand point...
-                                    try
-                                    {
-                                        if (DateTime.TryParse(s, out DateTime tmp))
-                                        {
-                                            res.Updated = tmp.ToUniversalTime();
-                                        }
-                                    }
-                                    catch { }
                                 }
                             }
                         }
 
                         XmlNodeList? entryList;
-                        entryList = xdoc.SelectNodes("//rss/channel/item");
+                        entryList = xdoc.SelectNodes("//atom:feed/atom:entry", atomNsMgr);
                         if (entryList == null)
                         {
                             res.Entries = list;
                             return res;
                         }
 
+                        requestCts.Token.ThrowIfCancellationRequested();
                         var i = 0;
                         foreach (XmlNode l in entryList)
                         {
@@ -250,8 +485,9 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             i++;
 
                             FeedEntryItem ent = new("", feedId, this);
+                            //ent.Status = EditEntryItem.EditStatus.esNormal;
 
-                            FillEntryItemFromXmlRss(ent, l, NsMgr, entriesUrl);
+                            FillEntryItemFromXmlAtom10(ent, l, atomNsMgr, entriesUrl);
 
                             if (!string.IsNullOrEmpty(ent.EntryId))
                                 list.Add(ent);
@@ -260,60 +496,95 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         // 
                         //await GetImages(list);
                     }
-                    // RSS 1.0
-                    else if (xdoc.DocumentElement.LocalName.Equals("RDF"))
+                    // Old Atom 0.3
+                    else if (xdoc.DocumentElement.NamespaceURI.Equals("http://purl.org/atom/ns#"))
                     {
-                        XmlNamespaceManager NsMgr = new(xdoc.NameTable);
-                        NsMgr.AddNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-                        NsMgr.AddNamespace("rss", "http://purl.org/rss/1.0/");
-                        NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
-                        NsMgr.AddNamespace("hatena", "http://www.hatena.ne.jp/info/xmlns#");
-                        NsMgr.AddNamespace("content", "http://purl.org/rss/1.0/modules/content/");
-                        NsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
+                        XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
+                        atomNsMgr.AddNamespace("atom", "http://purl.org/atom/ns#");
+                        atomNsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
 
-                        XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("rss:channel/rss:title", NsMgr);
+                        XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("atom:title", atomNsMgr);
                         res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
 
-                        XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("rss:channel/rss:description", NsMgr);
+                        XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("atom:tagline", atomNsMgr);
                         res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
 
-                        XmlNode? feedLinkUri = xdoc.DocumentElement.SelectSingleNode("rss:channel/rss:link", NsMgr);
-                        try
+                        XmlNodeList? feedLinkUris = xdoc.DocumentElement.SelectNodes("atom:link", atomNsMgr);
+                        string relAttr;
+                        string hrefAttr;
+                        string typeAttr;
+                        Uri? altUri = null;
+                        if (feedLinkUris != null)
                         {
-                            if (feedLinkUri != null)
-                                if (!string.IsNullOrEmpty(feedLinkUri.InnerText))
-                                    res.HtmlUri = new Uri(feedLinkUri.InnerText);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine(">> Exception @RSS 1.0 new Uri(feedLinkUri)");
+                            foreach (XmlNode u in feedLinkUris)
+                            {
+                                if (u.Attributes != null)
+                                {
+                                    relAttr = (u.Attributes["rel"] != null) ? u.Attributes["rel"]!.Value : "";
+                                    hrefAttr = (u.Attributes["href"] != null) ? u.Attributes["href"]!.Value : "";
+                                    typeAttr = (u.Attributes["type"] != null) ? u.Attributes["type"]!.Value : "";
 
-                            ToDebugWindow(">> Exception @RSS 1.0 new Uri(feedLinkUri)"
-                                + Environment.NewLine +
-                                "RSS feed (" + res.Title + ") contain invalid entry Uri: " + e.Message +
-                                Environment.NewLine);
-                        }
+                                    if (!string.IsNullOrEmpty(hrefAttr))
+                                    {
+                                        if (relAttr.Equals("alternate") || relAttr == "")
+                                        {
+                                            if ((typeAttr == "text/html") || typeAttr == "")
+                                            {
+                                                try
+                                                {
+                                                    //altUri = new Uri(hrefAttr);
+                                                    if (hrefAttr.StartsWith("http"))
+                                                    {
+                                                        // Absolute uri.
+                                                        altUri = new Uri(hrefAttr);
+                                                    }
+                                                    else
+                                                    {
+                                                        // Relative uri (probably...)
+                                                        // Uri(baseUri, relativeUriString)
+                                                        altUri = new Uri(entriesUrl, hrefAttr);
+                                                    }
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    Debug.WriteLine("Exception @new Uri(altUri) @ FeedClient Atom0.3" + "(" + res.Title + ")" + " : " + e.Message);
 
-                        XmlNode? feedLastBuildDate = xdoc.DocumentElement.SelectSingleNode("rss:channel/dc:date", NsMgr);
-                        if (feedLastBuildDate != null)
+                                                    ToDebugWindow(">> Exception @FeedClient@new Uri(altUri)"
+                                                        + Environment.NewLine +
+                                                        "Atom feed(" + res.Title + ") contain invalid atom:altUri: " + e.Message +
+                                                        Environment.NewLine);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        res.HtmlUri = altUri;
+
+                        XmlNode? feedUpdated = xdoc.DocumentElement.SelectSingleNode("atom:modified", atomNsMgr);
+                        if (feedUpdated != null)
                         {
-                            var s = feedLastBuildDate.InnerText;
-                            if (!string.IsNullOrEmpty(s))
+                            if (!string.IsNullOrEmpty(feedUpdated.InnerText))
                             {
                                 try
                                 {
-                                    var date = DateTimeOffset.Parse(s);
-
-                                    res.Updated = date.UtcDateTime;
+                                    res.Updated = XmlConvert.ToDateTime(feedUpdated.InnerText, XmlDateTimeSerializationMode.Utc);
                                 }
-                                catch
+                                catch (Exception e)
                                 {
-                                    Debug.WriteLine(">> Exception @RSS 1.0 Parse rss:channel/dc:date");
+                                    Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + "(" + res.Title + ")" + " : " + e.Message);
+
+                                    ToDebugWindow(">> Exception @FeedClient@ XmlConvert.ToDateTime()"
+                                        + Environment.NewLine +
+                                        "Atom feed(" + res.Title + ") contain invalid feed atom:published: " + e.Message +
+                                        Environment.NewLine);
                                 }
                             }
                         }
 
-                        XmlNodeList? entryList = xdoc.SelectNodes("//rdf:RDF/rss:item", NsMgr);
+                        XmlNodeList? entryList;
+                        entryList = xdoc.SelectNodes("//atom:feed/atom:entry", atomNsMgr);
                         if (entryList == null)
                         {
                             res.Entries = list;
@@ -326,9 +597,11 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             if (i >= 1000)
                                 continue;
                             i++;
-                            FeedEntryItem ent = new("", feedId, this);
 
-                            FillEntryItemFromXmlRdf(ent, l, NsMgr, entriesUrl);
+                            FeedEntryItem ent = new("", feedId, this);
+                            //ent.Status = EditEntryItem.EditStatus.esNormal;
+
+                            FillEntryItemFromXmlAtom03(ent, l, atomNsMgr, entriesUrl);
 
                             if (!string.IsNullOrEmpty(ent.EntryId))
                                 list.Add(ent);
@@ -336,256 +609,13 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                         // 
                         //await GetImages(list);
-                    }
-                    // Atom 0.3 or 1.0
-                    else if (xdoc.DocumentElement.LocalName.Equals("feed"))
-                    {
-                        // Atom 1.0
-                        if (xdoc.DocumentElement.NamespaceURI.Equals("http://www.w3.org/2005/Atom"))
-                        {
-                            XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
-                            atomNsMgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
-                            atomNsMgr.AddNamespace("app", "http://www.w3.org/2007/app");
-                            atomNsMgr.AddNamespace("media", "http://search.yahoo.com/mrss/");
 
-                            XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("atom:title", atomNsMgr);
-                            res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
-
-                            XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("atom:subtitle", atomNsMgr);
-                            res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
-
-                            XmlNodeList? feedLinkUris = xdoc.DocumentElement.SelectNodes("atom:link", atomNsMgr);
-                            string relAttr;
-                            string hrefAttr;
-                            string typeAttr;
-                            Uri? altUri = null;
-                            if (feedLinkUris != null)
-                            {
-                                foreach (XmlNode u in feedLinkUris)
-                                {
-                                    if (u.Attributes != null)
-                                    {
-                                        relAttr = (u.Attributes["rel"] != null) ? u.Attributes["rel"]!.Value : "";
-                                        hrefAttr = (u.Attributes["href"] != null) ? u.Attributes["href"]!.Value : "";
-                                        typeAttr = (u.Attributes["type"] != null) ? u.Attributes["type"]!.Value : "";
-
-                                        if (!string.IsNullOrEmpty(hrefAttr))
-                                        {
-                                            if (relAttr.Equals("alternate") || relAttr == "")
-                                            {
-                                                if ((typeAttr == "text/html") || typeAttr == "")
-                                                {
-                                                    try
-                                                    {
-                                                        //altUri = new Uri(hrefAttr);
-                                                        if (hrefAttr.StartsWith("http"))
-                                                        {
-                                                            // Absolute uri.
-                                                            altUri = new Uri(hrefAttr);
-                                                        }
-                                                        else
-                                                        {
-                                                            // Relative uri (probably...)
-                                                            // Uri(baseUri, relativeUriString)
-                                                            altUri = new Uri(entriesUrl, hrefAttr);
-                                                        }
-                                                    }
-                                                    catch (Exception e)
-                                                    {
-                                                        Debug.WriteLine("Exception @new Uri(altUri) @ FeedClient Atom1.0" + "(" + res.Title + ")" + " : " + e.Message);
-
-                                                        ToDebugWindow(">> Exception @FeedClient@new Uri(altUri)"
-                                                            + Environment.NewLine +
-                                                            "Atom feed (" + res.Title + ") contain invalid atom:altUri: " + e.Message +
-                                                            Environment.NewLine);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            res.HtmlUri = altUri;
-
-                            XmlNode? feedUpdated = xdoc.DocumentElement.SelectSingleNode("atom:updated", atomNsMgr);
-                            if (feedUpdated != null)
-                            {
-                                if (!string.IsNullOrEmpty(feedUpdated.InnerText))
-                                {
-                                    try
-                                    {
-                                        res.Updated = XmlConvert.ToDateTime(feedUpdated.InnerText, XmlDateTimeSerializationMode.Utc);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + " : " + e.Message);
-
-                                        ToDebugWindow(">> Exception @FeedClient@ XmlConvert.ToDateTime()"
-                                            + Environment.NewLine +
-                                            "Atom feed(" + res.Title + ") contain invalid feed atom:updated: " + e.Message +
-                                            Environment.NewLine);
-                                    }
-                                }
-                            }
-
-                            XmlNodeList? entryList;
-                            entryList = xdoc.SelectNodes("//atom:feed/atom:entry", atomNsMgr);
-                            if (entryList == null)
-                            {
-                                res.Entries = list;
-                                return res;
-                            }
-
-                            var i = 0;
-                            foreach (XmlNode l in entryList)
-                            {
-                                if (i >= 1000)
-                                    continue;
-                                i++;
-
-                                FeedEntryItem ent = new("", feedId, this);
-                                //ent.Status = EditEntryItem.EditStatus.esNormal;
-
-                                FillEntryItemFromXmlAtom10(ent, l, atomNsMgr, entriesUrl);
-
-                                if (!string.IsNullOrEmpty(ent.EntryId))
-                                    list.Add(ent);
-                            }
-
-                            // 
-                            //await GetImages(list);
-                        }
-                        // Old Atom 0.3
-                        else if (xdoc.DocumentElement.NamespaceURI.Equals("http://purl.org/atom/ns#"))
-                        {
-                            XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
-                            atomNsMgr.AddNamespace("atom", "http://purl.org/atom/ns#");
-                            atomNsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
-
-                            XmlNode? feedTitle = xdoc.DocumentElement.SelectSingleNode("atom:title", atomNsMgr);
-                            res.Title = (feedTitle != null) ? feedTitle.InnerText : "";
-
-                            XmlNode? feedDesc = xdoc.DocumentElement.SelectSingleNode("atom:tagline", atomNsMgr);
-                            res.Description = (feedDesc != null) ? feedDesc.InnerText : "";
-
-                            XmlNodeList? feedLinkUris = xdoc.DocumentElement.SelectNodes("atom:link", atomNsMgr);
-                            string relAttr;
-                            string hrefAttr;
-                            string typeAttr;
-                            Uri? altUri = null;
-                            if (feedLinkUris != null)
-                            {
-                                foreach (XmlNode u in feedLinkUris)
-                                {
-                                    if (u.Attributes != null)
-                                    {
-                                        relAttr = (u.Attributes["rel"] != null) ? u.Attributes["rel"]!.Value : "";
-                                        hrefAttr = (u.Attributes["href"] != null) ? u.Attributes["href"]!.Value : "";
-                                        typeAttr = (u.Attributes["type"] != null) ? u.Attributes["type"]!.Value : "";
-
-                                        if (!string.IsNullOrEmpty(hrefAttr))
-                                        {
-                                            if (relAttr.Equals("alternate") || relAttr == "")
-                                            {
-                                                if ((typeAttr == "text/html") || typeAttr == "")
-                                                {
-                                                    try
-                                                    {
-                                                        //altUri = new Uri(hrefAttr);
-                                                        if (hrefAttr.StartsWith("http"))
-                                                        {
-                                                            // Absolute uri.
-                                                            altUri = new Uri(hrefAttr);
-                                                        }
-                                                        else
-                                                        {
-                                                            // Relative uri (probably...)
-                                                            // Uri(baseUri, relativeUriString)
-                                                            altUri = new Uri(entriesUrl, hrefAttr);
-                                                        }
-                                                    }
-                                                    catch (Exception e)
-                                                    {
-                                                        Debug.WriteLine("Exception @new Uri(altUri) @ FeedClient Atom0.3" + "(" + res.Title + ")" + " : " + e.Message);
-
-                                                        ToDebugWindow(">> Exception @FeedClient@new Uri(altUri)"
-                                                            + Environment.NewLine +
-                                                            "Atom feed(" + res.Title + ") contain invalid atom:altUri: " + e.Message +
-                                                            Environment.NewLine);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            res.HtmlUri = altUri;
-
-                            XmlNode? feedUpdated = xdoc.DocumentElement.SelectSingleNode("atom:modified", atomNsMgr);
-                            if (feedUpdated != null)
-                            {
-                                if (!string.IsNullOrEmpty(feedUpdated.InnerText))
-                                {
-                                    try
-                                    {
-                                        res.Updated = XmlConvert.ToDateTime(feedUpdated.InnerText, XmlDateTimeSerializationMode.Utc);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Debug.WriteLine("Exception @XmlConvert.ToDateTime in the Atom 1.0 feed " + "(" + res.Title + ")" + " : " + e.Message);
-
-                                        ToDebugWindow(">> Exception @FeedClient@ XmlConvert.ToDateTime()"
-                                            + Environment.NewLine +
-                                            "Atom feed(" + res.Title + ") contain invalid feed atom:published: " + e.Message +
-                                            Environment.NewLine);
-                                    }
-                                }
-                            }
-
-                            XmlNodeList? entryList;
-                            entryList = xdoc.SelectNodes("//atom:feed/atom:entry", atomNsMgr);
-                            if (entryList == null)
-                            {
-                                res.Entries = list;
-                                return res;
-                            }
-
-                            var i = 0;
-                            foreach (XmlNode l in entryList)
-                            {
-                                if (i >= 1000)
-                                    continue;
-                                i++;
-
-                                FeedEntryItem ent = new("", feedId, this);
-                                //ent.Status = EditEntryItem.EditStatus.esNormal;
-
-                                FillEntryItemFromXmlAtom03(ent, l, atomNsMgr, entriesUrl);
-
-                                if (!string.IsNullOrEmpty(ent.EntryId))
-                                    list.Add(ent);
-                            }
-
-                            // 
-                            //await GetImages(list);
-
-                            ToDebugWindow("<< Old version of Atom feed format detected. Update recommended: " + entriesUrl.AbsoluteUri
-                                + Environment.NewLine);
-                        }
-                        else
-                        {
-                            ToDebugWindow("<< FormatUndetermined @FeedClient:GetEntries@xdoc.DocumentElement.NamespaceURI.Equals"
-                                + Environment.NewLine);
-
-                            FormatUndetermined(res.Error, "FeedHttpClient: GetEntries");
-                            res.IsError = true;
-
-                            return res;
-                        }
+                        ToDebugWindow("<< Old version of Atom feed format detected. Update recommended: " + entriesUrl.AbsoluteUri
+                            + Environment.NewLine);
                     }
                     else
                     {
-                        ToDebugWindow("<< FormatUndetermined @FeedClient:GetEntries:xdoc.DocumentElement.LocalName/NamespaceURI"
+                        ToDebugWindow("<< FormatUndetermined @FeedClient:GetEntries@xdoc.DocumentElement.NamespaceURI.Equals"
                             + Environment.NewLine);
 
                         FormatUndetermined(res.Error, "FeedHttpClient: GetEntries");
@@ -593,8 +623,19 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                         return res;
                     }
-
                 }
+                else
+                {
+                    ToDebugWindow("<< FormatUndetermined @FeedClient:GetEntries:xdoc.DocumentElement.LocalName/NamespaceURI"
+                        + Environment.NewLine);
+
+                    FormatUndetermined(res.Error, "FeedHttpClient: GetEntries");
+                    res.IsError = true;
+
+                    return res;
+                }
+
+                /*
                 catch (Exception e)
                 {
                     ToDebugWindow("<< Exception ReadAsStreamAsyncm: " + entriesUrl.AbsoluteUri
@@ -607,20 +648,23 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     HttpReqException(res.Error, e.Message, "httpResponseMessage.Content.ReadAsStreamAsync()", "FeedHttpClient:GetEntries");
                     res.IsError = true;
                 }
+                */
             }
             // HTTP non 200 status code.
             else
             {
-                Debug.WriteLine($"{httpResponseMessage.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
+                requestCts.Token.ThrowIfCancellationRequested();
+                Debug.WriteLine($"{response.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
 
-                var contents = await httpResponseMessage.Content.ReadAsStringAsync(token);
+                var contents = await response.Content.ReadAsStringAsync(requestCts.Token);
+                requestCts.Token.ThrowIfCancellationRequested();
 
                 if (contents != null)
                 {
                     ToDebugWindow(">> HTTP Request: GET "
                         + entriesUrl.AbsoluteUri
                         + Environment.NewLine
-                        + "<< HTTP Response: " + httpResponseMessage.StatusCode.ToString()
+                        + "<< HTTP Response: " + response.StatusCode.ToString()
                         + Environment.NewLine);
                     //+ contents + Environment.NewLine);
                 }
@@ -629,12 +673,12 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     ToDebugWindow(">> HTTP Request: GET "
                         + entriesUrl.AbsoluteUri
                         + Environment.NewLine
-                        + "<< HTTP Response: " + httpResponseMessage.StatusCode.ToString()
+                        + "<< HTTP Response: " + response.StatusCode.ToString()
                         + Environment.NewLine);
                     //+ contents + Environment.NewLine);
                 }
 
-                NonSuccessStatusCode(res.Error, httpResponseMessage.StatusCode.ToString(), "Client.GetAsync", "FeedHttpClient.GetEntries");
+                NonSuccessStatusCode(res.Error, response.StatusCode.ToString(), "Client.GetAsync", "FeedHttpClient.GetEntries");
                 res.IsError = true;
 
                 return res;
@@ -716,10 +760,6 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             res.IsError = true;
 
             return res;
-        }
-        finally
-        {
-            //timoutCts.Dispose();
         }
 
         return res;

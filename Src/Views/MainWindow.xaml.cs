@@ -60,6 +60,8 @@ public partial class MainWindow : Window
             presenter.PreferredMinimumWidth = 600;
             presenter.PreferredMinimumHeight = 780;
         }
+
+        this.Closed += Window_Closed;
     }
 
     [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
@@ -519,25 +521,26 @@ public partial class MainWindow : Window
 
     private void Window_Closed(object sender, WindowEventArgs args)
     {
+        /*
         var vm = App.GetService<MainViewModel>();
 
         // Save service tree.
         vm.SaveServiceXml();
-
+        */
         // Dispose httpclient.
-        vm.CleanUp();
+        //vm.CleanUp();
 
-        SaveSettings();
+        //SaveSettings();
 
         // Save err log.
-        (Application.Current as App)?.SaveErrorLog();
+        //(Application.Current as App)?.SaveErrorLog();
     }
 
     // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
     // https://github.com/dotnet/runtime/issues/121590
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
-    private void SaveSettings()
+    public void SaveSettings()
     {
         var vm = App.GetService<MainViewModel>();
 

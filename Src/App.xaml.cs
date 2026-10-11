@@ -12,6 +12,8 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using WinRT;
 
 
@@ -97,12 +99,28 @@ public partial class App
                 // Core Services
                 services.AddSingleton<IFileDialogService, FileDialogService>();
                 services.AddSingleton<IDataAccessService, DataAccessService>();
-                services.AddSingleton<IFeedClientService, FeedClientService>();
+                //services.AddSingleton<IFeedClientService, FeedClientService>();
                 services.AddSingleton<IAutoDiscoveryService, AutoDiscoveryService>();
                 services.AddSingleton<IOpmlService, OpmlService>();
                 services.AddSingleton<IDispatcherService>(new DispatcherService(CurrentDispatcherQueue));
                 services.AddSingleton<IFeedRefreshService, FeedRefreshService>();
                 services.AddSingleton<IFeedTreePersistenceService, FeedTreePersistenceService>();
+                services.AddHttpClient(FeedClientService.HttpClientName, client =>
+                {
+                    // Use the per-request cancellation token as the single timeout mechanism.
+                    client.Timeout = Timeout.InfiniteTimeSpan;
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rss+xml"));
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rdf+xml"));
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
+                }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+                    {
+                        ConnectTimeout = TimeSpan.FromSeconds(15)
+                    });
+
+                services.AddSingleton<IFeedClientService, FeedClientService>();
 
                 // Views and ViewModels
                 services.AddSingleton<SettingsPage>();
@@ -179,9 +197,17 @@ public partial class App
         {
             await _appHostStartTask;
         }
+
+        MainWnd?.SaveSettings();
+        var vm = GetService<MainViewModel>();
+        vm.SaveServiceXml();
+
+        vm.BeginShutdown();
+
         try
         {
             await Host.StopAsync();
+            await vm.WaitForBackgroundOperationsAsync(); // Await tracked refresh tasks.
         }
         catch (Exception ex)
         {
@@ -196,8 +222,10 @@ public partial class App
             }
             catch (Exception ex)
             {
-                AppendErrorLog("AppHost.Dispose", ex.ToString());
-                SaveErrorLog();
+                _ = ex;
+                Debug.WriteLine($"Exception disposing Host: {ex}");
+                //AppendErrorLog("AppHost.Dispose", ex.ToString());
+                //SaveErrorLog();
             }
         }
     }
@@ -222,14 +250,21 @@ public partial class App
         // This does not fire...because of winui3 bugs. should be fixed in v1.2.2 WinAppSDK
         // see https://github.com/microsoft/microsoft-ui-xaml/issues/5221
 
-        Debug.WriteLine("App_UnhandledException", e.Message + $"StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
-        AppendErrorLog("App_UnhandledException", e.Message + $"StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
-
-        try
+        Debug.WriteLine("App_UnhandledException", e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
+        AppendErrorLog("App_UnhandledException", e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
+        if (e.Exception.InnerException is TaskCanceledException or OperationCanceledException)
         {
+            // can ignore.
+            Debug.WriteLine("App_UnhandledException (TaskCanceledException): " + e.Exception.Message);
+            //AppendErrorLog("App_UnhandledException (TaskCanceledException)", e.Exception.Message);
+        }
+        else
+        {
+            Debug.WriteLine("App_UnhandledException: " + e.Exception.Message);
+            AppendErrorLog("App_UnhandledException", e.Exception.Message);
             SaveErrorLog();
         }
-        catch (Exception) { }
+
     }
 
     private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)

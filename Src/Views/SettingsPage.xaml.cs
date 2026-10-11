@@ -5,15 +5,15 @@ namespace FeedDesk.Views;
 
 internal sealed partial class SettingsPage : Page
 {
-    public MainViewModel ViewModel
-    {
-        get;
-    }
-
     public SettingsPage()
     {
         ViewModel = App.GetService<MainViewModel>();
 
         InitializeComponent();
+    }
+
+    public MainViewModel ViewModel
+    {
+        get;
     }
 }
