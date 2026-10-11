@@ -41,12 +41,12 @@ internal sealed partial class MainPage : Page
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        ViewModel.ShowWaitDialog += (sender, arg) => { OnShowWaitDialog(arg); };
+        ViewModel.ShowWaitDialog += OnShowWaitDialog;
     }
 
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
-        ViewModel.ShowWaitDialog -= (sender, arg) => { OnShowWaitDialog(arg); };
+        ViewModel.ShowWaitDialog -= OnShowWaitDialog;
     }
 
     public MainViewModel ViewModel
@@ -60,7 +60,7 @@ internal sealed partial class MainPage : Page
     } = [];
 
     [DynamicWindowsRuntimeCast(typeof(Style))]
-    public async void OnShowWaitDialog(bool isShow)
+    public async void OnShowWaitDialog(object? sender, bool isShow)
     {
         if (isShow)
         {

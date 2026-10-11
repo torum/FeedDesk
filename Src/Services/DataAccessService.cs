@@ -349,7 +349,9 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
                 cmd.ExecuteNonQuery();
 
-                cmd.CommandText = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedId);
+                cmd.CommandText = "DELETE FROM feeds WHERE feed_id = $feedId;";
+                cmd.Parameters.AddWithValue("$feedId", feedId);
+
                 res.AffectedCount = cmd.ExecuteNonQuery();
 
                 cmd.Transaction.Commit();
@@ -452,7 +454,7 @@ internal sealed class DataAccessService : IDataAccessService
             {
                 cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
                 cmd.ExecuteNonQuery();
-
+                /*
                 var sql = "UPDATE feeds SET ";
                 sql += String.Format("name = '{0}', ", EscapeSingleQuote(feedName));
                 sql += String.Format("title = '{0}', ", EscapeSingleQuote(feedTitle));
@@ -465,6 +467,34 @@ internal sealed class DataAccessService : IDataAccessService
                 sql += String.Format(" WHERE feed_id = '{0}'; ", feedId);
 
                 cmd.CommandText = sql;
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+                */
+                cmd.CommandText = """
+                    UPDATE feeds
+                    SET name = $name,
+                        title = $title,
+                        description = $description,
+                        updated = $updated
+                    """;
+
+                if (htmlUri is not null)
+                {
+                    cmd.CommandText += ", html_url = $htmlUrl";
+                }
+
+                cmd.CommandText += " WHERE feed_id = $feedId;";
+
+                cmd.Parameters.AddWithValue("$name", feedName);
+                cmd.Parameters.AddWithValue("$title", feedTitle);
+                cmd.Parameters.AddWithValue("$description", feedDescription);
+                cmd.Parameters.AddWithValue("$updated",updated.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
+                cmd.Parameters.AddWithValue("$feedId", feedId);
+
+                if (htmlUri is not null)
+                {
+                    cmd.Parameters.AddWithValue("$htmlUrl", htmlUri.AbsoluteUri);
+                }
 
                 res.AffectedCount = cmd.ExecuteNonQuery();
 
@@ -568,6 +598,7 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
                 cmd.ExecuteNonQuery();
 
+                /*
                 // update feed info.
                 var sql = "UPDATE feeds SET ";
                 sql += string.Format("name = '{0}', ", EscapeSingleQuote(feedName));
@@ -582,10 +613,54 @@ internal sealed class DataAccessService : IDataAccessService
 
                 cmd.CommandText = sql;
                 cmd.ExecuteNonQuery();
+                */
+                // Update feed info.
+                cmd.Parameters.Clear();
+                cmd.CommandText = """
+                    UPDATE feeds
+                    SET name = @Name,
+                        title = @Title,
+                        description = @Description,
+                        updated = @Updated
+                    """;
+
+                if (htmlUri is not null)
+                {
+                    cmd.CommandText += ", html_url = @HtmlUri";
+                }
+
+                cmd.CommandText += " WHERE feed_id = @FeedId;";
+
+                cmd.Parameters.AddWithValue("@Name", feedName);
+                cmd.Parameters.AddWithValue("@Title", feedTitle);
+                cmd.Parameters.AddWithValue("@Description", feedDescription);
+                cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                cmd.Parameters.AddWithValue("@FeedId", feedId);
+                if (htmlUri is not null)
+                {
+                    cmd.Parameters.AddWithValue("@HtmlUri", htmlUri.AbsoluteUri);
+                }
+                cmd.ExecuteNonQuery();
 
                 // Experimental 
                 // Delete old entries LIMIT 1000.
+                /*
                 cmd.CommandText = string.Format("DELETE FROM entries WHERE feed_id = '{0}' AND entry_id NOT IN (SELECT entry_id FROM entries WHERE feed_id = '{0}' ORDER BY updated DESC LIMIT 1000);", feedId);//ASC
+                cmd.ExecuteNonQuery();
+                */
+                cmd.Parameters.Clear();
+                cmd.CommandText = """
+                    DELETE FROM entries
+                    WHERE feed_id = @FeedId
+                      AND entry_id NOT IN (
+                          SELECT entry_id
+                          FROM entries
+                          WHERE feed_id = @FeedId
+                          ORDER BY updated DESC
+                          LIMIT 1000
+                      );
+                    """;
+                cmd.Parameters.AddWithValue("@FeedId", feedId);
                 cmd.ExecuteNonQuery();
 
                 foreach (var entry in entries)
@@ -769,6 +844,7 @@ internal sealed class DataAccessService : IDataAccessService
                     else
                     {
                         // Update
+                        /*
                         var sqlUpdate = "UPDATE entries SET ";
                         sqlUpdate += string.Format("title = '{0}', ", EscapeSingleQuote(entry.Title ?? ""));
                         sqlUpdate += string.Format("author = '{0}', ", EscapeSingleQuote(entry.Author ?? "-"));
@@ -808,6 +884,45 @@ internal sealed class DataAccessService : IDataAccessService
                         sqlUpdate += string.Format(" WHERE entry_id = '{0}'; ", entry.Id);
                         //Debug.WriteLine(sqlUpdate);
                         cmd.CommandText = sqlUpdate;
+                        var c = cmd.ExecuteNonQuery();
+                        */
+                        cmd.Parameters.Clear();
+                        cmd.CommandText = """
+                            UPDATE entries
+                            SET title = @Title,
+                                author = @Author,
+                                category = @Category,
+                                summary = @Summary,
+                                content = @Content,
+                                image_url = @ImageUri,
+                                audio_url = @AudioUri,
+                                updated = @Updated
+                            """;
+
+                        if (entry.AltHtmlUri is not null)
+                        {
+                            cmd.CommandText += ", url = @Url";
+                        }
+
+                        cmd.CommandText += " WHERE entry_id = @EntryId;";
+
+                        cmd.Parameters.AddWithValue("@Title", entry.Title ?? "");
+                        cmd.Parameters.AddWithValue("@Author", entry.Author ?? "-");
+                        cmd.Parameters.AddWithValue("@Category", entry.Category ?? "-");
+                        cmd.Parameters.AddWithValue("@Summary", entry.Summary ?? "");
+                        cmd.Parameters.AddWithValue("@Content", entry.Content ?? "");
+                        cmd.Parameters.AddWithValue("@ImageUri", entry.ImageUri?.AbsoluteUri ?? "");
+                        cmd.Parameters.AddWithValue("@AudioUri", entry.AudioUri?.AbsoluteUri ?? "");
+                        cmd.Parameters.AddWithValue("@Updated", entry.Updated == default
+                                ? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+                                : updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                        cmd.Parameters.AddWithValue("@EntryId", entry.Id);
+
+                        if (entry.AltHtmlUri is not null)
+                        {
+                            cmd.Parameters.AddWithValue("@Url", entry.AltHtmlUri.AbsoluteUri);
+                        }
+
                         var c = cmd.ExecuteNonQuery();
                         if (c > 0)
                         {
@@ -1159,6 +1274,23 @@ internal sealed class DataAccessService : IDataAccessService
         return res;
     }
 
+
+    private static string AddStringListParameters(
+    SqliteCommand command,
+    IReadOnlyList<string> values,
+    string parameterPrefix)
+    {
+        var placeholders = new string[values.Count];
+
+        for (var i = 0; i < values.Count; i++)
+        {
+            placeholders[i] = $"${parameterPrefix}{i}";
+            command.Parameters.AddWithValue(placeholders[i], values[i]);
+        }
+
+        return string.Join(", ", placeholders);
+    }
+
     public SqliteDataAccessSelectResultWrapper SelectEntriesByFeedIds(List<string> feedIds, bool IsUnarchivedOnly = true)
     {
         var res = new SqliteDataAccessSelectResultWrapper();
@@ -1172,7 +1304,7 @@ internal sealed class DataAccessService : IDataAccessService
         {
             return res;
         }
-
+        /*
         var before = "SELECT feeds.name as feedName, feeds.feed_id as feedId, entries.title as entryTitle, entries.entry_id as entryId, entries.url as entryUrl, entries.published as entryPublished, entries.updated as entryUpdated, entries.summary as entrySummary, entries.content as entryContent, entries.content_type as entryContentType, entries.image_url as entryImageUri, entries.audio_url as entryAudioUri, entries.source as entrySource, entries.source_url as entrySourceUri, entries.author as entryAuthor, entries.category as entryCategory, entries.comment_url as entryCommentUri, entries.archived as entryArchived, entries.status as entryStatus FROM entries INNER JOIN feeds USING (feed_id) WHERE ";
 
         var middle = "(";
@@ -1199,6 +1331,10 @@ internal sealed class DataAccessService : IDataAccessService
         }
 
         //Debug.WriteLine(before + middle + after);
+        */
+
+
+
 
         //_readerWriterLock.EnterReadLock();
         try
@@ -1210,7 +1346,33 @@ internal sealed class DataAccessService : IDataAccessService
             cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
             cmd.ExecuteNonQuery();
 
-            cmd.CommandText = before + middle + after;
+            //cmd.CommandText = before + middle + after;
+            var placeholders = AddStringListParameters(cmd, feedIds, "feedId");
+
+            cmd.CommandText = $"""
+                SELECT feeds.name AS feedName, feeds.feed_id AS feedId,
+                       entries.title AS entryTitle, entries.entry_id AS entryId,
+                       entries.url AS entryUrl, entries.published AS entryPublished,
+                       entries.updated AS entryUpdated, entries.summary AS entrySummary,
+                       entries.content AS entryContent, entries.content_type AS entryContentType,
+                       entries.image_url AS entryImageUri, entries.audio_url AS entryAudioUri,
+                       entries.source AS entrySource, entries.source_url AS entrySourceUri,
+                       entries.author AS entryAuthor, entries.category AS entryCategory,
+                       entries.comment_url AS entryCommentUri, entries.archived AS entryArchived,
+                       entries.status AS entryStatus
+                FROM entries INNER JOIN feeds USING (feed_id)
+                WHERE feed_id IN ({placeholders})
+                """;
+
+            if (IsUnarchivedOnly)
+            {
+                cmd.CommandText += " AND archived = $archived ORDER BY published DESC LIMIT 1000";
+                cmd.Parameters.AddWithValue("$archived", bool.FalseString);
+            }
+            else
+            {
+                cmd.CommandText += " ORDER BY published DESC LIMIT 10000";
+            }
 
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -1442,7 +1604,7 @@ internal sealed class DataAccessService : IDataAccessService
         {
             return res;
         }
-
+        /*
         var before = string.Format("UPDATE entries SET archived = '{0}' WHERE ", bool.TrueString);
 
         var middle = "(";
@@ -1458,7 +1620,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
 
         var after = string.Format(") AND archived = '{0}'", bool.FalseString);
-
+        */
         //Debug.WriteLine(before + middle + after);
 
         _readerWriterLock.EnterWriteLock();
@@ -1472,12 +1634,20 @@ internal sealed class DataAccessService : IDataAccessService
 
             try
             {
+                cmd.CommandType = CommandType.Text;
                 cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
                 cmd.ExecuteNonQuery();
 
-                cmd.CommandText = before + middle + after;
+                //cmd.CommandText = before + middle + after;
+                var placeholders = AddStringListParameters(cmd, feedIds, "feedId");
 
-                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = $"""
+                    UPDATE entries
+                    SET archived = $archived
+                    WHERE feed_id IN ({placeholders}) AND archived = $unarchived;
+                    """;
+                cmd.Parameters.AddWithValue("$archived", bool.TrueString);
+                cmd.Parameters.AddWithValue("$unarchived", bool.FalseString);
 
                 res.AffectedCount = cmd.ExecuteNonQuery();
 
@@ -1554,11 +1724,11 @@ internal sealed class DataAccessService : IDataAccessService
             // TODO:
             return res;
         }
-
+        /*
         var sql = "UPDATE entries SET ";
         sql += string.Format("status = '{0}'", readStatus.ToString());
         sql += string.Format(" WHERE entry_id = '{0}'; ", entryId);
-
+        */
         _readerWriterLock.EnterWriteLock();
         try
         {
@@ -1572,7 +1742,10 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
                 cmd.ExecuteNonQuery();
 
-                cmd.CommandText = sql;
+                //cmd.CommandText = sql;
+                cmd.CommandText = "UPDATE entries SET status = $status WHERE entry_id = $entryId;";
+                cmd.Parameters.AddWithValue("$status", readStatus.ToString());
+                cmd.Parameters.AddWithValue("$entryId", entryId);
 
                 res.AffectedCount = cmd.ExecuteNonQuery();
 
@@ -1653,7 +1826,7 @@ internal sealed class DataAccessService : IDataAccessService
         {
             return res;
         }
-
+        /*
         string sqlDelEntries;// = string.Empty;
 
         if (feedIds.Count > 1)
@@ -1681,7 +1854,7 @@ internal sealed class DataAccessService : IDataAccessService
             sqlDelEntries = String.Format("DELETE FROM entries WHERE feed_id = '{0}';", feedIds[0]);
             //sqlDelEntries = String.Format("DELETE FROM feeds WHERE feed_id = '{0}';", feedIds[0]);
         }
-
+        */
         //Debug.WriteLine(sqlDelEntries);
 
         _readerWriterLock.EnterWriteLock();
@@ -1697,7 +1870,9 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
                 cmd.ExecuteNonQuery();
 
-                cmd.CommandText = sqlDelEntries;
+                //cmd.CommandText = sqlDelEntries;
+                var placeholders = AddStringListParameters(cmd, feedIds, "feedId");
+                cmd.CommandText = $"DELETE FROM entries WHERE feed_id IN ({placeholders});";
 
                 res.AffectedCount = cmd.ExecuteNonQuery();
 

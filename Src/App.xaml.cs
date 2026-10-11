@@ -10,6 +10,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using WinRT;
 
@@ -37,6 +38,7 @@ public partial class App
 #endif
     public string LogFilePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
     private readonly StringBuilder _errortxt = new();
+    private readonly Lock _errorLogLock = new();
     private Task? _appHostStartTask;
     private Task? _appHostStopTask;
 
@@ -184,6 +186,18 @@ public partial class App
             AppendErrorLog("AppHost.StopAsync", ex.ToString());
             SaveErrorLog();
         }
+        finally
+        {
+            try
+            {
+                Host.Dispose();
+            }
+            catch (Exception ex)
+            {
+                AppendErrorLog("AppHost.Dispose", ex.ToString());
+                SaveErrorLog();
+            }
+        }
     }
 
     private void App_Activated(object? sender, Microsoft.Windows.AppLifecycle.AppActivationArguments e)
@@ -253,34 +267,29 @@ public partial class App
 
     public void AppendErrorLog(string kindTxt, string errorTxt)
     {
-        _errortxt.AppendLine(kindTxt + ": " + errorTxt);
-        var dt = DateTime.Now;
-        _errortxt.AppendLine($"Occured at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
-        _errortxt.AppendLine("");
+        lock (_errorLogLock)
+        {
+            _errortxt.AppendLine(kindTxt + ": " + errorTxt);
+            var dt = DateTime.Now;
+            _errortxt.AppendLine($"Occured at {dt:yyyy/MM/dd HH:mm:ss}");
+            _errortxt.AppendLine();
+        }
     }
 
     public void SaveErrorLog()
     {
-        if (!IsSaveErrorLog)
+        lock (_errorLogLock)
         {
-            return;
-        }
+            if (!IsSaveErrorLog || string.IsNullOrEmpty(LogFilePath) || _errortxt.Length == 0)
+            {
+                return;
+            }
 
-        if (string.IsNullOrEmpty(LogFilePath))
-        {
-            return;
-        }
+            var dt = DateTime.Now;
+            _errortxt.AppendLine();
+            _errortxt.AppendLine($"Saved at {dt:yyyy/MM/dd HH:mm:ss}");
 
-        if (_errortxt.Length <= 0) return;
-
-        _errortxt.AppendLine("");
-        var dt = DateTime.Now;
-        _errortxt.AppendLine($"Saved at {dt.ToString("yyyy/MM/dd HH:mm:ss")}");
-
-        var s = _errortxt.ToString();
-        if (!string.IsNullOrEmpty(s))
-        {
-            File.WriteAllText(LogFilePath, s);
+            File.WriteAllText(LogFilePath, _errortxt.ToString());
         }
     }
 

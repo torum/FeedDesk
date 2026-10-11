@@ -182,7 +182,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                         //Entries.Clear();
 
                         //LoadEntries(nfeed);
-                        _ = LoadEntriesAsync(nfeed, _ctsForSelectedTreeViewItem.Token); // Fire and forget
+                        //_ = LoadEntriesAsync(nfeed, _ctsForSelectedTreeViewItem.Token); // Fire and forget
+                        var selectionToken = _ctsForSelectedTreeViewItem.Token;
+
+                        _ = ObserveBackgroundTaskAsync(LoadEntriesAsync(nfeed, selectionToken), "LoadEntriesAsync", selectionToken);
                     }
                     else
                     {
@@ -197,7 +200,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     //Entries.Clear();
 
                     //LoadEntries(folder);
-                    _ = LoadEntriesAsync(folder, _ctsForSelectedTreeViewItem.Token);// Fire and forget
+                    //_ = LoadEntriesAsync(folder, _ctsForSelectedTreeViewItem.Token);// Fire and forget
+                    var selectionToken = _ctsForSelectedTreeViewItem.Token;
+
+                    _ = ObserveBackgroundTaskAsync(LoadEntriesAsync(folder, selectionToken), "LoadEntriesAsync", selectionToken);
                 }
 
                 // notify at last.
@@ -311,7 +317,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 {
                     return;
                 }
-                _ = UpdateEntryStatusAsReadAsync(SelectedTreeViewItem, field); // Fire and forget
+                //_ = UpdateEntryStatusAsReadAsync(SelectedTreeViewItem, field); // Fire and forget
+                var lifetimeToken = _cts.Token;
+
+                _ = ObserveBackgroundTaskAsync(UpdateEntryStatusAsReadAsync(SelectedTreeViewItem, field),"UpdateEntryStatusAsReadAsync",lifetimeToken);
             }
         }
     } = null;
@@ -448,7 +457,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 return;
             }
 
-            _ = LoadEntriesAsync(nt, _ctsForSelectedTreeViewItem.Token);// Fire and forget
+            //_ = LoadEntriesAsync(nt, _ctsForSelectedTreeViewItem.Token);// Fire and forget
+            var selectionToken = _ctsForSelectedTreeViewItem.Token;
+
+            _ = ObserveBackgroundTaskAsync(LoadEntriesAsync(nt, selectionToken), "LoadEntriesAsync", selectionToken);
         }
     }
 
@@ -758,9 +770,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             //Debug.WriteLine(Windows.Storage.ApplicationData.Current.LocalFolder.Path);
         }
 
+        var cancellationToken = _cts.Token;
         try
         {
-            var res = await Task.Run(() => _dataAccessService.InitializeDatabase(filePath), _cts.Token);
+            var res = await Task.Run(() => _dataAccessService.InitializeDatabase(filePath), cancellationToken);
             if (res.IsError)
             {
                 ErrorMain = res.Error;
@@ -768,6 +781,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
                 Debug.WriteLine("SQLite DB init: " + res.Error.ErrText + ": " + res.Error.ErrDescription + " @" + res.Error.ErrPlace + "@" + res.Error.ErrPlaceParent);
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when the app is shutting down.
         }
         catch (Exception e)
         {
@@ -784,6 +801,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     {
         try
         {
+            _ctsForSelectedTreeViewItem.Cancel();
             _cts?.Cancel();
 
             _feedClientService.BaseClient.DebugOutput -= OnDebugOutput;
@@ -1259,7 +1277,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             if (nt is NodeFeed feed)
             {
-                res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedId(feed.Id, feed.IsInboxOnly), _cts.Token);
+                res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedId(feed.Id, feed.IsInboxOnly), cancellationToken);
 
                 //cancellationToken.ThrowIfCancellationRequested();
                 if (cancellationToken.IsCancellationRequested)
@@ -1326,7 +1344,8 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     return;
                 }
 
-                res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsInboxOnly), _cts.Token);
+                //res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsInboxOnly), _cts.Token);
+                res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsInboxOnly), cancellationToken);
 
                 //cancellationToken.ThrowIfCancellationRequested();
                 if (cancellationToken.IsCancellationRequested)
@@ -1437,6 +1456,14 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 }
 
                 nt.IsBusy = false;
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await dispatcher.EnqueueAsync(() =>
+            {
+                nt.IsBusy = false;
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
             });
         }
         catch (Exception ex)
@@ -1760,12 +1787,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     private async Task UpdateEntryStatusAsReadAsync(NodeTree nd, FeedEntryItem entry)
     {
-        if ((nd == null) || (entry == null))
-        {
-            return;
-        }
-
-        if ((nd is not NodeFeed) && (nd is not NodeFolder))
+        if (nd is not (NodeFeed or NodeFolder))
         {
             return;
         }
@@ -1780,13 +1802,15 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             return;
         }
-
+        /*
         var rs = FeedEntryItem.ReadStatus.rsNewVisited;
         if (entry.IsArchived)
         {
             rs = FeedEntryItem.ReadStatus.rsNormalVisited;
         }
-
+        */
+        var status = entry.IsArchived ? FeedEntryItem.ReadStatus.rsNormalVisited : FeedEntryItem.ReadStatus.rsNewVisited;
+        /*
         var res = await Task.Run(() => _dataAccessService.UpdateEntryReadStatus(entry.EntryId, rs), _cts.Token);
 
         if (!res.IsError)
@@ -1829,9 +1853,64 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
             return;
         }
+        */
+        var cancellationToken = _cts.Token;
+
+        try
+        {
+            var result = await Task.Run(() => _dataAccessService.UpdateEntryReadStatus(entry.EntryId, status),cancellationToken);
+
+            // The synchronous database call may have finished after shutdown began.
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!result.IsError)
+            {
+                await dispatcher.EnqueueAsync(() => entry.Status = status);
+                return;
+            }
+
+            Debug.WriteLine($"UpdateEntryStatusAsReadAsync: {result.Error.ErrText}");
+
+            await dispatcher.EnqueueAsync(() =>
+            {
+                if (nd == SelectedTreeViewItem && nd is NodeFeed feed)
+                {
+                    feed.Status = NodeFeed.DownloadStatus.Error;
+                }
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when the app is shutting down.
+        }
+        // The caller may have already handled the exception, so we don't log it here.
+        /*
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"UpdateEntryStatusAsReadAsync failed: {ex}");
+            (Application.Current as App)?.AppendErrorLog(nameof(UpdateEntryStatusAsReadAsync), ex.ToString());
+        }
+        */
     }
 
     #endregion
+
+    private static async Task ObserveBackgroundTaskAsync(Task task, string operation, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when the selection changes or the app closes.
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"{operation} failed: {ex}");
+            (Application.Current as App)?.AppendErrorLog(operation, ex.ToString());
+        }
+    }
 
     public void OnDebugOutput(BaseClient sender, string data)
     {

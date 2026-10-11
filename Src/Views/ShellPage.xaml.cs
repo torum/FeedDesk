@@ -8,9 +8,7 @@ namespace FeedDesk.Views;
 
 public sealed partial class ShellPage : Page
 {
-    public MainViewModel ViewModel { get; }
-
-    public Frame NavFrame => NavigationFrame;
+    private MainWindow? _mainWindow;
 
     public ShellPage(MainViewModel vm)
     {
@@ -25,6 +23,10 @@ public sealed partial class ShellPage : Page
         this.ActualThemeChanged += this.This_ActualThemeChanged;
     }
 
+    public MainViewModel ViewModel { get; }
+
+    public Frame NavFrame => NavigationFrame;
+
     public void SetTitleBar(MainWindow wnd)
     {
         // MainWindow is null when ShellPage is created because of the order of creation.
@@ -32,7 +34,8 @@ public sealed partial class ShellPage : Page
 
         wnd.SetTitleBar(AppTitleBar);
 
-        wnd.Activated += MainWindow_Activated;
+        _mainWindow = wnd;
+        _mainWindow.Activated += MainWindow_Activated;
     }
 
     private void This_ActualThemeChanged(FrameworkElement sender, object args)
@@ -60,8 +63,9 @@ public sealed partial class ShellPage : Page
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
         // Unsub
-        var wnd = App.GetService<MainWindow>();
-        wnd?.Activated -= MainWindow_Activated;
+        
+        _mainWindow?.Activated -= MainWindow_Activated;
+
         this.ActualThemeChanged -= this.This_ActualThemeChanged;
     }
 }

@@ -124,16 +124,24 @@
 		<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
 		<PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
 		<PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
-
+		
+		<!-- Needs this when creating an unpackaged single self-contained exe file in the command-line. 
+		<WindowsPackageType>None</WindowsPackageType>
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		-->
 		<!-- 
-	  	  <PublishAot>false</PublishAot>
-	  <PublishTrimmed>false</PublishTrimmed>
-	   -->
+		<PublishAot>false</PublishAot>
+		<PublishTrimmed>false</PublishTrimmed>
+		-->
 		<!-- 
 	  
-	  <PublishAot>true</PublishAot>
-	  <PublishTrimmed>True</PublishTrimmed>
-	  <PublishSingleFile>false</PublishSingleFile>
+		<PublishAot>true</PublishAot>
+		<PublishTrimmed>True</PublishTrimmed>
+		<PublishSingleFile>false</PublishSingleFile>
+		<NativeDebugSymbols>true</NativeDebugSymbols>
+		<StripSymbols>false</StripSymbols>
+		<DebugType>full</DebugType>
 	   -->
 
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
