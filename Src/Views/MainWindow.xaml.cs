@@ -72,7 +72,7 @@ public sealed partial class MainWindow : Window
     private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
         Debug.WriteLine("Shutdown: AppWindow_Closing");
-
+        /*
         if (App.Current is not App app)
         {
             return;
@@ -95,8 +95,29 @@ public sealed partial class MainWindow : Window
 
         app.AppHostStopTask = app.StopAppHostAndCloseWindowAsync();
         await app.AppHostStopTask;
-        AppWindow.Closing -= AppWindow_Closing;
+        //AppWindow.Closing -= AppWindow_Closing;
         this.Close();
+        */
+    }
+
+    private void Window_Closed(object sender, WindowEventArgs args)
+    {
+        Debug.WriteLine("Shutdown: Window_Closed");
+        this.AppWindow.Closing += AppWindow_Closing;
+
+        /*
+        var vm = App.GetService<MainViewModel>();
+
+        // Save service tree.
+        vm.SaveServiceXml();
+        */
+        // Dispose httpclient.
+        //vm.CleanUp();
+
+        //SaveSettings();
+
+        // Save err log.
+        //(Application.Current as App)?.SaveErrorLog();
     }
 
 
@@ -553,25 +574,6 @@ public sealed partial class MainWindow : Window
                 }
             }
         }
-    }
-
-    private void Window_Closed(object sender, WindowEventArgs args)
-    {
-        Debug.WriteLine("Shutdown: Window_Closed");
-
-        /*
-        var vm = App.GetService<MainViewModel>();
-
-        // Save service tree.
-        vm.SaveServiceXml();
-        */
-        // Dispose httpclient.
-        //vm.CleanUp();
-
-        //SaveSettings();
-
-        // Save err log.
-        //(Application.Current as App)?.SaveErrorLog();
     }
 
     // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2

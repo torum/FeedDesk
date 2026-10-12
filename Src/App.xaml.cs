@@ -32,7 +32,8 @@ public partial class App
     public static readonly string AppName = "FeedDesk";//_resourceLoader.GetString("AppName");
     public static string AppDataFolder { get; } = EnvDataFolder + Path.DirectorySeparatorChar + AppDeveloper + Path.DirectorySeparatorChar + AppName;
     public static string AppConfigFilePath { get; } = Path.Combine(AppDataFolder, AppName + ".config");
-
+    private readonly CancellationTokenSource _cts = new();
+    public CancellationTokenSource AppCancellationToken => _cts;
     // ErrorLog
 #if DEBUG
     public bool IsSaveErrorLog = true;
@@ -150,8 +151,8 @@ public partial class App
                 services.AddSingleton<IFeedTreePersistenceService, FeedTreePersistenceService>();
                 services.AddHttpClient(FeedClientService.HttpClientName, client =>
                 {
-                    // Use the per-request cancellation token as the single timeout mechanism.
-                    client.Timeout = Timeout.InfiniteTimeSpan;
+                    // Addition to this timeout, also use the per-request cancellation token as the fallback timeout mechanism.
+                    client.Timeout = TimeSpan.FromSeconds(15);// or Timeout.InfiniteTimeSpan;
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
@@ -214,12 +215,10 @@ public partial class App
 
         _appHostStartTask = StartAppHostAsync();
         MainWnd = GetService<MainWindow>();
-        /*
-        MainWnd.AppWindow.Closing += (sender, e) =>
+        MainWnd.Closed += (sender, e) =>
         {
             _appHostStopTask = StopAppHostAsync();
         };
-        */
         //MainWnd.AppWindow.Show(true);
         MainWnd.Activate();
         MainWnd.AppWindow.MoveInZOrderAtTop();
@@ -240,6 +239,10 @@ public partial class App
 
     public async Task StopAppHostAndCloseWindowAsync()
     {
+        // This one uses MainWindow.AppWindow.Close() to wait for the background tasks to finish, then close the window after cleanup is done.
+        // However, this does not work well because the window closes immediately if close is requested via Alt+F4.
+        // Also, it is not good UX to show a dialog and force to wait when a user just trying to close the window.
+
         var progressRing = new ProgressRing
         {
             IsActive = true,
@@ -360,6 +363,10 @@ public partial class App
             {
                 LogShutdownTimestamp($"Shutdown: Host.Dispose exception: {ex}");
                 Debug.WriteLine($"Exception disposing Host: {ex}");
+            }
+            finally
+            {
+                _cts?.Dispose();
             }
         }
     }

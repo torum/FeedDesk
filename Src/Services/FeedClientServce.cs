@@ -68,7 +68,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
         //using var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 15 sec http timeout.
         //using var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));
         using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, token);
 
         try
@@ -85,9 +85,8 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
             using var client = _httpClientFactory.CreateClient(HttpClientName);
 
-            // Do not cancel in-progress TLS handshake. It would throw ObjectDisposedException and is anoying.
-            // Use timeoutCts ONLY for GetAsync, and use requestCts for the rest of the operations.
-            using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token).ConfigureAwait(false);//timeoutCts ONLY
+            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException and is anoying.
+            using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, requestCts.Token).ConfigureAwait(false);//timeoutCts ONLY
 
             requestCts.Token.ThrowIfCancellationRequested();
 
@@ -719,12 +718,12 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             HttpReqException(res.Error, e.Message, "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
-        catch (TaskCanceledException e) when (token.IsCancellationRequested)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
+        catch (TaskCanceledException e) when (requestCts.Token.IsCancellationRequested)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
         {
-            requestCts.Token.ThrowIfCancellationRequested();
             //throw new TimeoutException("HTTP request timed out. ");
 
             Debug.WriteLine($"<< TaskCanceledException ({entriesUrl}) : {e.Message}");
+            requestCts.Token.ThrowIfCancellationRequested();
 
             ToDebugWindow(" << TaskCanceledException: "
                 + Environment.NewLine
@@ -737,6 +736,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         catch (Exception e) when (e.InnerException is TimeoutException)
         {
             Debug.WriteLine("<< TimeoutException: " + entriesUrl.AbsoluteUri + " - " + e.Message);
+            requestCts.Token.ThrowIfCancellationRequested();
 
             ToDebugWindow("<< TimeoutException:"
                 + Environment.NewLine
@@ -748,10 +748,24 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
             return res;
         }
+        catch (Exception ex) when (ex is OperationCanceledException)
+        {
+            Debug.WriteLine("<< OperationCanceledException: " + entriesUrl.AbsoluteUri + " - " + ex.Message);
+            //requestCts.Token.ThrowIfCancellationRequested();
+            res.IsError = true;
+            return res;
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException)
+        {
+            Debug.WriteLine("<< ObjectDisposedException: " + entriesUrl.AbsoluteUri + " - " + ex.Message);
+            requestCts.Token.ThrowIfCancellationRequested();
+            res.IsError = true;
+            return res;
+        }
         catch (Exception e)
         {
-            requestCts.Token.ThrowIfCancellationRequested();
             Debug.WriteLine("<< HTTP error: " + entriesUrl.AbsoluteUri + " - " + e.Message);
+            requestCts.Token.ThrowIfCancellationRequested();
 
             ToDebugWindow("<< HTTP error:"
                 + Environment.NewLine
