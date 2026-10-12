@@ -3614,7 +3614,11 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     #region == Shell page commands ==
 
     [RelayCommand]
-    private static void MenuFileExit() => Application.Current.Exit();
+    private static void MenuFileExit()
+    {
+        //Application.Current.Exit();
+        App.MainWnd?.Close();
+    }
 
     [RelayCommand]
     private static void MenuSettings()
