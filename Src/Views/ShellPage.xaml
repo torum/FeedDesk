@@ -214,6 +214,19 @@
                                 </MenuFlyoutItem.KeyboardAccelerators>
                             </MenuFlyoutItem>
 
+                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_ArchiveRead" Command="{x:Bind ViewModel.EntryArchiveReadCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <PathIcon.Data>
+                                            M20 21H4V10H6V19H18V10H20V21M3 3H21V9H3V3M5 5V7H19V5M10.5 11V14H8L12 18L16 14H13.5V11
+                                        </PathIcon.Data>
+                                    </PathIcon>
+                                </MenuFlyoutItem.Icon>
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Modifiers="Control,Shift" Key="A"/>
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                            </MenuFlyoutItem>
+
                             <MenuFlyoutSubItem x:Uid="ShellMenuBarItem_Entry_View">
 
                                 <RadioMenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_View_Inbox" Command="{x:Bind ViewModel.ToggleShowInboxEntriesCommand}" IsChecked="{x:Bind ViewModel.IsShowInboxEntries, Mode=OneWay}">

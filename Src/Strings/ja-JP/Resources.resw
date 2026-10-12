@@ -453,4 +453,7 @@
   <data name="Settings_SystemBackdrop_None.Content" xml:space="preserve">
     <value>なし</value>
   </data>
+  <data name="ShellMenuBarItem_Entry_ArchiveRead.Text" xml:space="preserve">
+    <value>既読済みエントリーをアーカイブ</value>
+  </data>
 </root>

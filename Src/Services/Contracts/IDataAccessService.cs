@@ -19,20 +19,15 @@ public interface IDataAccessService
 
     SqliteDataAccessSelectResultWrapper SelectEntriesByFeedIds(List<string> feedIds, bool IsUnarchivedOnly = true);
 
-
-    //SqliteDataAccessSelectImageResultWrapper SelectImageByImageId(string imageId);
-
     SqliteDataAccessInsertResultWrapper InsertEntries(List<EntryItem> entries, string feedId, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri);
 
+    int CountEntriesByFeedId(string feedId, bool IsUnarchivedOnly = true);
 
-    //SqliteDataAccessInsertResultWrapper InsertImages(List<EntryItem> entries);
+    int CountEntriesByFeedIds(List<string> feedIds, bool IsUnarchivedOnly = true);
 
-    SqliteDataAccessResultWrapper UpdateAllEntriesAsArchived(List<string> feedIds);
+    SqliteDataAccessResultWrapper UpdateAllEntriesAsArchived(List<string> feedIds, bool isReadOnly = false);
 
     SqliteDataAccessResultWrapper UpdateEntryReadStatus(string? entryId, ReadStatus readStatus);
-
-
-    //SqliteDataAccessResultWrapper UpdateEntryStatus(EntryItem entry);
 
     SqliteDataAccessResultWrapper DeleteEntriesByFeedIds(List<string> feedIds);
 

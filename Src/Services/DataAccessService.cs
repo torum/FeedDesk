@@ -1300,11 +1300,7 @@ internal sealed class DataAccessService : IDataAccessService
         return res;
     }
 
-
-    private static string AddStringListParameters(
-    SqliteCommand command,
-    IReadOnlyList<string> values,
-    string parameterPrefix)
+    private static string AddStringListParameters(SqliteCommand command, IReadOnlyList<string> values, string parameterPrefix)
     {
         var placeholders = new string[values.Count];
 
@@ -1617,7 +1613,87 @@ internal sealed class DataAccessService : IDataAccessService
         return res;
     }
 
-    public SqliteDataAccessResultWrapper UpdateAllEntriesAsArchived(List<string> feedIds)
+    public int CountEntriesByFeedId(string feedId, bool IsUnarchivedOnly = true)
+    {
+        var res = 0;
+        if (string.IsNullOrEmpty(feedId))
+        {
+            return res;
+        }
+        _readerWriterLock.EnterReadLock();
+        try
+        {
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+            cmd.ExecuteNonQuery();
+            if (IsUnarchivedOnly)
+            {
+                cmd.CommandText = "SELECT COUNT(*) FROM entries WHERE feed_id = $feedId AND archived = $archived;";
+                cmd.Parameters.AddWithValue("$archived", bool.FalseString);
+            }
+            else
+            {
+                cmd.CommandText = "SELECT COUNT(*) FROM entries WHERE feed_id = $feedId;";
+            }
+            cmd.Parameters.AddWithValue("$feedId", feedId);
+            res = Convert.ToInt32(cmd.ExecuteScalar());
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e.Message + " @DataAccess::CountEntriesByFeedId");
+        }
+        finally
+        {
+            _readerWriterLock.ExitReadLock();
+        }
+        return res;
+    }
+
+    public int CountEntriesByFeedIds(List<string> feedIds, bool IsUnarchivedOnly = true)
+    {
+        var res = 0;
+        if (feedIds is null || feedIds.Count == 0)
+        {
+            return res;
+        }
+        _readerWriterLock.EnterReadLock();
+        try
+        {
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+            cmd.ExecuteNonQuery();
+
+            //cmd.Parameters.AddWithValue("$feedId", feedId);
+            var placeholders = AddStringListParameters(cmd, feedIds, "feedId");
+
+            if (IsUnarchivedOnly)
+            {
+                cmd.CommandText = $"SELECT COUNT(*) FROM entries WHERE feed_id IN ({placeholders}) AND archived = $archived;";
+                cmd.Parameters.AddWithValue("$archived", bool.FalseString);
+            }
+            else
+            {
+                cmd.CommandText = $"SELECT COUNT(*) FROM entries WHERE feed_id IN ({placeholders});";
+            }
+
+            res = Convert.ToInt32(cmd.ExecuteScalar());
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e.Message + " @DataAccess::CountEntriesByFeedId");
+        }
+        finally
+        {
+            _readerWriterLock.ExitReadLock();
+        }
+        return res;
+    }
+
+    public SqliteDataAccessResultWrapper UpdateAllEntriesAsArchived(List<string> feedIds, bool isReadOnly = false)
     {
         var res = new SqliteDataAccessResultWrapper();
 
@@ -1667,13 +1743,28 @@ internal sealed class DataAccessService : IDataAccessService
                 //cmd.CommandText = before + middle + after;
                 var placeholders = AddStringListParameters(cmd, feedIds, "feedId");
 
-                cmd.CommandText = $"""
+                if (isReadOnly)
+                {
+                    cmd.CommandText = $"""
+                    UPDATE entries
+                    SET archived = $archived, status = $statusNewValue
+                    WHERE feed_id IN ({placeholders}) AND archived = $unarchived AND status = $statusOldValue;
+                    """;
+                    cmd.Parameters.AddWithValue("$archived", bool.TrueString);
+                    cmd.Parameters.AddWithValue("$unarchived", bool.FalseString);
+                    cmd.Parameters.AddWithValue("$statusNewValue", ReadStatus.rsNormalVisited.ToString());
+                    cmd.Parameters.AddWithValue("$statusOldValue", ReadStatus.rsNewVisited.ToString());
+                }
+                else
+                {
+                    cmd.CommandText = $"""
                     UPDATE entries
                     SET archived = $archived
                     WHERE feed_id IN ({placeholders}) AND archived = $unarchived;
                     """;
-                cmd.Parameters.AddWithValue("$archived", bool.TrueString);
-                cmd.Parameters.AddWithValue("$unarchived", bool.FalseString);
+                    cmd.Parameters.AddWithValue("$archived", bool.TrueString);
+                    cmd.Parameters.AddWithValue("$unarchived", bool.FalseString);
+                }
 
                 res.AffectedCount = cmd.ExecuteNonQuery();
 
