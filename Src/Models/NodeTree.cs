@@ -114,13 +114,14 @@ public abstract class NodeTree : Node
 
             field = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(EntryNewCountText));
 
             if (field > 0)
             {
                 IsEntryCountMoreThanZero = true;
-                if (field > 99)
+                if (field > 999)
                 {
-                    //SubNodeText = "99+";
+                    //SubNodeText = "999+";
                 }
                 else
                 {
@@ -134,6 +135,23 @@ public abstract class NodeTree : Node
             }
         }
     } = 0;
+
+    // InfoBadge Text for EntryNewCount (if more than 999, show "999+")
+    // But the its value is int only....so currently not used. 
+    public string EntryNewCountText 
+    {
+        get
+        {
+            if (EntryNewCount > 999)
+            {
+                return "999+";
+            }
+            else
+            {
+                return EntryNewCount.ToString();
+            }
+        }
+    }
 
     public bool IsEntryCountMoreThanZero
     {

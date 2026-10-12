@@ -1909,7 +1909,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 {
                     return;
                 }
-                await dispatcher.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(async () =>
                 {
                     // Clear error
                     feed.ErrorDatabase = null;
@@ -1920,14 +1920,17 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     if (res.AffectedCount > 0)
                     {
                         // reset unread count.
+                        feed.EntryNewCount -= res.AffectedCount;
                         if (feed.Parent != null)
                         {
                             if (feed.Parent is NodeFolder parentFolder)
                             {
-                                MinusAllParentEntryCount(parentFolder, res.AffectedCount);
+                                await MinusAllParentEntryCount(parentFolder, res.AffectedCount);
                             }
                         }
-                        feed.EntryNewCount -= res.AffectedCount;
+
+                        //var newCount = await Task.Run(() => _dataAccessService.CountEntriesByFeedId(feed.Id, true));
+                        //feed.EntryNewCount = newCount > 1000 ? 1000 : newCount;
 
                         if (feed == SelectedTreeViewItem)
                         {
@@ -1978,7 +1981,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 {
                     return;
                 }
-                await dispatcher.EnqueueAsync(() =>
+                await dispatcher.EnqueueAsync(async () =>
                 {
                     folder.IsBusy = true;
                     if (folder == SelectedTreeViewItem)
@@ -2013,7 +2016,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                         {
                             if (folder.Parent is NodeFolder parentFolder)
                             {
-                                MinusAllParentEntryCount(parentFolder, res.AffectedCount);
+                                await MinusAllParentEntryCount(parentFolder, res.AffectedCount);
                             }
 
                             var newCount = await Task.Run(() => _dataAccessService.CountEntriesByFeedIds(tmpList, true), _cts.Token);
@@ -2114,20 +2117,22 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
     }
 
-    private static void MinusAllParentEntryCount(NodeFolder folder, int minusCount)
+    private async Task MinusAllParentEntryCount(NodeFolder folder, int minusCount)
     {
         if (folder is not null)
         {
             if ((minusCount > 0) && (folder.EntryNewCount >= minusCount))
             {
-                folder.EntryNewCount -= minusCount;
+                //folder.EntryNewCount -= minusCount;
+                var count = await Task.Run(() => _dataAccessService.CountEntriesByFeedIds(GetAllFeedIdsFromChildNodes(folder.Children), true));
+                folder.EntryNewCount = count > 1000 ? 1000 : count;
             }
 
             if (folder.Parent is not null)
             {
                 if (folder.Parent is NodeFolder parentFolder)
                 {
-                    MinusAllParentEntryCount(parentFolder, minusCount);
+                    await MinusAllParentEntryCount(parentFolder, minusCount);
                 }
             }
         }
@@ -2598,7 +2603,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             return;
         }
-        await dispatcher.EnqueueAsync(() =>
+        await dispatcher.EnqueueAsync(async () =>
         {
             foreach (var hoge in nodeToBeDeleted)
             {
@@ -2609,7 +2614,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     // 
                     if (hoge.Parent is NodeFolder parentFolder)
                     {
-                        MinusAllParentEntryCount(parentFolder, hoge.EntryNewCount);
+                        await MinusAllParentEntryCount(parentFolder, hoge.EntryNewCount);
                     }
 
                     SelectedTreeViewItem = null;
