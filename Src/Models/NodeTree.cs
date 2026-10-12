@@ -112,7 +112,15 @@ public abstract class NodeTree : Node
                 return;
             }
 
-            field = value;
+            if (value >= 0)
+            {
+                field = value;
+            }
+            else
+            {
+                field = 0;
+            }
+
             OnPropertyChanged();
             OnPropertyChanged(nameof(EntryNewCountText));
 
@@ -187,53 +195,6 @@ public abstract class NodeTree : Node
     {
         get; set;
     }
-
-    /*
-    private bool _isDragOver;
-    public bool IsDragOver
-    {
-        get => _isDragOver;
-        set
-        {
-            if (_isDragOver == value)
-                return;
-
-            _isDragOver = value;
-
-            NotifyPropertyChanged(nameof(IsDragOver));
-        }
-    }
-
-    private bool _isBeforeDragSeparator;
-    public bool IsBeforeDragSeparator
-    {
-        get => _isBeforeDragSeparator;
-        set
-        {
-            if (_isBeforeDragSeparator == value)
-                return;
-
-            _isBeforeDragSeparator = value;
-
-            NotifyPropertyChanged(nameof(IsBeforeDragSeparator));
-        }
-    }
-
-    private bool _isAfterDragSeparator;
-    public bool IsAfterDragSeparator
-    {
-        get => _isAfterDragSeparator;
-        set
-        {
-            if (_isAfterDragSeparator == value)
-                return;
-
-            _isAfterDragSeparator = value;
-
-            NotifyPropertyChanged(nameof(IsAfterDragSeparator));
-        }
-    }
-    */
 
     // Indicating feeds update is in progress (don't drag&drop TreeViewItem)
     public bool IsBusy
@@ -366,6 +327,37 @@ public abstract class NodeTree : Node
             OnPropertyChanged();
         }
     }
+
+    public bool IsExcludeFromRefreshAll
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+            field = value;
+
+            //IsRefreshAllIncluded = !value;
+            OnPropertyChanged();
+        }
+    }
+    /*
+    public bool IsRefreshAllIncluded
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+            field = value;
+            OnPropertyChanged();
+        }
+    } = true;
+    */
 
     public NodeTree? Parent
     {

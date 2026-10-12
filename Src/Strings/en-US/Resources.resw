@@ -456,4 +456,10 @@
   <data name="ShellMenuBarItem_Entry_ArchiveRead.Text" xml:space="preserve">
     <value>Archive Read Entries</value>
   </data>
+  <data name="FeedEditPage_CheckBox_IsExcludeFromRefreshAll.Content" xml:space="preserve">
+    <value>Exclude from multiple refresh action.</value>
+  </data>
+  <data name="ShellMenuBarItem_Feed_SlectedFeed_ArchiveAll.Text" xml:space="preserve">
+    <value>Archive All Entries</value>
+  </data>
 </root>

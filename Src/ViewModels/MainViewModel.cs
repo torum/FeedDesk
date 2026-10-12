@@ -562,6 +562,19 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         set => SetProperty(ref field, value);
     }
 
+    public bool IsExcludeFromRefreshAll
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                FeedToEDit?.IsExcludeFromRefreshAll = value;
+            }
+        }
+    
+    } = false;
+
     [RelayCommand]
     private void CheckIfFeedIsValidUsingValidator()
     {
@@ -1386,11 +1399,11 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                         remaining = _activeRefreshTasks.Count;
                     }
 
-                    Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Refresh task {completed.Id} finished: {completed.Status}; {remaining} remain");
+                    Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Refresh task ID {completed.Id} finished: {completed.Status}; {remaining} remain");
 
                     if (completed.IsFaulted)
                     {
-                        Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Refresh task {completed.Id} IsFaulted; exception: {completed.Exception}");
+                        Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Refresh task ID {completed.Id} IsFaulted; exception: {completed.Exception}");
                     }
                 },
                 CancellationToken.None,
@@ -1409,11 +1422,16 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         if (nt.Children.Count <= 0) return tasks;
         foreach (var c in nt.Children)
         {
-            if (c is NodeFeed feed && feed.Api == ApiTypes.AtFeed)
+            if (c is NodeFeed feed && feed.Api == ApiTypes.AtFeed && !feed.IsExcludeFromRefreshAll)
             {
                 var now = DateTime.Now;
                 var last = feed.LastFetched;
-                if ((last > now.AddMinutes(-1)) && (last <= now))
+                // Calculate how much time has passed since the last fetch
+                TimeSpan timeSinceLastFetch = now - last;
+
+                // Skip if it was fetched less than n minutes ago (and protect against future clocks)
+                //if ((last > now.AddMinutes(-1)) && (last <= now))
+                if (timeSinceLastFetch < TimeSpan.FromMinutes(1) && last <= now)
                 {
                     Debug.WriteLine("Skipping " + feed.Name + ": " + last.ToString());
                 }
@@ -1423,13 +1441,14 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         // Existing refresh body:
                         await RefreshFeedAsync(feed, _cts.Token);
-
+                        /*
                         if (_cts.IsCancellationRequested)
                         {
                             return;
                         }
+                        */
 
-                        await Task.Delay(100);
+                        //await Task.Delay(100);
                     }));
 
                     /*
@@ -1514,7 +1533,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     // Loads node's all (including children) entries from database.
     private async Task LoadEntriesAsync(NodeTree nt, CancellationToken cancellationToken)
     {
-        if (_cts.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested)
         {
             return;
         }
@@ -1609,7 +1628,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     });
                     return;
                 }
-                if (_cts.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
@@ -2148,6 +2167,11 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     private async Task MinusAllParentEntryCount(NodeFolder folder, int minusCount)
     {
+        if (_cts.IsCancellationRequested)
+        {
+            return;
+        }
+
         if (folder is not null)
         {
             if ((minusCount > 0) && (folder.EntryNewCount >= minusCount))
@@ -2173,6 +2197,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             return;
         }
+
         if (nd is not (NodeFeed or NodeFolder))
         {
             return;
@@ -2515,6 +2540,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         if (SelectedTreeViewItem is NodeFeed)
         {
             FeedToEDit = SelectedTreeViewItem as NodeFeed;
+            IsExcludeFromRefreshAll = FeedToEDit?.IsExcludeFromRefreshAll ?? false;
 
             //_navigationService.NavigateTo(typeof(FeedEditViewModel).FullName!, SelectedTreeViewItem);
             shell.NavFrame.Navigate(typeof(FeedEditPage), SelectedTreeViewItem, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromLeft });
@@ -2529,6 +2555,22 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     }
 
     private bool CanNodeEdit()
+    {
+        return SelectedTreeViewItem is not null;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanNodeIsEnabledToggle))]
+    private void NodeIsEnabledToggle()
+    {
+        if (SelectedTreeViewItem is null)
+        {
+            return;
+        }
+
+        SelectedTreeViewItem.IsExcludeFromRefreshAll = !SelectedTreeViewItem.IsExcludeFromRefreshAll;
+    }
+
+    private bool CanNodeIsEnabledToggle()
     {
         return SelectedTreeViewItem is not null;
     }
@@ -2812,6 +2854,34 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             // Expected when shutdown cancels the refresh.
         }
+        catch (OperationCanceledException)
+        {
+            // This may include the cancellation of timeout of the HttpClient request. We don't need to log this, as it is expected.
+            Debug.WriteLine("FeedRefreshAll: OperationCanceledException");
+        }
+        catch (ObjectDisposedException)
+        {
+            // This may include the cancellation of timeout of the HttpClient request. We don't need to log this, as it is expected.
+            Debug.WriteLine("FeedRefreshAll: ObjectDisposedException");
+
+        }
+        catch (AggregateException ae)
+        {
+            foreach (var ex in ae.InnerExceptions)
+            {
+                Debug.WriteLine($"FeedRefreshAll: {ex}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"FeedRefreshAll: {ex}");
+            /*
+            _dispatcherService.TryEnqueue(() =>
+            {
+                (Application.Current as App)?.AppendErrorLog("FeedRefreshAll", ex.Message);
+            });
+            */
+        }
         finally
         {
             IsTreeWorking = false;
@@ -2917,6 +2987,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             // Shutdown cancellation is expected.
         }
+        catch (OperationCanceledException)
+        {
+            // refresh was cancelled
+        }
         finally
         {
             if (busyFolder is not null)
@@ -2933,6 +3007,56 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     {
         return SelectedTreeViewItem is not null;
     }
+
+
+    [RelayCommand(CanExecute = nameof(CanNodeSelectedArchiveAll))]
+    private async Task NodeSelectedArchiveAll(NodeTree nd)
+    {
+        if (nd is null)
+        {
+            return;
+        }
+        if (!((nd is NodeFeed) || (nd is NodeFolder)))
+        {
+            return;
+        }
+        await ArchiveAllAsync(nd, false);
+    }
+    private bool CanNodeSelectedArchiveAll(NodeTree nd)
+    {
+        if (nd is null)
+        {
+            return false;
+        }
+
+        if (!((nd is NodeFeed) || (nd is NodeFolder)))
+        {
+            return false;
+        }
+
+        if (nd.EntryNewCount <= 0)
+        {
+            return false;
+        }
+
+        if (nd.IsBusy)
+        {
+            //return false;
+        }
+
+        if (nd.IsBusyChildrenCount > 0)
+        {
+            return false;
+        }
+
+        if (Entries.Count <= 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
 
     #endregion
 

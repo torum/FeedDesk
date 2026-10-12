@@ -456,4 +456,10 @@
   <data name="ShellMenuBarItem_Entry_ArchiveRead.Text" xml:space="preserve">
     <value>既読済みエントリーをアーカイブ</value>
   </data>
+  <data name="FeedEditPage_CheckBox_IsExcludeFromRefreshAll.Content" xml:space="preserve">
+    <value>一斉更新から除外する</value>
+  </data>
+  <data name="ShellMenuBarItem_Feed_SlectedFeed_ArchiveAll.Text" xml:space="preserve">
+    <value>すべてアーカイブ</value>
+  </data>
 </root>

@@ -31,7 +31,6 @@ public sealed class FeedRefreshService : IFeedRefreshService
         cancellationToken.ThrowIfCancellationRequested();
 
         var fetchResult = await _feedClientService.GetEntries(request.EndPoint, request.FeedId, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
 
         var fetchedAt = DateTime.Now;
 

@@ -151,8 +151,9 @@ public partial class App
                 services.AddSingleton<IFeedTreePersistenceService, FeedTreePersistenceService>();
                 services.AddHttpClient(FeedClientService.HttpClientName, client =>
                 {
-                    // Addition to this timeout, also use the per-request cancellation token as the fallback timeout mechanism.
-                    client.Timeout = TimeSpan.FromSeconds(15);// or Timeout.InfiniteTimeSpan;
+                    // No use cancellation token only. -> Addition to this timeout, also use the per-request cancellation token as the fallback timeout mechanism.
+                    // Don't set timeout here to avoid disposable race. 
+                    client.Timeout = TimeSpan.FromSeconds(10);//Timeout.InfiniteTimeSpan;//
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
@@ -160,9 +161,15 @@ public partial class App
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rdf+xml"));
                     client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
                 }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+                {
+                    ConnectTimeout = TimeSpan.FromSeconds(8),
+                    PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                    PooledConnectionIdleTimeout = TimeSpan.FromMinutes(1),
+                    SslOptions = new System.Net.Security.SslClientAuthenticationOptions
                     {
-                        ConnectTimeout = TimeSpan.FromSeconds(15)
-                    });
+                        // Optional: nothing to change here by default; handshake time is bounded by ConnectTimeout.
+                    }
+                });
 
                 services.AddSingleton<IFeedClientService, FeedClientService>();
 
@@ -367,6 +374,7 @@ public partial class App
             finally
             {
                 _cts?.Dispose();
+                LogShutdownTimestamp("Shutdown: CancellationTokenSource disposed");
             }
         }
     }

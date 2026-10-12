@@ -444,6 +444,9 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                 lastUpdate = DateTime.Parse(s);
         }
 
+        var exclude = string.IsNullOrEmpty(node.Attributes?["IsExcludeFromRefreshAll"]?.Value) ? "" : node.Attributes?["IsExcludeFromRefreshAll"]?.Value;
+        var isExcludeFromRefreshAll = (exclude == "true") ? true : false;
+
         ErrorObject? errHttpObj = null;
         XmlNodeList? ErrorList = node.SelectNodes("ErrorHTTP");
         if (ErrorList != null)
@@ -615,6 +618,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                 EntryNewCount = unreadCount,
                 ViewType = vt,
                 LastFetched = lastUpdate,
+                IsExcludeFromRefreshAll = isExcludeFromRefreshAll,
 
                 Api = at
             };
@@ -1009,6 +1013,9 @@ public sealed partial class FeedTreeBuilder : NodeRoot
         attrf.Value = fd.LastFetched.ToString("yyyy-MM-dd HH:mm:ss");
         feed.SetAttributeNode(attrf);
 
+        attrf = doc.CreateAttribute("IsExcludeFromRefreshAll");
+        attrf.Value = fd.IsExcludeFromRefreshAll ? "true" : "false";
+        feed.SetAttributeNode(attrf);
 
         if (fd.ErrorHttp != null)
         {

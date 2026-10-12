@@ -93,6 +93,10 @@
                                 </StackPanel>
                             </StackPanel>
 
+                            <StackPanel Margin="12,24,0,0">
+                                <CheckBox x:Uid="FeedEditPage_CheckBox_IsExcludeFromRefreshAll" IsChecked="{x:Bind ViewModel.IsExcludeFromRefreshAll, Mode=TwoWay}" Margin="{StaticResource XSmallTopMargin}"></CheckBox>
+                            </StackPanel>
+
                         </StackPanel>
 
                     </StackPanel>

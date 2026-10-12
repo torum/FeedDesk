@@ -41,7 +41,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         //Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
 
-        Client.Timeout = TimeSpan.FromSeconds(15); // 15 sec timeout here
+        Client.Timeout = TimeSpan.FromSeconds(10); // 10 sec timeout here
 
         //Client.DefaultRequestVersion = new Version(2, 0);
         */
@@ -66,14 +66,13 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             return res;
         }
 
-        //using var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 15 sec http timeout.
-        //using var aggregateCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));
-        using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, token);
+        //using var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 10 sec http timeout.
+        //using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
+        var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 10 sec http timeout.
+        var requestCts = CancellationTokenSource.CreateLinkedTokenSource(token, timoutCts.Token);
 
         try
         {
-            await Task.Delay(10, requestCts.Token);
             /*
             //Debug.WriteLine("GetAsync @GetEntries in FeedClientService ");
             //var httpResponseMessage = await Client.GetAsync(entriesUrl, aggregateCts.Token).ConfigureAwait(false)
@@ -85,7 +84,8 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
             using var client = _httpClientFactory.CreateClient(HttpClientName);
 
-            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException and is anoying.
+            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException and many System.IO.IOException...so anoying.
+            // In Debug > Windows > Exception Settings, uncheck System.ObjectDisposedException and System.IO.IOException under Common Language Runtime Exceptions. 
             using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, requestCts.Token).ConfigureAwait(false);//timeoutCts ONLY
 
             requestCts.Token.ThrowIfCancellationRequested();
@@ -653,7 +653,28 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             else
             {
                 requestCts.Token.ThrowIfCancellationRequested();
-                Debug.WriteLine($"{response.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
+                if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently)
+                {
+                    var location = response.Headers.Location;
+                    if (location is not null)
+                    {
+                        var baseUri = response.RequestMessage?.RequestUri ?? entriesUrl;
+                        var newUri = location.IsAbsoluteUri ? location : new Uri(baseUri, location);
+
+                        Debug.WriteLine($"301 MovedPermanently: {entriesUrl.AbsoluteUri} -> {newUri.AbsoluteUri}");
+                        // e.g. store newUri in res so the caller can update the feed's URL.
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"301 MovedPermanently: {entriesUrl.AbsoluteUri} but no Location header found.");
+                    }
+                }
+                else
+                {
+
+                    Debug.WriteLine($"{response.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
+                }
+
 
                 var contents = await response.Content.ReadAsStringAsync(requestCts.Token);
                 requestCts.Token.ThrowIfCancellationRequested();
@@ -723,7 +744,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             //throw new TimeoutException("HTTP request timed out. ");
 
             Debug.WriteLine($"<< TaskCanceledException ({entriesUrl}) : {e.Message}");
-            requestCts.Token.ThrowIfCancellationRequested();
+            //requestCts.Token.ThrowIfCancellationRequested();
 
             ToDebugWindow(" << TaskCanceledException: "
                 + Environment.NewLine
@@ -733,39 +754,44 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             HttpReqException(res.Error, e.Message + " (TaskCanceledException IsCancellationRequested)", "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
+        catch (ObjectDisposedException) when (requestCts.Token.IsCancellationRequested)
+        {
+            // Connection was aborted by cancellation/timeout. Normalize to cancellation.
+            throw new OperationCanceledException(requestCts.Token);
+        }
+        catch (ObjectDisposedException ode)
+        {
+            // Transport torn down mid-request (server/network abort). Report as a failed request.
+            Debug.WriteLine($"<< ObjectDisposedException GetEntries ({entriesUrl.AbsoluteUri}): {ode.Message}");
+            res.IsError = true;
+            // Set a suitable error on res.Error, as the other failure paths do.
+            return res;
+        }
         catch (Exception e) when (e.InnerException is TimeoutException)
         {
             Debug.WriteLine("<< TimeoutException: " + entriesUrl.AbsoluteUri + " - " + e.Message);
-            requestCts.Token.ThrowIfCancellationRequested();
+            //requestCts.Token.ThrowIfCancellationRequested();
 
             ToDebugWindow("<< TimeoutException:"
                 + Environment.NewLine
                 + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
-            HttpTimeoutException(res.Error, e.Message + " (Timeout 15 sec)", "Client.GetAsync", "FeedHttpClient.GetEntries");
+            HttpTimeoutException(res.Error, e.Message + " (Timeout 10 sec)", "Client.GetAsync", "FeedHttpClient.GetEntries");
             res.IsError = true;
 
             return res;
         }
-        catch (Exception ex) when (ex is OperationCanceledException)
+        catch (Exception ex) when (ex is OperationCanceledException || (requestCts.Token.IsCancellationRequested && ex is ObjectDisposedException or System.IO.IOException or HttpRequestException))
         {
-            Debug.WriteLine("<< OperationCanceledException: " + entriesUrl.AbsoluteUri + " - " + ex.Message);
-            //requestCts.Token.ThrowIfCancellationRequested();
-            res.IsError = true;
-            return res;
-        }
-        catch (Exception ex) when (ex is ObjectDisposedException)
-        {
-            Debug.WriteLine("<< ObjectDisposedException: " + entriesUrl.AbsoluteUri + " - " + ex.Message);
-            requestCts.Token.ThrowIfCancellationRequested();
+            Debug.WriteLine("<< Operation Cancelled: " + entriesUrl.AbsoluteUri + " - " + ex.Message);
             res.IsError = true;
             return res;
         }
         catch (Exception e)
         {
             Debug.WriteLine("<< HTTP error: " + entriesUrl.AbsoluteUri + " - " + e.Message);
-            requestCts.Token.ThrowIfCancellationRequested();
+            //requestCts.Token.ThrowIfCancellationRequested();
 
             ToDebugWindow("<< HTTP error:"
                 + Environment.NewLine
@@ -776,6 +802,11 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             res.IsError = true;
 
             return res;
+        }
+        finally
+        {
+            timoutCts?.Dispose();
+            requestCts?.Dispose();
         }
 
         return res;

@@ -52,3 +52,16 @@ public partial class BoolToFontWeightConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+public partial class BooleanToOpacityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        return value is true ? 0.7 : 1.0;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        return value is double d && d >= 1.0;
+    }
+}

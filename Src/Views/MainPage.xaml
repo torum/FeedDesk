@@ -89,6 +89,7 @@
                             Background="{ThemeResource NavigationViewContentBackground}"  Background="{ThemeResource NavigationViewTopPaneBackground}"
                             Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}"  -->
                     <TreeView
+                        x:Name="FeedsTreeView"
                           SelectionMode="Single" 
                           AllowDrop="True" 
                           CanReorderItems="True" 
@@ -113,11 +114,23 @@
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
 
-                                <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem Text="Archive All" x:Uid="ShellMenuBarItem_Feed_SlectedFeed_ArchiveAll" Command="{x:Bind ViewModel.NodeSelectedArchiveAllCommand, Mode=OneWay}" CommandParameter="{x:Bind FeedsTreeView.SelectedItem, Mode=OneWay}" >
+                                    <MenuFlyoutItem.Icon>
+                                        <PathIcon Margin="0,0,0,0" Data="M20 21H4V10H6V19H18V10H20V21M3 3H21V9H3V3M5 5V7H19V5M10.5 11V14H8L12 18L16 14H13.5V11">
+                                        </PathIcon>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
 
+                                <MenuFlyoutSeparator/>
+                                
                                 <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_Edit" Icon="Edit" Command="{x:Bind ViewModel.NodeEditCommand}"/>
 
                                 <MenuFlyoutSeparator/>
+                                <!--
+                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_ToggleIsEnabled" Icon="Edit" Command="{x:Bind ViewModel.NodeIsEnabledToggleCommand}"/>
+
+                                <MenuFlyoutSeparator/>
+                                -->
 
                                 <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_Remove" Icon="Remove" Command="{x:Bind ViewModel.NodeRemoveCommand}">
                                     <MenuFlyoutItem.KeyboardAccelerators>
@@ -138,7 +151,8 @@
                         <TreeView.ItemTemplate>
                             <DataTemplate x:DataType="model:NodeTree">
                                 <localControls:MyTreeViewItem ItemsSource="{x:Bind Children, Mode=TwoWay}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}" IsSelected="{x:Bind IsSelected, Mode=TwoWay}" RightTapped="TreeViewItem_RightTapped" DoubleTapped="TreeViewItem_DoubleTapped" Padding="2" Margin="0,0,6,0">
-                                    <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0" Padding="0,0.5,0,0.5">
+                                    <Border x:Name="PanelBackground" Background="Transparent" CornerRadius="0" Padding="0,0.5,0,0.5"
+                                             Opacity="{x:Bind IsExcludeFromRefreshAll, Mode=OneWay, Converter={StaticResource BooleanToOpacityConverter}}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
