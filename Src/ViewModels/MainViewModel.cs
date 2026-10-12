@@ -1881,7 +1881,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             {
                 Debug.WriteLine("ArchiveAllAsync(NodeFeed):" + res.Error.ErrText);
 
-                if (dispatcher is null)
+                if (_cts.IsCancellationRequested)
                 {
                     return;
                 }
@@ -1905,7 +1905,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             }
             else
             {
-                if (dispatcher is null)
+                if (_cts.IsCancellationRequested)
                 {
                     return;
                 }
@@ -1919,20 +1919,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     */
                     if (res.AffectedCount > 0)
                     {
-                        // reset unread count.
-                        feed.EntryNewCount -= res.AffectedCount;
-                        if (feed.Parent != null)
-                        {
-                            if (feed.Parent is NodeFolder parentFolder)
-                            {
-                                await MinusAllParentEntryCount(parentFolder, res.AffectedCount);
-                            }
-                        }
-
-                        //var newCount = await Task.Run(() => _dataAccessService.CountEntriesByFeedId(feed.Id, true));
-                        //feed.EntryNewCount = newCount > 1000 ? 1000 : newCount;
-
-                        if (feed == SelectedTreeViewItem)
+                        if (feed == SelectedTreeViewItem && !_ctsForSelectedTreeViewItem.IsCancellationRequested)
                         {
                             if (isReadOnly)
                             {
@@ -1962,6 +1949,32 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                                 }
                             }
 
+                        }
+
+                        // reset unread count.
+                        feed.EntryNewCount -= res.AffectedCount;
+                        if (feed.Parent != null)
+                        {
+                            if (feed.Parent is NodeFolder parentFolder)
+                            {
+                                await MinusAllParentEntryCount(parentFolder, res.AffectedCount);
+                            }
+                            if (_cts.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                        }
+
+                        //var newCount = await Task.Run(() => _dataAccessService.CountEntriesByFeedId(feed.Id, true));
+                        //feed.EntryNewCount = newCount > 1000 ? 1000 : newCount;
+
+                        if (_cts.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                        if (_ctsForSelectedTreeViewItem.IsCancellationRequested)
+                        {
+                            return;
                         }
                     }
 
@@ -2014,16 +2027,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         await dispatcher.EnqueueAsync(async () =>
                         {
-                            if (folder.Parent is NodeFolder parentFolder)
-                            {
-                                await MinusAllParentEntryCount(parentFolder, res.AffectedCount);
-                            }
-
-                            var newCount = await Task.Run(() => _dataAccessService.CountEntriesByFeedIds(tmpList, true), _cts.Token);
-                            folder.EntryNewCount = newCount > 1000 ? 1000 : newCount;
-                            await ResetAllEntryCountAtChildNodes(folder.Children, isReadOnly);
-
-                            if (folder == SelectedTreeViewItem)
+                            if (folder == SelectedTreeViewItem && !_ctsForSelectedTreeViewItem.IsCancellationRequested)
                             {
                                 if (isReadOnly)
                                 {
@@ -2047,6 +2051,31 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                                     Entries.Clear();
                                 }
                             }
+
+                            if (folder.Parent is NodeFolder parentFolder)
+                            {
+                                await MinusAllParentEntryCount(parentFolder, res.AffectedCount);
+                            }
+                            if (_cts.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            if (_ctsForSelectedTreeViewItem.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            var newCount = await Task.Run(() => _dataAccessService.CountEntriesByFeedIds(tmpList, true), _cts.Token);
+                            if (_cts.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            if (_ctsForSelectedTreeViewItem.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            folder.EntryNewCount = newCount > 1000 ? 1000 : newCount;
+                            await ResetAllEntryCountAtChildNodes(folder.Children, isReadOnly);
+
 
                             //folder.IsBusy = false;
                             //EntryArchiveAllCommand.NotifyCanExecuteChanged();
