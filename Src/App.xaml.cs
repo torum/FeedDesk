@@ -98,6 +98,7 @@ public partial class App
         get;
     }
 
+    /*
     public static T GetService<T>()
         where T : class
     {
@@ -107,6 +108,11 @@ public partial class App
         }
 
         return service;
+    }
+    */
+    public static T GetService<T>() where T : class
+    {
+        return ((App)Current).Host.Services.GetRequiredService<T>();
     }
 
     public App()
@@ -188,34 +194,48 @@ public partial class App
 
     protected async override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        base.OnLaunched(args);
-
-        // Single instance.
-        // https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/guides/applifecycle
-        var mainInstance = Microsoft.Windows.AppLifecycle.AppInstance.FindOrRegisterForKey("FeedDeskMain");
-        // If the instance that's executing the OnLaunched handler right now
-        // isn't the "main" instance.
-        if (!mainInstance.IsCurrent)
+        try
         {
-            // Redirect the activation (and args) to the "main" instance, and exit.
-            var activatedEventArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
-            await mainInstance.RedirectActivationToAsync(activatedEventArgs);
+            base.OnLaunched(args);
 
-            Process.GetCurrentProcess().Kill();
-            return;
+            // Single instance.
+            // https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/guides/applifecycle
+            var mainInstance = Microsoft.Windows.AppLifecycle.AppInstance.FindOrRegisterForKey("FeedDeskMain");
+            // If the instance that's executing the OnLaunched handler right now
+            // isn't the "main" instance.
+            if (!mainInstance.IsCurrent)
+            {
+                // Redirect the activation (and args) to the "main" instance, and exit.
+                var activatedEventArgs = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
+                await mainInstance.RedirectActivationToAsync(activatedEventArgs);
+
+                //Process.GetCurrentProcess().Kill();
+                Environment.Exit(0);
+                return;
+            }
+            else
+            {
+                // Otherwise, register for activation redirection
+                Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().Activated += App_Activated;
+            }
+
+            _appHostStartTask = StartAppHostAsync();
+            MainWnd = GetService<MainWindow>();
+
+            //MainWnd.AppWindow.Show(true);
+            MainWnd.Activate();
+            MainWnd.AppWindow.MoveInZOrderAtTop();
         }
-        else
+        catch (Exception ex)
         {
-            // Otherwise, register for activation redirection
-            Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().Activated += App_Activated;
-        }
+            Debug.WriteLine($"OnLaunched: {ex}");
+            AppendErrorLog("OnLaunched", ex.ToString());
+            SaveErrorLog();
 
-        _appHostStartTask = StartAppHostAsync();
-        MainWnd = GetService<MainWindow>();
+            // Startup failed and the app is in an unknown state, so exit instead of leaving a half-initialized process.
+            Environment.Exit(1);
+        }   
 
-        //MainWnd.AppWindow.Show(true);
-        MainWnd.Activate();
-        MainWnd.AppWindow.MoveInZOrderAtTop();
     }
 
     private async Task StartAppHostAsync()
@@ -370,33 +390,29 @@ public partial class App
         // This does not fire...because of winui3 bugs. should be fixed in v1.2.2 WinAppSDK
         // see https://github.com/microsoft/microsoft-ui-xaml/issues/5221
 
-        Debug.WriteLine("App_UnhandledException: " + e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
-        AppendErrorLog("App_UnhandledException", e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
-        if (e.Exception.InnerException is TaskCanceledException or OperationCanceledException)
-        {
-            // can ignore.
-            Debug.WriteLine("App_UnhandledException (TaskCanceledException): " + e.Exception.Message);
-            //AppendErrorLog("App_UnhandledException (TaskCanceledException)", e.Exception.Message);
-        }
-        else
-        {
-            Debug.WriteLine("App_UnhandledException: " + e.Exception.Message);
-            AppendErrorLog("App_UnhandledException", e.Exception.Message);
-            SaveErrorLog();
-        }
+        // e.Exception can lose detail when it crosses the WinRT boundary,
+        // but ToString() still gives the best available type, message, HResult and stack trace.
+        var details = $"{e.Exception}{Environment.NewLine}HResult: 0x{e.Exception.HResult:X8}{Environment.NewLine}Message: {e.Message}";
 
-        e.Handled = true;
+        Debug.WriteLine($"App_UnhandledException: {details}");
+        AppendErrorLog("App_UnhandledException", details);
+        SaveErrorLog();
+
+        // Mark as handled only for exceptions that are known to be recoverable.
+        // Leaving it unhandled lets the app terminate, which is safer for unknown states.
+        if (e.Exception is OperationCanceledException)
+        {
+            e.Handled = true;
+        }
     }
 
     private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
-        if (e.Exception.InnerException is not Exception exception)
-        {
-            return;
-        }
+        // Flatten so nested AggregateExceptions are unwrapped, and log full details (type, message, stack trace).
+        var details = e.Exception.Flatten().ToString();
 
-        Debug.WriteLine("TaskScheduler_UnobservedTaskException: " + exception.Message);
-        AppendErrorLog("TaskScheduler_UnobservedTaskException", exception.Message);
+        Debug.WriteLine($"TaskScheduler_UnobservedTaskException: {details}");
+        AppendErrorLog("TaskScheduler_UnobservedTaskException", details);
         SaveErrorLog();
 
         e.SetObserved();
@@ -406,21 +422,26 @@ public partial class App
     {
         if (e.ExceptionObject is not Exception exception)
         {
+            var raw = e.ExceptionObject?.ToString() ?? "Unknown exception object";
+            Debug.WriteLine($"CurrentDomain_UnhandledException: {raw}");
+            AppendErrorLog("CurrentDomain_UnhandledException", raw);
+            SaveErrorLog();
             return;
         }
 
         if (exception is TaskCanceledException)
         {
             // can ignore.
-            Debug.WriteLine("CurrentDomain_UnhandledException (TaskCanceledException): " + exception.Message);
-            AppendErrorLog("CurrentDomain_UnhandledException (TaskCanceledException)", exception.Message);
+            Debug.WriteLine($"CurrentDomain_UnhandledException (TaskCanceledException): {exception.Message}");
+            return;
         }
-        else
-        {
-            Debug.WriteLine("CurrentDomain_UnhandledException: " + exception.Message);
-            AppendErrorLog("CurrentDomain_UnhandledException", exception.Message);
-            SaveErrorLog();
-        }
+
+        // Log full details (type, message, stack trace, inner exceptions).
+        var details = exception.ToString();
+
+        Debug.WriteLine($"CurrentDomain_UnhandledException (IsTerminating={e.IsTerminating}): {details}");
+        AppendErrorLog("CurrentDomain_UnhandledException", details);
+        SaveErrorLog();
     }
 
     public void AppendErrorLog(string kindTxt, string errorTxt)
@@ -429,7 +450,7 @@ public partial class App
         {
             _errortxt.AppendLine(kindTxt + ": " + errorTxt);
             var dt = DateTime.Now;
-            _errortxt.AppendLine($"Occured at {dt:yyyy/MM/dd HH:mm:ss}");
+            _errortxt.AppendLine($"Occurred at {dt:yyyy/MM/dd HH:mm:ss}");
             _errortxt.AppendLine();
         }
     }
