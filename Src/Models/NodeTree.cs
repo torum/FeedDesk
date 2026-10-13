@@ -792,6 +792,12 @@ public partial class NodeFeed : NodeService
         }
     } = DownloadStatus.Normal;
 
+    public string Etag
+    {
+        get;
+        set;
+    } = string.Empty;
+
     public ObservableCollection<EntryItem> List { get; set; } = [];
 
     public NodeFeed(string name, Uri feedUrl) : base(name, feedUrl, ApiTypes.AtFeed, ServiceTypes.Feed)

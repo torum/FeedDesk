@@ -30,7 +30,7 @@ public sealed class FeedRefreshService : IFeedRefreshService
         await reportStageAsync(FeedRefreshStage.Downloading);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var fetchResult = await _feedClientService.GetEntries(request.EndPoint, request.FeedId, cancellationToken);
+        var fetchResult = await _feedClientService.GetEntries(request.EndPoint, request.FeedId, request.Etag, cancellationToken);
 
         var fetchedAt = DateTime.Now;
 

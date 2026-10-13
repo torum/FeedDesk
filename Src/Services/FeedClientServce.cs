@@ -11,6 +11,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Collections.Concurrent;
 
 namespace FeedDesk.Services;
 
@@ -18,6 +19,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 {
     internal const string HttpClientName = "FeedDesk";
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ConcurrentDictionary<string, string> _etags = new();
     public BaseClient BaseClient => this;
 
     public FeedClientService(IHttpClientFactory httpClientFactory)
@@ -47,12 +49,10 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         */
     }
 
-    public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token)
+    public async override Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, string etag, CancellationToken token)
     {
         var res = new HttpClientEntryItemCollectionResultWrapper();
-
-        var list = new List<EntryItem>();
-        res.Entries = list;
+         res.Entries ??= [];
 
         if (!(entriesUrl.Scheme.Equals("http") || entriesUrl.Scheme.Equals("https")))
         {
@@ -89,12 +89,44 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
             // If canceled in-progress TLS handshake, it would throw ObjectDisposedException for Object: 'System.Net.Sockets.NetworkStream', Source=System.Private.CoreLib and many System.IO.IOException...so anoying.
             // In Debug > Windows > Exception Settings, uncheck System.ObjectDisposedException and System.IO.IOException under Common Language Runtime Exceptions. 
-            using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);//timeoutCts ONLY
+            //using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);//timeoutCts ONLY
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, entriesUrl);
+            if (_etags.TryGetValue(entriesUrl.AbsoluteUri, out var storedEtag) && EntityTagHeaderValue.TryParse(storedEtag, out var etagValue))
+            {
+                request.Headers.IfNoneMatch.Add(etagValue);
+            }
+            else if (!string.IsNullOrEmpty(etag) && EntityTagHeaderValue.TryParse(etag, out var etagParsedValue))
+            {
+                request.Headers.IfNoneMatch.Add(etagParsedValue);
+            }
+            else if (!string.IsNullOrEmpty(etag))
+            {
+                Debug.WriteLine(">> Invalid ETag value: " + etag + " @GetEntries in FeedClientService");
+            }
+
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);
 
             cancelltoken.ThrowIfCancellationRequested();
 
+            if (response.StatusCode == HttpStatusCode.NotModified)
+            {
+                // Nothing changed since the last fetch. Return empty, non-error result.
+                return res;
+            }
+
             if (response.IsSuccessStatusCode)
             {
+                if (response.Headers.ETag is { } responseEtag)
+                {
+                    _etags[entriesUrl.AbsoluteUri] = responseEtag.ToString();
+                    res.Etag = responseEtag.ToString();
+                }
+                else
+                {
+                    _etags.TryRemove(entriesUrl.AbsoluteUri, out _);
+                }
+
                 /*
                 var s = await response.Content.ReadAsStringAsync();
                 ToDebugWindow(">> HTTP Request: GET "
@@ -278,7 +310,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     entryList = xdoc.SelectNodes("//rss/channel/item");
                     if (entryList == null)
                     {
-                        res.Entries = list;
+                        //res.Entries = list;
                         return res;
                     }
 
@@ -295,7 +327,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         FillEntryItemFromXmlRss(ent, l, NsMgr, entriesUrl);
 
                         if (!string.IsNullOrEmpty(ent.EntryId))
-                            list.Add(ent);
+                            res.Entries.Add(ent);
                     }
 
                     // 
@@ -357,7 +389,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     XmlNodeList? entryList = xdoc.SelectNodes("//rdf:RDF/rss:item", NsMgr);
                     if (entryList == null)
                     {
-                        res.Entries = list;
+                        //res.Entries = list;
                         return res;
                     }
 
@@ -373,7 +405,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         FillEntryItemFromXmlRdf(ent, l, NsMgr, entriesUrl);
 
                         if (!string.IsNullOrEmpty(ent.EntryId))
-                            list.Add(ent);
+                            res.Entries.Add(ent);
                     }
 
                     // 
@@ -474,7 +506,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         entryList = xdoc.SelectNodes("//atom:feed/atom:entry", atomNsMgr);
                         if (entryList == null)
                         {
-                            res.Entries = list;
+                            //res.Entries = list;
                             return res;
                         }
 
@@ -492,7 +524,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             FillEntryItemFromXmlAtom10(ent, l, atomNsMgr, entriesUrl);
 
                             if (!string.IsNullOrEmpty(ent.EntryId))
-                                list.Add(ent);
+                                res.Entries.Add(ent);
                         }
 
                         // 
@@ -589,7 +621,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         entryList = xdoc.SelectNodes("//atom:feed/atom:entry", atomNsMgr);
                         if (entryList == null)
                         {
-                            res.Entries = list;
+                            //res.Entries = list;
                             return res;
                         }
 
@@ -606,7 +638,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             FillEntryItemFromXmlAtom03(ent, l, atomNsMgr, entriesUrl);
 
                             if (!string.IsNullOrEmpty(ent.EntryId))
-                                list.Add(ent);
+                                res.Entries.Add(ent);
                         }
 
                         // 

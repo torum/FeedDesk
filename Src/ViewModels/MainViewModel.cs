@@ -1073,7 +1073,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var request = new FeedRefreshRequest(feed.Id, feed.EndPoint, feed.Name);
+            var request = new FeedRefreshRequest(feed.Id, feed.EndPoint, feed.Name, feed.Etag);
             var result = await _feedRefreshService.RefreshAsync(request,
                 stage => _dispatcherService.EnqueueAsync(() =>
                 {
@@ -1113,6 +1113,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 feed.Description = result.FetchResult.Description;
                 feed.HtmlUri = result.FetchResult.HtmlUri;
                 feed.Updated = result.FetchResult.Updated;
+                feed.Etag = result.FetchResult.Etag;
 
                 if (feed == SelectedTreeViewItem)
                 {

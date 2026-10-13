@@ -444,6 +444,8 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                 lastUpdate = DateTime.Parse(s);
         }
 
+        var etag = string.IsNullOrEmpty(node.Attributes?["Etag"]?.Value) ? "" : node.Attributes?["Etag"]?.Value;
+
         var exclude = string.IsNullOrEmpty(node.Attributes?["IsExcludeFromRefreshAll"]?.Value) ? "" : node.Attributes?["IsExcludeFromRefreshAll"]?.Value;
         var isExcludeFromRefreshAll = (exclude == "true") ? true : false;
 
@@ -614,6 +616,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                 Description = siteSubTitle ?? "",
                 HtmlUri = siteUri,
                 Updated = Updated,
+                Etag = etag ?? "",
 
                 EntryNewCount = unreadCount,
                 ViewType = vt,
@@ -1011,6 +1014,10 @@ public sealed partial class FeedTreeBuilder : NodeRoot
 
         attrf = doc.CreateAttribute("LastUpdate");
         attrf.Value = fd.LastFetched.ToString("yyyy-MM-dd HH:mm:ss");
+        feed.SetAttributeNode(attrf);
+
+        attrf = doc.CreateAttribute("Etag");
+        attrf.Value = fd.Etag;
         feed.SetAttributeNode(attrf);
 
         attrf = doc.CreateAttribute("IsExcludeFromRefreshAll");

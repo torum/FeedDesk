@@ -8,7 +8,7 @@ namespace FeedDesk.Models.Clients;
 
 public abstract class BaseClient
 {
-    public abstract Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, CancellationToken token);
+    public abstract Task<HttpClientEntryItemCollectionResultWrapper> GetEntries(Uri entriesUrl, string feedId, string etag, CancellationToken token);
 
     /*
     private static readonly Lock _locker = new();

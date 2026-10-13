@@ -112,6 +112,11 @@ public class HttpClientEntryItemCollectionResultWrapper : ResultWrapper
 
     // category (s)
 
+    public string Etag
+    {
+        get; set;
+    } = string.Empty;
+
     public List<EntryItem> Entries = [];
 
     public HttpClientEntryItemCollectionResultWrapper()
