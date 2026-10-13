@@ -13,9 +13,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 using Windows.Storage;
-using Windows.UI.WindowManagement;
 using WinRT;
-using WinRT.Interop;
 
 namespace FeedDesk;
 
@@ -72,17 +70,18 @@ public sealed partial class MainWindow : Window
     private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
         Debug.WriteLine("Shutdown: AppWindow_Closing");
-        /*
         if (App.Current is not App app)
         {
             return;
         }
-        if (app.IsAppHostStopping)
+
+        // Second pass: cleanup is finished and Close() was called by the app. Let it through.
+        if (app.IsAllowWindowClose)
         {
             return;
         }
 
-        // Keep the window and dispatcher alive while cleanup runs.
+        // Must be set synchronously, before any await.
         args.Cancel = true;
 
         if (app.IsShutdownCloseStarted)
@@ -91,19 +90,17 @@ public sealed partial class MainWindow : Window
         }
 
         app.IsShutdownCloseStarted = true;
-        app.IsAppHostStopping = true;
 
-        app.AppHostStopTask = app.StopAppHostAndCloseWindowAsync();
-        await app.AppHostStopTask;
-        //AppWindow.Closing -= AppWindow_Closing;
-        this.Close();
-        */
+        // Hide instead of showing a dialog. The window object stays alive while cleanup runs.
+        sender.Hide();
+
+        app.AppHostStopTask = app.ShutdownAndCloseAsync();
     }
 
     private void Window_Closed(object sender, WindowEventArgs args)
     {
         Debug.WriteLine("Shutdown: Window_Closed");
-        this.AppWindow.Closing += AppWindow_Closing;
+        this.AppWindow.Closing -= AppWindow_Closing;
 
         /*
         var vm = App.GetService<MainViewModel>();

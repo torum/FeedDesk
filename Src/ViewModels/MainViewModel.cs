@@ -3,12 +3,10 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using FeedDesk.Helpers;
 using FeedDesk.Models;
-using FeedDesk.Models.Clients;
 using FeedDesk.Services;
 using FeedDesk.Services.Contracts;
 using FeedDesk.Views;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
@@ -67,8 +65,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         _cts = (App.Current as App)?.AppCancellationToken ?? new();
 
-        InitializeFeedTree();
-        InitializeDatabase();
+        // InitializeFeedTree() and InitializeDatabase() moved to InitializeAsync().
+        //InitializeFeedTree();
+        //InitializeDatabase();
 
         if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
         {
@@ -745,45 +744,117 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #region == Initialization ==
 
-    private void InitializeFeedTree()
+    #region == Initialization ==
+
+    private Task? _initializeTask;
+
+    public bool IsInitialized { get; private set; }
+
+    /// <summary>
+    /// Idempotent. Call once from the UI thread after the window content is shown, e.g. ShellPage.Loaded.
+    /// </summary>
+    public Task InitializeAsync() => _initializeTask ??= InitializeCoreAsync();
+
+    private async Task InitializeCoreAsync()
     {
-        /*
-        var filePath = Path.Combine(App.AppDataFolder, "Searvies.xml");
+        try
+        {
+            await InitializeDatabaseAsync();
+
+            if (_cts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await InitializeFeedTreeAsync();
+        }
+        finally
+        {
+            IsInitialized = true;
+
+            // Command state depends on the tree, which is now loaded.
+            FeedRefreshAllCommand.NotifyCanExecuteChanged();
+            FolderAddCommand.NotifyCanExecuteChanged();
+            FeedAddCommand.NotifyCanExecuteChanged();
+            OpmlImportCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private async Task InitializeFeedTreeAsync()
+    {
+        var cancellationToken = _cts.Token;
+
+        try
+        {
+            // File I/O and XML parsing off the UI thread.
+            var document = await Task.Run(() => _feedTreePersistenceService.Load(), cancellationToken);
+            if (document is null)
+            {
+                return;
+            }
+
+            // Back on the UI thread (captured context): the tree is bound to the UI.
+            Root.LoadXmlDoc(document);
+            IsFeedTreeLoaded = true;
+
+            OnPropertyChanged(nameof(Services));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when the app is shutting down.
+        }
+        catch (Exception ex)
+        {
+            ErrorMain = new ErrorObject
+            {
+                ErrType = ErrorObject.ErrTypes.XML,
+                ErrCode = "",
+                ErrText = ex.Message,
+                ErrDescription = "Error loading \"Searvies.xml\"",
+                ErrDatetime = DateTime.Now,
+                ErrPlace = "MainViewModel::InitializeFeedTreeAsync",
+                ErrPlaceParent = "MainViewModel.InitializeAsync()"
+            };
+            IsMainErrorInfoBarVisible = true;
+
+            Debug.WriteLine("Exception while loading service.xml:" + ex);
+        }
+    }
+
+    private async Task InitializeDatabaseAsync()
+    {
+        var filePath = Path.Combine(App.AppDataFolder, "Feeds.db");
         if (RuntimeHelper.IsMSIX)
         {
-            filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "Searvies.xml");
+            filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "Feeds.db");
         }
 
-        if (File.Exists(filePath))
+        var cancellationToken = _cts.Token;
+        try
         {
-            var doc = new System.Xml.XmlDocument();
-
-            try
+            var res = await Task.Run(() => _dataAccessService.InitializeDatabase(filePath), cancellationToken);
+            if (res.IsError)
             {
-                doc.Load(filePath);
-
-                Root.LoadXmlDoc(doc);
-
-                IsFeedTreeLoaded = true;
-            }
-            catch (Exception ex)
-            {
-                ErrorMain = new ErrorObject
-                {
-                    ErrType = ErrorObject.ErrTypes.XML,
-                    ErrCode = "",
-                    ErrText = ex.Message,
-                    ErrDescription = "Error loading \"Searvies.xml\"",
-                    ErrDatetime = DateTime.Now,
-                    ErrPlace = "MainViewModel::InitializeFeedTree",
-                    ErrPlaceParent = "MainViewModel()"
-                };
+                ErrorMain = res.Error;
                 IsMainErrorInfoBarVisible = true;
 
-                Debug.WriteLine("Exception while loading service.xml:" + ex);
+                Debug.WriteLine("SQLite DB init: " + res.Error.ErrText + ": " + res.Error.ErrDescription + " @" + res.Error.ErrPlace + "@" + res.Error.ErrPlaceParent);
             }
         }
-        */
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected when the app is shutting down.
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine($"Exception @InitializeDatabaseAsync: {e}");
+        }
+    }
+
+    #endregion
+    /*
+    private void InitializeFeedTree()
+    {
         try
         {
             var document = _feedTreePersistenceService.Load();
@@ -844,7 +915,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             Debug.WriteLine($"Exception @InitializeDatabase: {e}");
         }
     }
-
+    */
     #endregion
 
     #region == Finalization ==
@@ -905,7 +976,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 }
             }
         }
-        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Background operations canceled during shutdown");
         }
@@ -924,9 +995,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         try
         {
-            if (!_ctsForSelectedTreeViewItem.IsCancellationRequested)
+            if (_ctsForSelectedTreeViewItem?.IsCancellationRequested == false)
             {
-                _ctsForSelectedTreeViewItem.Cancel();
+                _ctsForSelectedTreeViewItem?.Cancel();
             }
         }
         catch (Exception ex)
@@ -939,9 +1010,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         try
         {
-            if (!_cts.IsCancellationRequested)
+            if (_cts?.IsCancellationRequested == false)
             {
-                _cts.Cancel();
+                _cts?.Cancel();
             }
         }
         catch (Exception ex)
@@ -2386,7 +2457,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #region == Treeview commands ==
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanFeedAdd))]
     private static void FeedAdd()
     {
         var shell = App.GetService<ShellPage>();
@@ -2497,6 +2568,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         }
     }
+    private bool CanFeedAdd()
+    {
+        return IsInitialized;
+    }
 
     private bool IsFeedDupeCheck(string feedUri)
     {
@@ -2574,7 +2649,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     {
         return SelectedTreeViewItem is not null;
     }
-
+    
     [RelayCommand(CanExecute = nameof(CanFolderAdd))]
     private void FolderAdd()
     {
@@ -2611,9 +2686,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
     }
 
-    private static bool CanFolderAdd()
+    private bool CanFolderAdd()
     {
-        return true;
+        return IsInitialized;
     }
 
     [RelayCommand(CanExecute = nameof(CanFeedRemove))]
@@ -3516,9 +3591,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
     }
 
-    private static bool CanOpmlImport()
+    private bool CanOpmlImport()
     {
-        return true;
+        return IsInitialized;
     }
 
     [RelayCommand(CanExecute = nameof(CanOpmlExport))]

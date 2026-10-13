@@ -52,17 +52,7 @@ public partial class App
         set => _appHostStopTask = value;
     }
     private bool _isAppHostStopping = false;
-    public bool IsAppHostStopping
-    {
-        get => (Current as App)?._isAppHostStopping ?? false;
-        set
-        {
-            if (Current is App app)
-            {
-                app._isAppHostStopping = value;
-            }
-        }
-    }
+
     private bool _allowWindowClose;
     public bool IsAllowWindowClose
     {
@@ -222,10 +212,7 @@ public partial class App
 
         _appHostStartTask = StartAppHostAsync();
         MainWnd = GetService<MainWindow>();
-        MainWnd.Closed += (sender, e) =>
-        {
-            _appHostStopTask = StopAppHostAsync();
-        };
+
         //MainWnd.AppWindow.Show(true);
         MainWnd.Activate();
         MainWnd.AppWindow.MoveInZOrderAtTop();
@@ -244,51 +231,20 @@ public partial class App
         }
     }
 
-    public async Task StopAppHostAndCloseWindowAsync()
+    public async Task ShutdownAndCloseAsync()
     {
-        // This one uses MainWindow.AppWindow.Close() to wait for the background tasks to finish, then close the window after cleanup is done.
-        // However, this does not work well because the window closes immediately if close is requested via Alt+F4.
-        // Also, it is not good UX to show a dialog and force to wait when a user just trying to close the window.
-
-        var progressRing = new ProgressRing
-        {
-            IsActive = true,
-            Width = 32,
-            Height = 32
-        };
-
-        var content = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 12
-        };
-        content.Children.Add(progressRing);
-        content.Children.Add(new TextBlock
-        {
-            Text = "Stopping background operations…",
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
-        var dialog = new ContentDialog
-        {
-            Title = "Closing FeedDesk",
-            Content = content,
-            XamlRoot = MainWnd!.Content.XamlRoot
-        };
-
-        // Prevent the user from dismissing the dialog before cleanup finishes.
-        dialog.Closing += (_, e) =>
-        {
-            if (!_allowWindowClose)
-            {
-                e.Cancel = true;
-            }
-        };
-
-        var dialogOperation = dialog.ShowAsync();
+        _isAppHostStopping = true;
 
         try
         {
+            LogShutdownTimestamp("Shutdown: saving window settings");
+            MainWnd?.SaveSettings();
+
+            var vm = GetService<MainViewModel>();
+
+            LogShutdownTimestamp("Shutdown: saving feed tree");
+            vm.SaveServiceXml();
+
             await StopAppHostAsync();
         }
         catch (Exception ex)
@@ -301,14 +257,11 @@ public partial class App
         {
             _allowWindowClose = true;
 
-            try
+            // Window.Close() must run on the UI thread.
+            var queued = CurrentDispatcherQueue?.TryEnqueue(() => MainWnd?.Close()) ?? false;
+            if (!queued)
             {
-                dialog.Hide();
-                await dialogOperation;
-            }
-            finally
-            {
-                //MainWnd?.Close();
+                Exit();
             }
         }
     }
@@ -329,18 +282,16 @@ public partial class App
             LogShutdownTimestamp("Shutdown: Host.StartAsync completed");
         }
 
-        _isAppHostStopping = true;
-
-        LogShutdownTimestamp("Shutdown: saving window settings");
-        MainWnd?.SaveSettings();
+        //LogShutdownTimestamp("Shutdown: saving window settings");
+        //MainWnd?.SaveSettings();
 
         var vm = GetService<MainViewModel>();
 
-        LogShutdownTimestamp("Shutdown: saving feed tree");
-        vm.SaveServiceXml();
-
         LogShutdownTimestamp("Shutdown: canceling background operations");
         vm.BeginShutdown();
+
+        //LogShutdownTimestamp("Shutdown: saving feed tree");
+        //vm.SaveServiceXml();
 
         try
         {
@@ -362,6 +313,10 @@ public partial class App
         {
             try
             {
+                LogShutdownTimestamp("Shutdown: CancellationTokenSource disposed started");
+                _cts?.Dispose();
+                LogShutdownTimestamp("Shutdown: CancellationTokenSource disposed completed");
+
                 LogShutdownTimestamp("Shutdown: Host.Dispose started");
                 Host.Dispose();
                 LogShutdownTimestamp("Shutdown: Host.Dispose completed");
@@ -373,8 +328,6 @@ public partial class App
             }
             finally
             {
-                _cts?.Dispose();
-                LogShutdownTimestamp("Shutdown: CancellationTokenSource disposed");
             }
         }
     }
@@ -417,7 +370,7 @@ public partial class App
         // This does not fire...because of winui3 bugs. should be fixed in v1.2.2 WinAppSDK
         // see https://github.com/microsoft/microsoft-ui-xaml/issues/5221
 
-        Debug.WriteLine("App_UnhandledException", e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
+        Debug.WriteLine("App_UnhandledException: " + e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
         AppendErrorLog("App_UnhandledException", e.Message + $" StackTrace: {e.Exception.StackTrace}, Source: {e.Exception.Source}");
         if (e.Exception.InnerException is TaskCanceledException or OperationCanceledException)
         {
@@ -432,6 +385,7 @@ public partial class App
             SaveErrorLog();
         }
 
+        e.Handled = true;
     }
 
     private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)

@@ -70,6 +70,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         //using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
         var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 10 sec http timeout.
         var requestCts = CancellationTokenSource.CreateLinkedTokenSource(token, timoutCts.Token);
+        var cancelltoken = requestCts.Token;
 
         try
         {
@@ -82,13 +83,15 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             aggregateCts.Token.ThrowIfCancellationRequested();
             */
 
+
+
             using var client = _httpClientFactory.CreateClient(HttpClientName);
 
-            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException and many System.IO.IOException...so anoying.
+            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException for Object: 'System.Net.Sockets.NetworkStream', Source=System.Private.CoreLib and many System.IO.IOException...so anoying.
             // In Debug > Windows > Exception Settings, uncheck System.ObjectDisposedException and System.IO.IOException under Common Language Runtime Exceptions. 
-            using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, requestCts.Token).ConfigureAwait(false);//timeoutCts ONLY
+            using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);//timeoutCts ONLY
 
-            requestCts.Token.ThrowIfCancellationRequested();
+            cancelltoken.ThrowIfCancellationRequested();
 
             if (response.IsSuccessStatusCode)
             {
@@ -122,15 +125,15 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 */
                 //Debug.WriteLine("ReadAsStreamAsync @GetEntries in FeedClientService ");
                 //var source = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-                using var source = await response.Content.ReadAsStreamAsync(requestCts.Token).ConfigureAwait(false);
+                using var source = await response.Content.ReadAsStreamAsync(cancelltoken).ConfigureAwait(false); 
 
-                requestCts.Token.ThrowIfCancellationRequested();
+                cancelltoken.ThrowIfCancellationRequested();
 
                 // Load XML
                 var xdoc = new XmlDocument();
                 try
                 {
-                    requestCts.Token.ThrowIfCancellationRequested();
+                    cancelltoken.ThrowIfCancellationRequested();
                     var settings = new XmlReaderSettings
                     {
                         DtdProcessing = DtdProcessing.Parse
@@ -138,7 +141,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     
                     //XmlReader reader = XmlReader.Create(source, settings);
                     using var reader = XmlReader.Create(source, settings);
-                    requestCts.Token.ThrowIfCancellationRequested();
+                    cancelltoken.ThrowIfCancellationRequested();
                     xdoc.Load(reader);
                 }
                 catch (OperationCanceledException)
@@ -149,7 +152,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 {
                     // If cancellation closed the response stream during the read,
                     // report cancellation rather than invalid XML.
-                    requestCts.Token.ThrowIfCancellationRequested();
+                    cancelltoken.ThrowIfCancellationRequested();
 
                     Debug.WriteLine($"<< Exception xdoc.Load GetEntries FeedHttpClient ({entriesUrl.AbsoluteUri}): {e.Message}");
 
@@ -169,7 +172,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     return res;
                 }
 
-                requestCts.Token.ThrowIfCancellationRequested();
+                cancelltoken.ThrowIfCancellationRequested();
 
                 // RSS 2.0
                 if (xdoc.DocumentElement.LocalName.Equals("rss"))
@@ -279,7 +282,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         return res;
                     }
 
-                    requestCts.Token.ThrowIfCancellationRequested();
+                    cancelltoken.ThrowIfCancellationRequested();
                     var i = 0;
                     foreach (XmlNode l in entryList)
                     {
@@ -358,7 +361,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         return res;
                     }
 
-                    requestCts.Token.ThrowIfCancellationRequested();
+                    cancelltoken.ThrowIfCancellationRequested();
                     var i = 0;
                     foreach (XmlNode l in entryList)
                     {
@@ -475,7 +478,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             return res;
                         }
 
-                        requestCts.Token.ThrowIfCancellationRequested();
+                        cancelltoken.ThrowIfCancellationRequested();
                         var i = 0;
                         foreach (XmlNode l in entryList)
                         {
@@ -652,7 +655,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             // HTTP non 200 status code.
             else
             {
-                requestCts.Token.ThrowIfCancellationRequested();
+                cancelltoken.ThrowIfCancellationRequested();
                 if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently)
                 {
                     var location = response.Headers.Location;
@@ -676,8 +679,8 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 }
 
 
-                var contents = await response.Content.ReadAsStringAsync(requestCts.Token);
-                requestCts.Token.ThrowIfCancellationRequested();
+                var contents = await response.Content.ReadAsStringAsync(cancelltoken);
+                cancelltoken.ThrowIfCancellationRequested();
 
                 if (contents != null)
                 {
@@ -739,12 +742,12 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             HttpReqException(res.Error, e.Message, "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
-        catch (TaskCanceledException e) when (requestCts.Token.IsCancellationRequested)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
+        catch (TaskCanceledException e) when (cancelltoken.IsCancellationRequested)// when (timoutCts.IsCancellationRequested) // when (ex.InnerException is TimeoutException)
         {
             //throw new TimeoutException("HTTP request timed out. ");
 
             Debug.WriteLine($"<< TaskCanceledException ({entriesUrl}) : {e.Message}");
-            //requestCts.Token.ThrowIfCancellationRequested();
+            //cancelltoken.ThrowIfCancellationRequested();
 
             ToDebugWindow(" << TaskCanceledException: "
                 + Environment.NewLine
@@ -754,10 +757,10 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             HttpReqException(res.Error, e.Message + " (TaskCanceledException IsCancellationRequested)", "Client.GetAsync", "FeedHttpClient:GetEntries");
             res.IsError = true;
         }
-        catch (ObjectDisposedException) when (requestCts.Token.IsCancellationRequested)
+        catch (ObjectDisposedException) when (cancelltoken.IsCancellationRequested)
         {
             // Connection was aborted by cancellation/timeout. Normalize to cancellation.
-            throw new OperationCanceledException(requestCts.Token);
+            throw new OperationCanceledException(cancelltoken);
         }
         catch (ObjectDisposedException ode)
         {
@@ -770,7 +773,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         catch (Exception e) when (e.InnerException is TimeoutException)
         {
             Debug.WriteLine("<< TimeoutException: " + entriesUrl.AbsoluteUri + " - " + e.Message);
-            //requestCts.Token.ThrowIfCancellationRequested();
+            //cancelltoken.ThrowIfCancellationRequested();
 
             ToDebugWindow("<< TimeoutException:"
                 + Environment.NewLine
@@ -782,7 +785,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
             return res;
         }
-        catch (Exception ex) when (ex is OperationCanceledException || (requestCts.Token.IsCancellationRequested && ex is ObjectDisposedException or System.IO.IOException or HttpRequestException))
+        catch (Exception ex) when (ex is OperationCanceledException || (cancelltoken.IsCancellationRequested && ex is ObjectDisposedException or System.IO.IOException or HttpRequestException))
         {
             Debug.WriteLine("<< Operation Cancelled: " + entriesUrl.AbsoluteUri + " - " + ex.Message);
             res.IsError = true;
@@ -791,7 +794,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         catch (Exception e)
         {
             Debug.WriteLine("<< HTTP error: " + entriesUrl.AbsoluteUri + " - " + e.Message);
-            //requestCts.Token.ThrowIfCancellationRequested();
+            //cancelltoken.ThrowIfCancellationRequested();
 
             ToDebugWindow("<< HTTP error:"
                 + Environment.NewLine
