@@ -147,15 +147,18 @@ public partial class App
                 services.AddSingleton<IFeedTreePersistenceService, FeedTreePersistenceService>();
                 services.AddHttpClient(FeedClientService.HttpClientName, client =>
                 {
-                    // No use cancellation token only. -> Addition to this timeout, also use the per-request cancellation token as the fallback timeout mechanism.
-                    // Don't set timeout here to avoid disposable race. 
+                    // Addition to this timeout, also use the per-request cancellation token as the fallback timeout mechanism.
+                    // Though, not a good idea to set timeout here to avoid disposable race. 
                     client.Timeout = TimeSpan.FromSeconds(10);//Timeout.InfiniteTimeSpan;//
+                    // Preemptively close the connection to avoid IOExceptions caused by remote server silently tears down an idle TLS/socket connection.
+                    // .NET's internal reading loops encounter expected IOExceptions or SocketExceptions on server side closed idle keep-alive sockets.
+                    client.DefaultRequestHeaders.ConnectionClose = true; // Avoids server 
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rss+xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/rdf+xml"));
-                    client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.2");
                 }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
                 {
                     ConnectTimeout = TimeSpan.FromSeconds(8),
