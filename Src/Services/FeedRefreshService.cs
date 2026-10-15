@@ -1,10 +1,13 @@
-﻿using FeedDesk.Models;
-using FeedDesk.Services.Contracts;
+﻿using FeedDesk.Services.Contracts;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+#pragma warning disable IDE0079 // Remove unnecessary suppression
+#pragma warning disable IDE0290 // Use primary constructor
+
 namespace FeedDesk.Services;
+
 public enum FeedRefreshStage
 {
     Downloading,
@@ -21,7 +24,6 @@ public sealed class FeedRefreshService : IFeedRefreshService
         _feedClientService = feedClientService;
         _dataAccessService = dataAccessService;
     }
-
 
     //public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, CancellationToken cancellationToken)
     public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, Func<FeedRefreshStage, Task> reportStageAsync, CancellationToken cancellationToken)

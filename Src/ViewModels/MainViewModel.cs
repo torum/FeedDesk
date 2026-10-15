@@ -35,11 +35,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private CancellationTokenSource _ctsForSelectedTreeViewItem = new();
     private volatile bool _isShuttingDown;
     private readonly Lock _activeRefreshTasksLock = new();
-    private readonly HashSet<Task> _activeRefreshTasks = new();
+    private readonly HashSet<Task> _activeRefreshTasks = [];
 
     private readonly IFileDialogService _fileDialogService;
     private readonly IDataAccessService _dataAccessService;
-    private readonly IFeedClientService _feedClientService;
     private readonly IOpmlService _opmlService;
     private readonly IDispatcherService _dispatcherService;
     private readonly IFeedRefreshService _feedRefreshService;
@@ -51,11 +50,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #endregion
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService)
     {
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
-        _feedClientService = feedClientService;
         _feedRefreshService = feedRefreshService;
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
@@ -443,15 +441,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             }
 
             if (SelectedTreeViewItem is not NodeTree nt) return;
-
-            if (nt is NodeFeed feed)
-            {
-
-            }
-            else if (nt is NodeFolder folder)
-            {
-
-            }
 
             if (_selectedEntryArchiveStatus.Key == EntryArchivingStatusKeys.Inbox)
             {
@@ -951,7 +940,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         lock (_activeRefreshTasksLock)
         {
-            pending = _activeRefreshTasks.ToArray();
+            pending = [.. _activeRefreshTasks];
         }
 
         Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Waiting for {pending.Length} background operations");
@@ -1095,7 +1084,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 if (result.FetchResult.IsError)
                 {
                     feed.ErrorHttp = result.FetchResult.Error;
-                    feed.EntryNewCount = 0;
+                    //feed.EntryNewCount = 0;
                     feed.IsPendingReload = false;
 
                     if (feed == SelectedTreeViewItem)
@@ -3069,10 +3058,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
         finally
         {
-            if (busyFolder is not null)
-            {
-                busyFolder.IsBusy = false;
-            }
+            busyFolder?.IsBusy = false;
 
             IsTreeWorking = false;
             EntryArchiveAllCommand.NotifyCanExecuteChanged();
@@ -3692,8 +3678,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     [RelayCommand]
     private static void MenuFileExit()
     {
-        //Application.Current.Exit();
-        App.MainWnd?.Close();
+        //Application.Current.Exit();// DON'T.
+        //MainWindow.Close() // DON'T call that either. It will bypass the MainWindow.OnClosing() event and will failed disposing resource.
+        Debug.WriteLine("MenuFileExit (Alt+F4)");
     }
 
     [RelayCommand]

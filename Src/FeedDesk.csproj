@@ -86,10 +86,10 @@
 		<PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.3.260402-preview2" />
 		<PackageReference Include="CommunityToolkit.WinUI.Media" Version="8.3.260402-preview2" />
 		<PackageReference Include="CommunityToolkit.WinUI.Triggers" Version="8.3.260402-preview2" />
-		<PackageReference Include="HtmlAgilityPack" Version="1.13.0" />
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
+		<PackageReference Include="HtmlAgilityPack" Version="1.13.1" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
 		<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.1" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="1.7.260930100">
 			<PrivateAssets>all</PrivateAssets>
@@ -133,13 +133,11 @@
 		<WindowsPackageType>None</WindowsPackageType>
 		<PublishSingleFile>true</PublishSingleFile>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-		-->
-		<!-- 
 		<PublishAot>false</PublishAot>
 		<PublishTrimmed>false</PublishTrimmed>
 		-->
-		<!-- 
-	  
+		
+		<!-- for store submission, needs to be set to true
 		<PublishAot>true</PublishAot>
 		<PublishTrimmed>True</PublishTrimmed>
 		<PublishSingleFile>false</PublishSingleFile>

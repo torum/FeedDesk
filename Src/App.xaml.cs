@@ -54,7 +54,7 @@ public partial class App
     private bool _isAppHostStopping = false;
 
     private bool _allowWindowClose;
-    public bool IsAllowWindowClose
+    public static bool IsAllowWindowClose
     {
         get => (Current as App)?._allowWindowClose ?? false;
         set
@@ -66,7 +66,7 @@ public partial class App
         }
     }
     private bool _shutdownCloseStarted;
-    public bool IsShutdownCloseStarted
+    public static bool IsShutdownCloseStarted
     {
         get => (Current as App)?._shutdownCloseStarted ?? false;
         set
@@ -139,7 +139,6 @@ public partial class App
                 // Core Services
                 services.AddSingleton<IFileDialogService, FileDialogService>();
                 services.AddSingleton<IDataAccessService, DataAccessService>();
-                //services.AddSingleton<IFeedClientService, FeedClientService>();
                 services.AddSingleton<IAutoDiscoveryService, AutoDiscoveryService>();
                 services.AddSingleton<IOpmlService, OpmlService>();
                 services.AddSingleton<IDispatcherService>(new DispatcherService(CurrentDispatcherQueue));
@@ -152,7 +151,7 @@ public partial class App
                     client.Timeout = TimeSpan.FromSeconds(10);//Timeout.InfiniteTimeSpan;//
                     // Preemptively close the connection to avoid IOExceptions caused by remote server silently tears down an idle TLS/socket connection.
                     // .NET's internal reading loops encounter expected IOExceptions or SocketExceptions on server side closed idle keep-alive sockets.
-                    client.DefaultRequestHeaders.ConnectionClose = true; // Avoids server 
+                    client.DefaultRequestHeaders.ConnectionClose = true;
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/atom+xml"));
@@ -169,21 +168,21 @@ public partial class App
                         // Optional: nothing to change here by default; handshake time is bounded by ConnectTimeout.
                     }
                 });
-
                 services.AddSingleton<IFeedClientService, FeedClientService>();
 
                 // Views and ViewModels
-                services.AddSingleton<SettingsPage>();
+                services.AddSingleton<MainViewModel>();
+                services.AddSingleton<MainWindow>();
+                services.AddSingleton<ShellPage>();
+                services.AddSingleton<MainPage>();
                 services.AddTransient<FeedAddViewModel>();
+                /*
+                services.AddSingleton<SettingsPage>();
                 services.AddTransient<FeedAddPage>();
                 services.AddSingleton<FeedEditPage>();
                 services.AddSingleton<FolderEditPage>();
                 services.AddSingleton<FolderAddPage>();
-                services.AddSingleton<MainWindow>();
-                services.AddSingleton<MainViewModel>();
-                services.AddSingleton<MainPage>();
-                services.AddSingleton<ShellPage>();
-
+                */
                 // Configuration
                 //services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             }).
@@ -348,9 +347,13 @@ public partial class App
             {
                 LogShutdownTimestamp($"Shutdown: Host.Dispose exception: {ex}");
                 Debug.WriteLine($"Exception disposing Host: {ex}");
+
+                AppendErrorLog("AppHost.StopAsync @Dispose()", ex.ToString());
             }
             finally
             {
+                // Save error log if any.
+                SaveErrorLog();
             }
         }
     }

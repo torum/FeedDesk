@@ -3,7 +3,7 @@ using FeedDesk.Models;
 using FeedDesk.Models.Clients;
 using FeedDesk.Services.Contracts;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
@@ -11,7 +11,9 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Collections.Concurrent;
+
+#pragma warning disable IDE0079 // Remove unnecessary suppression
+#pragma warning disable IDE0290 // Use primary constructor
 
 namespace FeedDesk.Services;
 
@@ -20,7 +22,6 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
     internal const string HttpClientName = "FeedDesk";
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ConcurrentDictionary<string, string> _etags = new();
-    public BaseClient BaseClient => this;
 
     public FeedClientService(IHttpClientFactory httpClientFactory)
     {
@@ -83,14 +84,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             aggregateCts.Token.ThrowIfCancellationRequested();
             */
 
-
-
             using var client = _httpClientFactory.CreateClient(HttpClientName);
-
-            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException for Object: 'System.Net.Sockets.NetworkStream', Source=System.Private.CoreLib and many System.IO.IOException...so anoying.
-            // In Debug > Windows > Exception Settings, uncheck System.ObjectDisposedException and System.IO.IOException under Common Language Runtime Exceptions. 
-            //using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);//timeoutCts ONLY
-
             using var request = new HttpRequestMessage(HttpMethod.Get, entriesUrl);
             if (_etags.TryGetValue(entriesUrl.AbsoluteUri, out var storedEtag) && EntityTagHeaderValue.TryParse(storedEtag, out var etagValue))
             {
@@ -105,6 +99,9 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 Debug.WriteLine(">> Invalid ETag value: " + etag + " @GetEntries in FeedClientService");
             }
 
+            // If canceled in-progress TLS handshake, it would throw ObjectDisposedException for Object: 'System.Net.Sockets.NetworkStream', Source=System.Private.CoreLib and many System.IO.IOException...so anoying.
+            // In Debug > Windows > Exception Settings, uncheck System.ObjectDisposedException and System.IO.IOException under Common Language Runtime Exceptions. 
+            //using var response = await client.GetAsync(entriesUrl, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);//timeoutCts ONLY
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelltoken).ConfigureAwait(false);
 
             cancelltoken.ThrowIfCancellationRequested();
@@ -688,6 +685,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             else
             {
                 cancelltoken.ThrowIfCancellationRequested();
+
                 if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently)
                 {
                     var location = response.Headers.Location;
@@ -709,7 +707,6 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                     Debug.WriteLine($"{response.StatusCode} @GetEntries in FeedClientService - " + entriesUrl.AbsoluteUri);
                 }
-
 
                 var contents = await response.Content.ReadAsStringAsync(cancelltoken);
                 cancelltoken.ThrowIfCancellationRequested();

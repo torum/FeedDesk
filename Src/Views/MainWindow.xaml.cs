@@ -76,7 +76,7 @@ public sealed partial class MainWindow : Window
         }
 
         // Second pass: cleanup is finished and Close() was called by the app. Let it through.
-        if (app.IsAllowWindowClose)
+        if (App.IsAllowWindowClose)
         {
             return;
         }
@@ -84,12 +84,12 @@ public sealed partial class MainWindow : Window
         // Must be set synchronously, before any await.
         args.Cancel = true;
 
-        if (app.IsShutdownCloseStarted)
+        if (App.IsShutdownCloseStarted)
         {
             return;
         }
 
-        app.IsShutdownCloseStarted = true;
+        App.IsShutdownCloseStarted = true;
 
         // Hide instead of showing a dialog. The window object stays alive while cleanup runs.
         sender.Hide();
@@ -102,19 +102,6 @@ public sealed partial class MainWindow : Window
         Debug.WriteLine("Shutdown: Window_Closed");
         this.AppWindow.Closing -= AppWindow_Closing;
 
-        /*
-        var vm = App.GetService<MainViewModel>();
-
-        // Save service tree.
-        vm.SaveServiceXml();
-        */
-        // Dispose httpclient.
-        //vm.CleanUp();
-
-        //SaveSettings();
-
-        // Save err log.
-        //(Application.Current as App)?.SaveErrorLog();
     }
 
 
@@ -394,7 +381,7 @@ public sealed partial class MainWindow : Window
         if (appWindow != null)
         {
             // Window state
-            if (appWindow.Presenter is OverlappedPresenter presenter)
+            if (appWindow.Presenter is OverlappedPresenter)//  presenter
             {
                 // AOT bad
                 // https://github.com/microsoft/CsWinRT/issues/1930
