@@ -250,8 +250,15 @@ public partial class App
         }
     }
 
+    private static void LogShutdownTimestamp(string message)
+    {
+        Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] {message}");
+    }
+
     public async Task ShutdownAndCloseAsync()
     {
+        LogShutdownTimestamp("Shutdown: ShutdownAndCloseAsync started");
+
         _isAppHostStopping = true;
 
         try
@@ -273,23 +280,24 @@ public partial class App
         {
             _allowWindowClose = true;
 
+            // This is weird WinUI3 bug, but calling MainWnd.Close() here WHILE MINIMIZED causes the app to hang on shutdown.
+            /*
+            LogShutdownTimestamp($"Shutdown: starting Close()");
             // Window.Close() must run on the UI thread.
             var queued = CurrentDispatcherQueue?.TryEnqueue(() => MainWnd?.Close()) ?? false;
             if (!queued)
             {
+                LogShutdownTimestamp($"Shutdown: Close() failed,starting Exit()");
                 Exit();
             }
+            */
+            LogShutdownTimestamp("Shutdown: ShutdownAndCloseAsync completed");
         }
-    }
-
-    private static void LogShutdownTimestamp(string message)
-    {
-        Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] {message}");
     }
 
     private async Task StopAppHostAsync()
     {
-        LogShutdownTimestamp("Shutdown: started");
+        LogShutdownTimestamp("Shutdown: StopAppHostAsync() started");
 
         if (_appHostStartTask != null)
         {
@@ -302,9 +310,6 @@ public partial class App
 
         LogShutdownTimestamp("Shutdown: canceling background operations");
         vm.BeginShutdown();
-
-        //LogShutdownTimestamp("Shutdown: saving feed tree");
-        //vm.SaveServiceXml();
 
         try
         {
@@ -345,6 +350,8 @@ public partial class App
             {
                 // Save error log if any.
                 SaveErrorLog();
+
+                LogShutdownTimestamp("Shutdown: StopAppHostAsync() completed");
             }
         }
     }

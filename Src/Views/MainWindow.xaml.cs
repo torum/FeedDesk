@@ -12,9 +12,6 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Xml;
-using System.Xml.Linq;
-using Windows.Storage;
 using WinRT;
 
 namespace FeedDesk;
@@ -31,7 +28,7 @@ public sealed partial class MainWindow : Window
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
 
-    private MainViewModel _vm;
+    private readonly MainViewModel _vm;
 
     private readonly IConfigurationService _configurationService;
 
@@ -240,18 +237,21 @@ public sealed partial class MainWindow : Window
 
         #endregion
 
-        app.AppHostStopTask = app.ShutdownAndCloseAsync();
+        //app.AppHostStopTask = app.ShutdownAndCloseAsync();
+        await app.ShutdownAndCloseAsync();
+
+        Close();
     }
 
     private void Window_Closed(object sender, WindowEventArgs args)
     {
-        Debug.WriteLine("Shutdown: Window_Closed");
-
         this.Closed -= Window_Closed;
         this.AppWindow.Closing -= AppWindow_Closing;
         this.SizeChanged -= Window_SizeChanged;
         this.AppWindow.Changed -= AppWindow_Changed;
         this.Activated -= MainWindow_Activated;
+
+        Debug.WriteLine("Shutdown: Window_Closed");
     }
 
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
