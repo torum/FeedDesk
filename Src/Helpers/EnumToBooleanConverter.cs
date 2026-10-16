@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
+using FeedDesk.Models;
 
 namespace FeedDesk.Helpers;
 
@@ -36,12 +37,6 @@ public partial class ElementThemeEnumToBooleanConverter : IValueConverter
 
         throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
     }
-}
-
-
-public enum SystemBackdropOption
-{
-    Mica, MicaAlt, Acrylic, None
 }
 
 public partial class SystemBackdropEnumToBooleanConverter : IValueConverter

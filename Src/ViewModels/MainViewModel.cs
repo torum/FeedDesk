@@ -50,7 +50,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #endregion
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService)
+    private readonly IConfigurationService _configurationService;
+
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService, IConfigurationService configurationService)
     {
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
@@ -58,14 +60,15 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
         _feedTreePersistenceService = feedTreePersistenceService;
+        _configurationService = configurationService;
 
         //_feedClientService.BaseClient.DebugOutput += OnDebugOutput;
 
         _cts = (App.Current as App)?.AppCancellationToken ?? new();
 
-        // InitializeFeedTree() and InitializeDatabase() moved to InitializeAsync().
-        //InitializeFeedTree();
-        //InitializeDatabase();
+        var config = _configurationService.CurrentConfiguration;
+        WidthLeftPane = config.WidthLeftPane;
+        WidthListViewPane = config.WidthListViewPane;
 
         if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
         {
@@ -916,22 +919,20 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             return;
         }
-        /*
-        var filePath = Path.Combine(App.AppDataFolder, "Searvies.xml");
-        if (RuntimeHelper.IsMSIX)
+
+        try
         {
-            filePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "Searvies.xml");
+            var document = Root.AsXmlDoc();
+            _feedTreePersistenceService.Save(document);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Exception @SaveServiceXml: {ex}");
+
+            (App.Current as App)?.AppendErrorLog("SaveServiceXml", ex.ToString());
+            (App.Current as App)?.SaveErrorLog();
         }
 
-        var xdoc = Root.AsXmlDoc();
-
-        //xdoc.Save(filePath);
-        var temporaryPath = filePath + ".tmp";
-        xdoc.Save(temporaryPath);
-        File.Move(temporaryPath, filePath, overwrite: true);
-        */
-        var document = Root.AsXmlDoc();
-        _feedTreePersistenceService.Save(document);
     }
 
     public async Task WaitForBackgroundOperationsAsync()
@@ -2390,6 +2391,13 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         });
     }
     */
+
+    public void UpdateSettings()
+    {
+        var config = _configurationService.CurrentConfiguration;
+        config.WidthLeftPane = WidthLeftPane;
+        config.WidthListViewPane = WidthListViewPane;
+    }
 
     #endregion
 

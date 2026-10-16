@@ -1,4 +1,5 @@
-﻿using FeedDesk.Services;
+﻿using FeedDesk.Helpers;
+using FeedDesk.Services;
 using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
 using FeedDesk.Views;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,7 +16,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WinRT;
-
+using Windows.Storage;
 
 // https://github.com/CommunityToolkit/Windows/issues/612
 [assembly: GeneratedWinRTExposedExternalType(typeof(GridLength))]
@@ -78,8 +78,6 @@ public partial class App
         }
     }
 
-    //public const string BackdropSettingsKey = "AppSystemBackdropOption";
-
     public static UIElement? AppTitlebar
     {
         get; set;
@@ -98,18 +96,6 @@ public partial class App
         get;
     }
 
-    /*
-    public static T GetService<T>()
-        where T : class
-    {
-        if ((Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
-        {
-            throw new ArgumentException($"{typeof(T)} needs to be registered in ConfigureServices within App.xaml.cs.");
-        }
-
-        return service;
-    }
-    */
     public static T GetService<T>() where T : class
     {
         return ((App)Current).Host.Services.GetRequiredService<T>();
@@ -170,6 +156,8 @@ public partial class App
                 });
                 services.AddSingleton<IFeedClientService, FeedClientService>();
 
+                services.AddSingleton<IConfigurationService, ConfigurationService>();
+
                 // Views and ViewModels
                 services.AddSingleton<MainViewModel>();
                 services.AddSingleton<MainWindow>();
@@ -221,6 +209,15 @@ public partial class App
                 Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().Activated += App_Activated;
             }
 
+            var configurationService = GetService<IConfigurationService>();
+            var filePath = App.AppConfigFilePath;
+            if (RuntimeHelper.IsMSIX)
+            {
+                filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
+            }
+            configurationService.Initialize(filePath);
+            await configurationService.LoadConfigurationAsync();
+
             _appHostStartTask = StartAppHostAsync();
             MainWnd = GetService<MainWindow>();
 
@@ -259,9 +256,6 @@ public partial class App
 
         try
         {
-            LogShutdownTimestamp("Shutdown: saving window settings");
-            MainWnd?.SaveSettings();
-
             var vm = GetService<MainViewModel>();
 
             LogShutdownTimestamp("Shutdown: saving feed tree");
@@ -303,9 +297,6 @@ public partial class App
             await _appHostStartTask;
             LogShutdownTimestamp("Shutdown: Host.StartAsync completed");
         }
-
-        //LogShutdownTimestamp("Shutdown: saving window settings");
-        //MainWnd?.SaveSettings();
 
         var vm = GetService<MainViewModel>();
 

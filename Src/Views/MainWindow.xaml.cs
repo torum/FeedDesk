@@ -1,5 +1,7 @@
 using CommunityToolkit.WinUI;
 using FeedDesk.Helpers;
+using FeedDesk.Models;
+using FeedDesk.Services.Contracts;
 using FeedDesk.ViewModels;
 using FeedDesk.Views;
 using Microsoft.UI;
@@ -29,17 +31,24 @@ public sealed partial class MainWindow : Window
     //private readonly UISettings settings;
     private ElementTheme theme = ElementTheme.Default;
 
+    private MainViewModel _vm;
+
+    private readonly IConfigurationService _configurationService;
+
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
-    public MainWindow()
+    public MainWindow(IConfigurationService configurationService)
     {
+        _configurationService = configurationService;
+        _vm = App.GetService<MainViewModel>();
+
+        LoadSettings();
+
         InitializeComponent();
 
         this.Title = "AppDisplayName".GetLocalized();
         this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Icons\\FeedDesk3.ico"));
 
         this.ExtendsContentIntoTitleBar = true;
-
-        LoadSettings();
 
         // It's important to set content as early as here in order to set theme.
         // But make sure to call LoadSettings() before in order to apply settings value for contents.
@@ -56,17 +65,20 @@ public sealed partial class MainWindow : Window
         shell.SetTitleBar(this);
 
         this.Closed += Window_Closed;
-
         this.AppWindow.Closing += AppWindow_Closing;
+        this.SizeChanged += Window_SizeChanged;
+        this.AppWindow.Changed += AppWindow_Changed;
+        this.Activated += MainWindow_Activated;
 
         if (this.AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.PreferredMinimumWidth = 600;
             presenter.PreferredMinimumHeight = 780;
         }
-
     }
 
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
+    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
         Debug.WriteLine("Shutdown: AppWindow_Closing");
@@ -94,16 +106,201 @@ public sealed partial class MainWindow : Window
         // Hide instead of showing a dialog. The window object stays alive while cleanup runs.
         sender.Hide();
 
+        _vm.UpdateSettings();
+
+        #region == Save Configuration ==
+
+        if (!RuntimeHelper.IsMSIX)
+        {
+            Directory.CreateDirectory(App.AppDataFolder);
+        }
+
+        //SaveSettings();
+        var config = _configurationService.CurrentConfiguration;
+
+        OverlappedPresenterState? winState = null; // For AOT workaround, don't set default.  = OverlappedPresenterState.Restored;
+
+        //Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
+        if (sender != null)
+        {
+            // AOT bad
+            // https://github.com/microsoft/CsWinRT/issues/1930
+            if (sender.Presenter is OverlappedPresenter presenter)
+            {
+                // AOT bad
+                //OverlappedPresenter? presenter = appWindow.Presenter as OverlappedPresenter;
+
+                if (presenter?.State == OverlappedPresenterState.Maximized)
+                {
+                    winState = OverlappedPresenterState.Maximized;
+                }
+                else if (presenter?.State == OverlappedPresenterState.Minimized)
+                {
+                    winState = OverlappedPresenterState.Minimized;
+                }
+                else if (presenter?.State == OverlappedPresenterState.Restored)
+                {
+                    winState = OverlappedPresenterState.Restored;
+                }
+            }
+            else
+            {
+                //App.AppendErrorLog("AOT Error",$"{appWindow.Presenter}"); //Microsoft.UI.Windowing.AppWindowPresenter
+                //App.SaveErrorLog();
+
+                try
+                {
+                    // For AOT tmp workaround
+                    OverlappedPresenter presenterAOT = this.AppWindow.Presenter.As<OverlappedPresenter>();
+
+                    if (presenterAOT.State == OverlappedPresenterState.Maximized)
+                    {
+                        winState = OverlappedPresenterState.Maximized;
+                    }
+                    else if (presenterAOT.State == OverlappedPresenterState.Minimized)
+                    {
+                        winState = OverlappedPresenterState.Minimized;
+                    }
+                    else if (presenterAOT.State == OverlappedPresenterState.Restored)
+                    {
+                        winState = OverlappedPresenterState.Restored;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    (Application.Current as App)?.AppendErrorLog("AOT Error@SaveSettings", $"{ex}");
+                    (Application.Current as App)?.SaveErrorLog();
+                }
+
+            }
+
+            // For AOT, check if winState is null or not.
+            if (winState != null)
+            {
+                // Main Window attributes
+                if (winState == OverlappedPresenterState.Restored)
+                {
+                    config.MainWindow.Width = sender.Size.Width;
+                }
+                else
+                {
+                    config.MainWindow.Width = _winRestoreWidth;
+                }
+                config.MainWindow.RestoreWidth = _winRestoreWidth;
+
+                if (winState == OverlappedPresenterState.Restored)
+                {
+                    config.MainWindow.Height = sender.Size.Height;
+                }
+                else
+                {
+                    config.MainWindow.Height = _winRestoreHeight;
+                }
+                config.MainWindow.RestoreHeight = _winRestoreHeight;
+
+                if (winState == OverlappedPresenterState.Restored)
+                {
+                    config.MainWindow.Top = sender.Position.Y;
+                }
+                else
+                {
+                    config.MainWindow.Top = _winRestoreTop;
+                }
+                config.MainWindow.RestoreTop = _winRestoreTop;
+
+                if (winState == OverlappedPresenterState.Restored)
+                {
+                    config.MainWindow.Left = sender.Position.X;
+                }
+                else
+                {
+                    config.MainWindow.Left = _winRestoreLeft;
+                }
+                config.MainWindow.RestoreLeft = _winRestoreLeft;
+
+                if (winState == OverlappedPresenterState.Maximized)
+                {
+                    //attrs.Value = "Maximized";
+                    config.MainWindow.WindowState = OverlappedPresenterState.Maximized;
+                }
+                else if (winState == OverlappedPresenterState.Restored)
+                {
+                    //attrs.Value = "Normal";
+                    config.MainWindow.WindowState = OverlappedPresenterState.Restored;
+                }
+                else if (winState == OverlappedPresenterState.Minimized)
+                {
+                    //attrs.Value = "Minimized";
+                    config.MainWindow.WindowState = OverlappedPresenterState.Restored; // Ignore actual value.
+                }
+            }
+        }
+
+        await _configurationService.SaveConfigurationAsync();
+
+        #endregion
+
         app.AppHostStopTask = app.ShutdownAndCloseAsync();
     }
 
     private void Window_Closed(object sender, WindowEventArgs args)
     {
         Debug.WriteLine("Shutdown: Window_Closed");
-        this.AppWindow.Closing -= AppWindow_Closing;
 
+        this.Closed -= Window_Closed;
+        this.AppWindow.Closing -= AppWindow_Closing;
+        this.SizeChanged -= Window_SizeChanged;
+        this.AppWindow.Changed -= AppWindow_Changed;
+        this.Activated -= MainWindow_Activated;
     }
 
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
+    private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+    {
+        // Ensure that the restore position and sizes are updated when the window is activated, especially after being minimized or restored.
+        Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
+        if (appWindow == null)
+        {
+            return;
+        }
+        if (appWindow.Presenter is not OverlappedPresenter presenter)
+        {
+            return;
+        }
+        if (presenter.State == OverlappedPresenterState.Restored)
+        {
+            _winRestoreHeight = appWindow.Size.Height;
+            _winRestoreWidth = appWindow.Size.Width;
+            _winRestoreTop = appWindow.Position.Y;
+            _winRestoreLeft = appWindow.Position.X;
+        }
+    }
+
+    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
+    private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (!args.DidPositionChange)
+        {
+            return;
+        }
+
+        //Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
+        if (sender == null)
+        {
+            return;
+        }
+        if (sender.Presenter is not OverlappedPresenter presenter)
+        {
+            return;
+        }
+        if (presenter.State == OverlappedPresenterState.Restored)
+        {
+            _winRestoreHeight = sender.Size.Height;
+            _winRestoreWidth = sender.Size.Width;
+            _winRestoreTop = sender.Position.Y;
+            _winRestoreLeft = sender.Position.X;
+        }
+    }
 
     [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     public void SetCapitionButtonColorForWin11()
@@ -134,43 +331,33 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
-    // https://github.com/dotnet/runtime/issues/121590
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
     private void LoadSettings()
     {
-        var filePath = App.AppConfigFilePath;
-        if (RuntimeHelper.IsMSIX)
-        {
-            filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
-        }
-
-        var vm = App.GetService<MainViewModel>();
-
         if (DesktopAcrylicController.IsSupported())
         {
-            vm.IsAcrylicSupported = true;
+            _vm.IsAcrylicSupported = true;
 
-            vm.IsBackdropEnabled = true;
+            _vm.IsBackdropEnabled = true;
         }
         if (MicaController.IsSupported())
         {
-            vm.IsMicaSupported = true;
+            _vm.IsMicaSupported = true;
 
-            vm.IsBackdropEnabled = true;
+            _vm.IsBackdropEnabled = true;
         }
 
-        if (!File.Exists(filePath))
+        if (string.IsNullOrEmpty(_configurationService.ConfigFilePath) || (!File.Exists(_configurationService.ConfigFilePath)))
         {
             // Sets default.
 
             if (DesktopAcrylicController.IsSupported())
             {
                 SystemBackdrop = new DesktopAcrylicBackdrop();
-                vm.Material = SystemBackdropOption.Acrylic;
+                _vm.Material = SystemBackdropOption.Acrylic;
 
-                vm.IsBackdropEnabled = true;
+                _vm.IsBackdropEnabled = true;
             }
             else if (MicaController.IsSupported())
             {
@@ -178,9 +365,9 @@ public sealed partial class MainWindow : Window
                 {
                     Kind = MicaKind.Base
                 };
-                vm.Material = SystemBackdropOption.Mica;
+                _vm.Material = SystemBackdropOption.Mica;
 
-                vm.IsBackdropEnabled = true;
+                _vm.IsBackdropEnabled = true;
             }
 
             theme = ElementTheme.Default;
@@ -188,285 +375,95 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        OverlappedPresenterState? winState = null; // For AOT workaround, don't set default, = OverlappedPresenterState.Restored;
+        var config = _configurationService.CurrentConfiguration;
+        Debug.WriteLine($"MainWindow Configuration: Width={config.MainWindow.Width}, Height={config.MainWindow.Height}, Top={config.MainWindow.Top}, Left={config.MainWindow.Left}, RestoreWidth={config.MainWindow.RestoreWidth}, RestoreHeight={config.MainWindow.RestoreHeight}, RestoreTop={config.MainWindow.RestoreTop}, RestoreLeft={config.MainWindow.RestoreLeft}");
 
-        ElementTheme eleThme = ElementTheme.Default;
-        SystemBackdropOption bd = SystemBackdropOption.None;
-        bool isFoundNewThemeSetting = false;
-
-        double top = 100;
-        double left = 100;
-        double height = 768;
-        double width = 1024;
-
-        var xdoc = XDocument.Load(filePath);
-
-        // Main window
-        if (xdoc.Root != null)
+        if (config.MainWindow.Width < 500)
         {
-            // Main Window element
-            var mainWindow = xdoc.Root.Element("MainWindow");
-            if (mainWindow != null)
-            {
-                var hoge = mainWindow.Attribute("top");
-                if (hoge != null)
-                {
-                    top = double.Parse(hoge.Value);
-                }
-
-                hoge = mainWindow.Attribute("left");
-                if (hoge != null)
-                {
-                    left = double.Parse(hoge.Value);
-                }
-
-                hoge = mainWindow.Attribute("height");
-                if (hoge != null)
-                {
-                    height = double.Parse(hoge.Value);
-                }
-
-                hoge = mainWindow.Attribute("width");
-                if (hoge != null)
-                {
-                    width = double.Parse(hoge.Value);
-                }
-
-                hoge = mainWindow.Attribute("state");
-                if (hoge != null)
-                {
-                    if (hoge.Value == "Maximized")
-                    {
-                        winState = OverlappedPresenterState.Maximized;
-                    }
-                    else if (hoge.Value == "Normal")
-                    {
-                        winState = OverlappedPresenterState.Restored;
-                    }
-                    else if (hoge.Value == "Minimized")
-                    {
-                        // Ignore minimized.
-                        winState = OverlappedPresenterState.Restored;
-                    }
-                    else
-                    {
-                        winState = null;
-                    }
-                }
-
-                var xLeftPane = mainWindow.Element("LeftPane");
-                if (xLeftPane != null)
-                {
-                    if (xLeftPane.Attribute("width") != null)
-                    {
-                        var xvalue = xLeftPane.Attribute("width")?.Value;
-                        if (!string.IsNullOrEmpty(xvalue))
-                        {
-                            var w = double.Parse(xvalue);
-                            if (w > 256)
-                            {
-                                vm.WidthLeftPane = w;
-                            }
-                        }
-                    }
-                }
-
-                /*
-                var xDetailPane = mainWindow.Element("DetailPane");
-                if (xDetailPane != null)
-                {
-                    if (xDetailPane.Attribute("width") != null)
-                    {
-                        var xvalue = xDetailPane.Attribute("width")?.Value;
-                        if (!string.IsNullOrEmpty(xvalue))
-                        {
-                            var w = double.Parse(xvalue);
-                            if (w > 256)
-                            {
-                                vm.WidthDetailPane = w;
-                            }
-                        }
-                    }
-                }
-                */
-                var xListViewPane = mainWindow.Element("ListViewPane");
-                if (xListViewPane != null)
-                {
-                    if (xListViewPane.Attribute("width") != null)
-                    {
-                        var xvalue = xListViewPane.Attribute("width")?.Value;
-                        if (!string.IsNullOrEmpty(xvalue))
-                        {
-                            var w = double.Parse(xvalue);
-                            if (w > 256)
-                            {
-                                vm.WidthListViewPane = w;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Themes
-            var opts = xdoc.Root.Element("Theme");
-            if (opts != null)
-            {
-                var xvalue = opts.Attribute("current");
-                if (xvalue != null)
-                {
-                    if (!string.IsNullOrEmpty(xvalue.Value))
-                    {
-                        if (Enum.TryParse(xvalue.Value, out ElementTheme cacheTheme))
-                        {
-                            eleThme = cacheTheme;
-                            isFoundNewThemeSetting = true;
-                        }
-                    }
-                }
-                xvalue = opts.Attribute("backdrop");
-                if (xvalue != null)
-                {
-                    if (!string.IsNullOrEmpty(xvalue.Value))
-                    {
-                        if (Enum.TryParse(xvalue.Value, out SystemBackdropOption cacheBackdrop))
-                        {
-                            bd = cacheBackdrop;
-                            isFoundNewThemeSetting = true;
-                        }
-                    }
-                }
-            }
-
-            // Options
-            opts = xdoc.Root.Element("Opts");
-            if (opts != null)
-            {
-                /*
-                xvalue = opts.Attribute("IsDebugSaveLog");
-                if (xvalue != null)
-                {
-                    if (!string.IsNullOrEmpty(xvalue.Value))
-                    {
-                        //MainViewModel.IsDebugSaveLog = xvalue.Value == "True";
-                    }
-                }
-                */
-            }
+            config.MainWindow.Width = 500;
+        }
+        if (config.MainWindow.Height < 500)
+        {
+            config.MainWindow.Height = 500;
+        }
+        if (config.MainWindow.Top < 0)
+        {
+            config.MainWindow.Top = 0;
+        }
+        if (config.MainWindow.Left < 0)
+        {
+            config.MainWindow.Left = 0;
         }
 
-        _winRestoreWidth = (int)width;
-        _winRestoreHeight = (int)height;
-        _winRestoreTop = (int)top;
-        _winRestoreLeft = (int)left;
-
-        if (_winRestoreWidth < 500)
+        if (config.MainWindow.RestoreWidth < 500)
         {
-            _winRestoreWidth = 500;
+            config.MainWindow.RestoreWidth = 500;
         }
-        if (_winRestoreHeight < 500)
+        if (config.MainWindow.RestoreHeight < 500)
         {
-            _winRestoreHeight = 500;
+            config.MainWindow.RestoreHeight = 500;
         }
-        if (_winRestoreTop < 0)
+        if (config.MainWindow.RestoreTop < 0)
         {
-            _winRestoreTop = 0;
+            config.MainWindow.RestoreTop = 0;
         }
-        if (_winRestoreLeft < 0)
+        if (config.MainWindow.RestoreLeft < 0)
         {
-            _winRestoreLeft = 0;
+            config.MainWindow.RestoreLeft = 0;
         }
 
         // Restore window size and position
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
         if (appWindow != null)
         {
+            // AOT bad
+            /*
+            // https://github.com/microsoft/CsWinRT/issues/1930
             // Window state
-            if (appWindow.Presenter is OverlappedPresenter)//  presenter
+            if (appWindow.Presenter is OverlappedPresenter presenter)
             {
-                // AOT bad
-                // https://github.com/microsoft/CsWinRT/issues/1930
             }
+            */
 
-            if (winState is null)
+            if (config.MainWindow.WindowState == OverlappedPresenterState.Maximized)
             {
-                // do nothing.
+                // Sets restore size and position.
+                appWindow.MoveAndResize(new Windows.Graphics.RectInt32(config.MainWindow.Left, config.MainWindow.Top, config.MainWindow.Width, config.MainWindow.Height));
+                // Maximize the window.
+                (appWindow.Presenter as OverlappedPresenter)!.Maximize();
             }
-            else
+            else if (config.MainWindow.WindowState == OverlappedPresenterState.Minimized)
             {
-                // Window state
-                if (winState == OverlappedPresenterState.Maximized)
-                {
-                    // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreLeft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
-                    // Maximize the window.
-                    (appWindow.Presenter as OverlappedPresenter)!.Maximize();
-                }
-                else if (winState == OverlappedPresenterState.Minimized)
-                {
-                    // DONT restore minimized size and pos. bad.
-                    // This should not happen, but just in case.
-                    //(appWindow.Presenter as OverlappedPresenter)!.Restore();
-                    // Sets restore size and position.
-                    //appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreleft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
-                }
-                else
-                {
-                    // TODO:
-                    //var dpi = Windows.Win32.PInvoke.GetDpiForWindow(new Windows.Win32.Foundation.HWND(WinRT.Interop.WindowNative.GetWindowHandle(this)));
-                    //var scalingFactor = (float)dpi / 96;
-                    //AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(400.0f * scalingFactor), (int)(300.0f * scalingFactor)));
+                // This should not happen.
 
-                    // Sets restore size and position.
-                    appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_winRestoreLeft, _winRestoreTop, _winRestoreWidth, _winRestoreHeight));
-                }
+                // DONT restore minimized size and pos. bad.
+
+                (appWindow.Presenter as OverlappedPresenter)!.Restore();
+
+                appWindow.MoveAndResize(new Windows.Graphics.RectInt32(config.MainWindow.Left, config.MainWindow.Top, config.MainWindow.Width, config.MainWindow.Height));
             }
-
-        }
-
-        // For the strictly backward compatibility reason, load preference from localsetting.
-        if (RuntimeHelper.IsMSIX && (!isFoundNewThemeSetting))
-        {
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("AppSystemBackdropOption", out var obj))
+            else if (config.MainWindow.WindowState == OverlappedPresenterState.Restored)
             {
-                if (obj is not null)
-                {
-                    if (obj is string s)
-                    {
-                        if (s == SystemBackdropOption.Acrylic.ToString())
-                        {
-                            bd = SystemBackdropOption.Acrylic;
-                        }
-                        else if (s == SystemBackdropOption.Mica.ToString())
-                        {
-                            bd = SystemBackdropOption.Mica;
-                        }
-                    }
-                }
-            }
+                // TODO:
+                //var dpi = Windows.Win32.PInvoke.GetDpiForWindow(new Windows.Win32.Foundation.HWND(WinRT.Interop.WindowNative.GetWindowHandle(this)));
+                //var scalingFactor = (float)dpi / 96;
+                //AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(400.0f * scalingFactor), (int)(300.0f * scalingFactor)));
 
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("AppBackgroundRequestedTheme", out var obj2))
-            {
-                if (obj2 is not null)
-                {
-                    if (obj2 is string themeName)
-                    {
-                        if (Enum.TryParse(themeName, out ElementTheme cacheTheme))
-                        {
-                            eleThme = cacheTheme;
-                        }
-                    }
-                }
+                // Sets restore size and position.
+                appWindow.MoveAndResize(new Windows.Graphics.RectInt32(config.MainWindow.Left, config.MainWindow.Top, config.MainWindow.Width, config.MainWindow.Height));
             }
         }
+
 
         // Apply theme and backdrop
-        if (bd != SystemBackdropOption.None)
+        if (config.SystemBackdrop != SystemBackdropOption.None)
         {
-            theme = eleThme;
-            vm.Theme = eleThme;
+            theme = config.Theme;
+            _vm.Theme = config.Theme;
         }
-        vm.Material = bd;
-        SwitchBackdrop(bd);
+        _vm.Material = config.SystemBackdrop;
+        SwitchBackdrop(config.SystemBackdrop);
+
     }
 
     public void SwitchBackdrop(SystemBackdropOption backdrop)
@@ -533,8 +530,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
-    // https://github.com/dotnet/runtime/issues/121590
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     private void Window_SizeChanged(object sender, WindowSizeChangedEventArgs args)
     {
@@ -560,221 +555,4 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // TEMP: Require CsWinRT 2.3.0-prerelease.251115.2
-    // https://github.com/dotnet/runtime/issues/121590
-    [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
-    [DynamicWindowsRuntimeCast(typeof(FrameworkElement))]
-    public void SaveSettings()
-    {
-        var vm = App.GetService<MainViewModel>();
-
-        XmlDocument doc = new();
-        var xmlDeclaration = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
-        doc.InsertBefore(xmlDeclaration, doc.DocumentElement);
-
-        // Root Document Element
-        var root = doc.CreateElement(string.Empty, "App", string.Empty);
-        doc.AppendChild(root);
-
-        //XmlAttribute attrs = doc.CreateAttribute("Version");
-        //attrs.Value = _appVer;
-        //root.SetAttributeNode(attrs);
-        XmlAttribute attrs;
-
-        // Main window
-        if (App.MainWnd != null)
-        {
-            // Main Window element
-            var mainWindow = doc.CreateElement(string.Empty, "MainWindow", string.Empty);
-
-            OverlappedPresenterState? winState = null; // For AOT workaround, don't set default.  = OverlappedPresenterState.Restored;
-
-            Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
-            if (appWindow != null)
-            {
-                // AOT bad
-                // https://github.com/microsoft/CsWinRT/issues/1930
-                if (appWindow.Presenter is OverlappedPresenter presenter)
-                {
-                    if (presenter.State == OverlappedPresenterState.Maximized)
-                    {
-                        winState = OverlappedPresenterState.Maximized;
-                    }
-                    else if (presenter.State == OverlappedPresenterState.Minimized)
-                    {
-                        winState = OverlappedPresenterState.Restored;
-                    }
-                    else
-                    {
-                        winState = OverlappedPresenterState.Restored;
-                    }
-                }
-                else
-                {
-                    // For AOT tmp workaround
-                    OverlappedPresenter presenterAOT = this.AppWindow.Presenter.As<OverlappedPresenter>();
-
-                    if (presenterAOT.State == OverlappedPresenterState.Maximized)
-                    {
-                        winState = OverlappedPresenterState.Maximized;
-                    }
-                    else if (presenterAOT.State == OverlappedPresenterState.Minimized)
-                    {
-                        winState = OverlappedPresenterState.Restored;
-                    }
-                    else
-                    {
-                        winState = OverlappedPresenterState.Restored;
-                    }
-                }
-            }
-
-            if (winState != null)
-            {
-                // Main Window attributes
-                attrs = doc.CreateAttribute("width");
-                if (winState == OverlappedPresenterState.Maximized)
-                {
-                    attrs.Value = _winRestoreWidth.ToString();
-                }
-                else
-                {
-                    attrs.Value = this.AppWindow.Size.Width.ToString();
-                }
-                //attrs.Value = this.AppWindow.Size.Width.ToString();
-                mainWindow.SetAttributeNode(attrs);
-
-                attrs = doc.CreateAttribute("height");
-                if (winState == OverlappedPresenterState.Maximized)
-                {
-                    attrs.Value = _winRestoreHeight.ToString();
-                }
-                else
-                {
-                    attrs.Value = this.AppWindow.Size.Height.ToString();
-                }
-                //attrs.Value = App.MainWindow.AppWindow.Size.Height.ToString();//App.MainWindow.GetAppWindow().Size.Height.ToString();
-                mainWindow.SetAttributeNode(attrs);
-
-                attrs = doc.CreateAttribute("top");
-                if (winState == OverlappedPresenterState.Maximized)
-                {
-                    attrs.Value = _winRestoreTop.ToString();
-                }
-                else
-                {
-                    attrs.Value = this.AppWindow.Position.Y.ToString();
-                }
-                //attrs.Value = App.MainWindow.AppWindow.Position.Y.ToString();
-                mainWindow.SetAttributeNode(attrs);
-
-                attrs = doc.CreateAttribute("left");
-                if (winState == OverlappedPresenterState.Maximized)
-                {
-                    attrs.Value = _winRestoreLeft.ToString();
-                }
-                else
-                {
-                    attrs.Value = this.AppWindow.Position.X.ToString();
-                }
-                //attrs.Value = App.MainWindow.AppWindow.Position.X.ToString();
-                mainWindow.SetAttributeNode(attrs);
-
-                attrs = doc.CreateAttribute("state");
-                if (winState == OverlappedPresenterState.Maximized)
-                {
-                    attrs.Value = "Maximized";
-                }
-                else if (winState == OverlappedPresenterState.Restored)
-                {
-                    attrs.Value = "Normal";
-
-                }
-                else if (winState == OverlappedPresenterState.Minimized)
-                {
-                    attrs.Value = "Minimized";
-                }
-                mainWindow.SetAttributeNode(attrs);
-
-                // Layout
-                //ListViewPaneColumnGridSplitter
-
-
-                var xLeftPane = doc.CreateElement(string.Empty, "LeftPane", string.Empty);
-                var xAttrs = doc.CreateAttribute("width");
-                xAttrs.Value = vm.WidthLeftPane.ToString();
-                xLeftPane.SetAttributeNode(xAttrs);
-
-                mainWindow.AppendChild(xLeftPane);
-
-                /*
-                var xDetailPane = doc.CreateElement(string.Empty, "DetailPane", string.Empty);
-                xAttrs = doc.CreateAttribute("width");
-                xAttrs.Value = vm.WidthDetailPane.ToString();
-                xDetailPane.SetAttributeNode(xAttrs);
-
-                mainWindow.AppendChild(xDetailPane);
-                */
-                var xListViewPane = doc.CreateElement(string.Empty, "ListViewPane", string.Empty);
-                xAttrs = doc.CreateAttribute("width");
-                xAttrs.Value = vm.WidthListViewPane.ToString();
-                xListViewPane.SetAttributeNode(xAttrs);
-
-                mainWindow.AppendChild(xListViewPane);
-
-                // set Main Window element to root.
-                root.AppendChild(mainWindow);
-            }
-        }
-
-        // Themes
-        var xTheme = doc.CreateElement(string.Empty, "Theme", string.Empty);
-
-        attrs = doc.CreateAttribute("current");
-        attrs.Value = vm.Theme.ToString();
-        xTheme.SetAttributeNode(attrs);
-
-        attrs = doc.CreateAttribute("backdrop");
-        attrs.Value = vm.Material.ToString();
-        xTheme.SetAttributeNode(attrs);
-
-        root.AppendChild(xTheme);
-
-        // Options
-        var xOpts = doc.CreateElement(string.Empty, "Opts", string.Empty);
-
-        //attrs = doc.CreateAttribute("isChartTooltipVisible");
-        //attrs.Value = MainViewModel.IsChartTooltipVisible.ToString();
-        //xOpts.SetAttributeNode(attrs);
-
-        //attrs = doc.CreateAttribute("isDebugSaveLog");
-        //attrs.Value = MainViewModel.IsDebugSaveLog.ToString();
-        //xOpts.SetAttributeNode(attrs);
-
-        root.AppendChild(xOpts);
-
-
-        var filePath = App.AppConfigFilePath;
-        if (RuntimeHelper.IsMSIX)
-        {
-            filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
-        }
-        else
-        {
-            Directory.CreateDirectory(App.AppDataFolder);
-        }
-
-        try
-        {
-            //doc.Save(filePath);
-            var temporaryPath = filePath + ".tmp";
-            doc.Save(temporaryPath);
-            File.Move(temporaryPath, filePath, overwrite: true);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("MainWindow_Closed: " + ex + " while saving : " + filePath);
-        }
-
-    }
 }
