@@ -128,7 +128,6 @@ public partial class App
                 services.AddSingleton<IAutoDiscoveryService, AutoDiscoveryService>();
                 services.AddSingleton<IOpmlService, OpmlService>();
                 services.AddSingleton<IDispatcherService>(new DispatcherService(CurrentDispatcherQueue));
-                services.AddSingleton<IFeedRefreshService, FeedRefreshService>();
                 services.AddSingleton<IFeedTreePersistenceService, FeedTreePersistenceService>();
                 services.AddHttpClient(FeedClientService.HttpClientName, client =>
                 {

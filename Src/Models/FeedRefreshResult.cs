@@ -1,7 +1,12 @@
-﻿using FeedDesk.Models;
-using System;
+﻿using System;
 
-namespace FeedDesk.Services;
+namespace FeedDesk.Models;
+
+public enum FeedRefreshStage
+{
+    Downloading,
+    Saving
+}
 
 public sealed record FeedRefreshRequest(string FeedId, Uri EndPoint, string Name, string Etag);
 

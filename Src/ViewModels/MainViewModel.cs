@@ -41,8 +41,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private readonly IDataAccessService _dataAccessService;
     private readonly IOpmlService _opmlService;
     private readonly IDispatcherService _dispatcherService;
-    private readonly IFeedRefreshService _feedRefreshService;
+    //private readonly IFeedRefreshService _feedRefreshService;
     private readonly IFeedTreePersistenceService _feedTreePersistenceService;
+    private readonly IFeedClientService _feedClientService;
 
     #region == Events ==
 
@@ -52,11 +53,12 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     private readonly IConfigurationService _configurationService;
 
-    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedRefreshService feedRefreshService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService, IConfigurationService configurationService)
+    public MainViewModel(IFileDialogService fileDialogService, IDataAccessService dataAccessService, IFeedClientService feedClientService, IFeedTreePersistenceService feedTreePersistenceService, IOpmlService opmlService, IDispatcherService dispatcherService, IConfigurationService configurationService)
     {
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
-        _feedRefreshService = feedRefreshService;
+        _feedClientService = feedClientService;
+        //_feedRefreshService = feedRefreshService; , IFeedRefreshService feedRefreshService
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
         _feedTreePersistenceService = feedTreePersistenceService;
@@ -985,6 +987,40 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #region == Entries Refreshing Methods ==
 
+    public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, Func<FeedRefreshStage, Task> reportStageAsync, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await reportStageAsync(FeedRefreshStage.Downloading);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var fetchResult = await _feedClientService.GetEntries(request.EndPoint, request.FeedId, request.Etag, cancellationToken);
+
+        var fetchedAt = DateTime.Now;
+
+        if (fetchResult.IsError || fetchResult.Entries.Count == 0)
+        {
+            return new FeedRefreshResult(fetchedAt, fetchResult, null);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await reportStageAsync(FeedRefreshStage.Saving);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var saveResult = await Task.Run(
+            () => _dataAccessService.InsertEntries(
+                fetchResult.Entries,
+                request.FeedId,
+                request.Name,
+                fetchResult.Title,
+                fetchResult.Description,
+                fetchResult.Updated,
+                fetchResult.HtmlUri),
+            cancellationToken);
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return new FeedRefreshResult(fetchedAt, fetchResult, saveResult);
+    }
+
     private async Task RefreshFeedAsync(NodeFeed feed, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -1000,7 +1036,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
             var request = new FeedRefreshRequest(feed.Id, feed.EndPoint, feed.Name, feed.Etag);
-            var result = await _feedRefreshService.RefreshAsync(request,
+            var result = await RefreshAsync(request,
                 stage => _dispatcherService.EnqueueAsync(() =>
                 {
                     feed.Status = stage switch
