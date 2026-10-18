@@ -1,8 +1,5 @@
-﻿
-using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Windowing;
+﻿using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using System.Collections.Generic;
 
 namespace FeedDesk.Models;
 

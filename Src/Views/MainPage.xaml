@@ -34,7 +34,7 @@
         </Grid>
         
         <!-- Left pane -->
-        <Border x:Name="LeftPane" Grid.Row="1" Grid.Column="0" MinWidth="256" MaxWidth="380" SizeChanged="LeftPane_SizeChanged" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="{ThemeResource NavigationViewContentChildGridBorderThickness}">
+        <Border x:Name="LeftPane" Grid.Row="1" Grid.Column="0" MinWidth="256" MaxWidth="380" SizeChanged="LeftPane_SizeChanged" Margin="0,0,0,0" CornerRadius="0" BorderBrush="{ThemeResource NavigationViewContentGridBorderBrush}" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

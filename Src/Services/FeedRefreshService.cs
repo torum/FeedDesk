@@ -25,7 +25,6 @@ public sealed class FeedRefreshService : IFeedRefreshService
         _dataAccessService = dataAccessService;
     }
 
-    //public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, CancellationToken cancellationToken)
     public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, Func<FeedRefreshStage, Task> reportStageAsync, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

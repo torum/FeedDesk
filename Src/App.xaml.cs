@@ -331,9 +331,9 @@ public partial class App
         {
             try
             {
-                LogShutdownTimestamp("Shutdown: CancellationTokenSource disposed started");
+                LogShutdownTimestamp("Shutdown: CancellationTokenSource dispose started");
                 _cts?.Dispose();
-                LogShutdownTimestamp("Shutdown: CancellationTokenSource disposed completed");
+                LogShutdownTimestamp("Shutdown: CancellationTokenSource dispose completed");
 
                 LogShutdownTimestamp("Shutdown: Host.Dispose started");
                 Host.Dispose();
