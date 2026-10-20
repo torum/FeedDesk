@@ -485,7 +485,7 @@ public class HtmlProperties : DependencyObject
                     return span;
                 }
 
-                var imageUri = new Uri(sourceUri, UriKind.Absolute);
+                var imageUri = new Uri(sourceUri, UriKind.RelativeOrAbsolute);
                 if (sourceUri?.StartsWith("http") != true)
                 {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
@@ -582,7 +582,7 @@ public class HtmlProperties : DependencyObject
                     return span;
                 }
 
-                var imageUri = new Uri(sourceUri, UriKind.Absolute);
+                var imageUri = new Uri(sourceUri, UriKind.RelativeOrAbsolute);
                 if ((sourceUri?.StartsWith("http") != true) && (sourceUri?.StartsWith("mailto:") != true))
                 {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
@@ -598,7 +598,7 @@ public class HtmlProperties : DependencyObject
                     }
                 }
 
-                if (sourceUri?.StartsWith("http") == true)
+                if (imageUri?.AbsoluteUri.StartsWith("http") == true)
                 {
                     var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
                     var sourceHeight = WebUtility.HtmlDecode(node?.Attributes["height"]?.Value);
@@ -738,11 +738,6 @@ public class HtmlProperties : DependencyObject
 
         try
         {
-            if (node.Attributes["href"] == null)
-            {
-                return null;
-            }
-
             var href = node?.Attributes["href"]?.Value;
 
             if (string.IsNullOrEmpty(href))
@@ -751,12 +746,14 @@ public class HtmlProperties : DependencyObject
                 return null;
             }
 
-            var HyperLinkUri = new Uri(href, UriKind.Absolute);
+            //Debug.WriteLine("GenerateHyperLink: href=" + href);
+
+            var HyperLinkUri = new Uri(href, UriKind.RelativeOrAbsolute);
             if ((href?.StartsWith("http") != true) && (href?.StartsWith("mailto:") != true))
             {
                 if (Uri.TryCreate(baseUri, href ?? string.Empty, out Uri? absoluteUri))
                 {
-                    Debug.WriteLine(absoluteUri.ToString());
+                    //Debug.WriteLine(absoluteUri.ToString());
                     HyperLinkUri = absoluteUri;
                 }
                 else
@@ -769,7 +766,7 @@ public class HtmlProperties : DependencyObject
                 }
             }
 
-            if (href?.StartsWith("http") == true)
+            if (HyperLinkUri?.AbsoluteUri.StartsWith("http") == true)
             {
                 var hyperlinkButton = new Hyperlink();
                 hyperlinkButton.NavigateUri = HyperLinkUri;
@@ -790,7 +787,7 @@ public class HtmlProperties : DependencyObject
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("GenerateHyperLink: " + ex.Message);
+            Debug.WriteLine("GenerateHyperLink: " + ex);
             return null;
         }
     }
@@ -825,7 +822,7 @@ public class HtmlProperties : DependencyObject
                 return span;
             }
 
-            var srcUri = new Uri(sourceUri, UriKind.Absolute);
+            var srcUri = new Uri(sourceUri, UriKind.RelativeOrAbsolute);
             if (sourceUri?.StartsWith("http") != true)
             {
                 if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
