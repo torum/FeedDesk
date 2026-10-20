@@ -338,7 +338,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 );
             }
 
-            Debug.WriteLine("SelectedListViewItem AbsBaseUri: " + field.ContentBaseUri?.AbsoluteUri);
+            //Debug.WriteLine("SelectedListViewItem AbsBaseUri: " + field.ContentBaseUri?.AbsoluteUri);
 
             if ((field.Status != FeedEntryItem.ReadStatus.rsNewVisited) && (field.Status != FeedEntryItem.ReadStatus.rsNormalVisited))
             {

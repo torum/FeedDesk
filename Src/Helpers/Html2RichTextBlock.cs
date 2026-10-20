@@ -100,7 +100,7 @@ public class HtmlProperties : DependencyObject
         {
             return;
         }
-
+        /*
         if (sourceData.BaseUri is null)
         {
             Debug.WriteLine("HtmlChanged: BaseUri is null");
@@ -109,6 +109,7 @@ public class HtmlProperties : DependencyObject
         {
             Debug.WriteLine("HtmlChanged: BaseUri is " + sourceData.BaseUri.ToString());
         }
+        */
 
         _currentObject = richText;
 
@@ -308,7 +309,7 @@ public class HtmlProperties : DependencyObject
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
-            var ifr = GenerateIFrame(node);
+            var ifr = GenerateIFrame(node, baseUri);
             if (ifr is not null)
             {
                 paragraph.Inlines.Add(ifr);
@@ -441,7 +442,7 @@ public class HtmlProperties : DependencyObject
                 case "code":
                     return GenerateInnerPreCode(node);
                 case "iframe":
-                    return GenerateIFrame(node);
+                    return GenerateIFrame(node, baseUri);
                 case "#text":
                     if (!string.IsNullOrWhiteSpace(ReplaceHtmlEntities(node.InnerText)))
                         return new Run { Text = CleanText(node.InnerText) }; // CleanText is removing white spaces in this case
@@ -478,71 +479,74 @@ public class HtmlProperties : DependencyObject
                 var inlineUiContainer = new InlineUIContainer();
                 var sourceUri = WebUtility.HtmlDecode(node?.Attributes["src"]?.Value);
 
-                if (sourceUri?.StartsWith("http") == true)
+                if (string.IsNullOrEmpty(sourceUri))
                 {
-                    var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
-                    var sourceHeight = WebUtility.HtmlDecode(node?.Attributes["height"]?.Value);
-
-                    var image = new Image
-                    {
-                        Stretch = Stretch.Uniform,
-                        VerticalAlignment = VerticalAlignment.Top,
-                        HorizontalAlignment = HorizontalAlignment.Stretch,
-                    };
-
-                    if (sourceWidth != null || sourceHeight != null)
-                    {
-                        //image.MaxWidth = ImageMaxPixelWidth;
-                        if (sourceWidth != null)
-                        {
-                            //image.MaxWidth = double.Parse(sourceWidth);
-                            //image.Width = double.Parse(sourceWidth);
-                        }
-
-                        //image.MaxHeight = ImageMaxPixelHeight;
-                        if (sourceHeight != null)
-                        {
-                            //image.MaxHeight = double.Parse(sourceHeight);
-                            //image.Height = double.Parse(sourceHeight);
-                        }
-                    }
-
-                    image.ImageOpened += ImageOpened;
-                    //image.MaxWidth = ImageMaxPixelWidth;
-                    //image.MaxHeight = ImageMaxPixelHeight;
-
-                    image.ImageFailed += ImageFailed;
-                    image.Tapped += ImageOnTapped;
-
-                    // hidden untill resize in ImageOpened.
-                    image.Visibility = Visibility.Collapsed;
-
-                    image.Source = new BitmapImage(new Uri(sourceUri, UriKind.Absolute));
-
-                    image.Margin = ImageMargin;
-
-                    inlineUiContainer.Child = image;
-
-                    //span.Inlines.Add(new LineBreak());
-                    span.Inlines.Add(inlineUiContainer);
-                    span.Inlines.Add(new LineBreak());
+                    Debug.WriteLine("GenerateImage: sourceUri is null or empty.");
+                    return span;
                 }
-                else
-                {
-                    // TODO: 
-                    span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
 
-                    //Uri absoluteUri = new Uri(baseUri, sourceUri);
+                var imageUri = new Uri(sourceUri, UriKind.Absolute);
+                if (sourceUri?.StartsWith("http") != true)
+                {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                     {
                         Debug.WriteLine(absoluteUri.ToString());
+                        imageUri = absoluteUri;
                     }
                     else
                     {
-                        Debug.WriteLine("Could not combine URIs.");
+                        Debug.WriteLine("GenerateImage: Could not combine URIs.");
+                        span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
+                        return span;
+                    }
+                }
+
+                var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
+                var sourceHeight = WebUtility.HtmlDecode(node?.Attributes["height"]?.Value);
+
+                var image = new Image
+                {
+                    Stretch = Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                };
+
+                if (sourceWidth != null || sourceHeight != null)
+                {
+                    //image.MaxWidth = ImageMaxPixelWidth;
+                    if (sourceWidth != null)
+                    {
+                        //image.MaxWidth = double.Parse(sourceWidth);
+                        //image.Width = double.Parse(sourceWidth);
                     }
 
+                    //image.MaxHeight = ImageMaxPixelHeight;
+                    if (sourceHeight != null)
+                    {
+                        //image.MaxHeight = double.Parse(sourceHeight);
+                        //image.Height = double.Parse(sourceHeight);
+                    }
                 }
+
+                image.ImageOpened += ImageOpened;
+                //image.MaxWidth = ImageMaxPixelWidth;
+                //image.MaxHeight = ImageMaxPixelHeight;
+
+                image.ImageFailed += ImageFailed;
+                image.Tapped += ImageOnTapped;
+
+                // hidden untill resize in ImageOpened.
+                image.Visibility = Visibility.Collapsed;
+
+                image.Source = new BitmapImage(imageUri);
+
+                image.Margin = ImageMargin;
+
+                inlineUiContainer.Child = image;
+
+                //span.Inlines.Add(new LineBreak());
+                span.Inlines.Add(inlineUiContainer);
+                span.Inlines.Add(new LineBreak());
             }
         }
         catch (Exception ex)
@@ -572,6 +576,28 @@ public class HtmlProperties : DependencyObject
                 var inlineUiContainer = new InlineUIContainer();
                 var sourceUri = WebUtility.HtmlDecode(node?.Attributes["src"]?.Value);
 
+                if (string.IsNullOrEmpty(sourceUri))
+                {
+                    Debug.WriteLine("GenerateImageWithHyperLink: sourceUri is null or empty.");
+                    return span;
+                }
+
+                var imageUri = new Uri(sourceUri, UriKind.Absolute);
+                if ((sourceUri?.StartsWith("http") != true) && (sourceUri?.StartsWith("mailto:") != true))
+                {
+                    if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
+                    {
+                        Debug.WriteLine(absoluteUri.ToString());
+                        imageUri = absoluteUri;
+                    }
+                    else
+                    {
+                        Debug.WriteLine("GenerateImageWithHyperLink: Could not combine URIs.");
+                        span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
+                        return span;
+                    }
+                }
+
                 if (sourceUri?.StartsWith("http") == true)
                 {
                     var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
@@ -611,7 +637,7 @@ public class HtmlProperties : DependencyObject
                     // hidden untill resize in ImageOpened.
                     image.Visibility = Visibility.Collapsed;
 
-                    image.Source = new BitmapImage(new Uri(sourceUri, UriKind.Absolute));
+                    image.Source = new BitmapImage(imageUri);
 
                     inlineUiContainer.Child = image;
 
@@ -622,11 +648,6 @@ public class HtmlProperties : DependencyObject
                 else if (sourceUri?.StartsWith("mailto:") == true)
                 {
                     span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({sourceUri})" });
-                }
-                else
-                {
-                    // TODO: 
-                    span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
                 }
             }
         }
@@ -717,72 +738,55 @@ public class HtmlProperties : DependencyObject
 
         try
         {
-            if (node.Attributes["href"] != null)
+            if (node.Attributes["href"] == null)
             {
-                var href = node?.Attributes["href"]?.Value;
-                if (!string.IsNullOrEmpty(href))
-                {
-                    if (href?.StartsWith("http") == true)
-                    {
-                        var hyperlinkButton = new Hyperlink();
-                        hyperlinkButton.NavigateUri = new Uri(href, UriKind.Absolute);
-                        hyperlinkButton.Inlines.Add(new Run { Text = CleanText(node?.InnerText ?? "") });
-                        var span = new Span();
-                        span.Inlines.Add(hyperlinkButton);
-                        return span;
-                    }
-                    else if (href?.StartsWith("mailto:") == true)
-                    {
-                        var span = new Span();
-                        span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({CleanText(node?.InnerText ?? "")}) " });
-                        return span;
-                    }
-                    else
-                    {
-                        // TODO: handle baseUrl
-                        Debug.WriteLine($"GenerateHyperLink Relative Uri!! baseUri={baseUri}, href={href}");
-                        //Uri absoluteUri = new Uri(baseUri, sourceUri);
-                        if (Uri.TryCreate(baseUri, href ?? string.Empty, out Uri? absoluteUri))
-                        {
-                            Debug.WriteLine(absoluteUri.ToString());
-                        }
-                        else
-                        {
-                            Debug.WriteLine($"Could not combine URIs: baseUri={baseUri}, href={href}");
-                        }
+                return null;
+            }
 
-                        var span = new Span();
-                        span.Inlines.Add(new Run { Text = $" Url (relative): [{CleanText(node?.InnerText ?? "")}]({href}) " });
-                        return span;
-                    }
+            var href = node?.Attributes["href"]?.Value;
+
+            if (string.IsNullOrEmpty(href))
+            {
+                Debug.WriteLine("GenerateHyperLink: href is null or empty.");
+                return null;
+            }
+
+            var HyperLinkUri = new Uri(href, UriKind.Absolute);
+            if ((href?.StartsWith("http") != true) && (href?.StartsWith("mailto:") != true))
+            {
+                if (Uri.TryCreate(baseUri, href ?? string.Empty, out Uri? absoluteUri))
+                {
+                    Debug.WriteLine(absoluteUri.ToString());
+                    HyperLinkUri = absoluteUri;
+                }
+                else
+                {
+                    Debug.WriteLine($"GenerateHyperLink: Could not combine URIs: baseUri={baseUri}, href={href}");
+
+                    var span = new Span();
+                    span.Inlines.Add(new Run { Text = $" Url (relative): [{CleanText(node?.InnerText ?? "")}]({href}) " });
+                    return span;
                 }
             }
 
+            if (href?.StartsWith("http") == true)
+            {
+                var hyperlinkButton = new Hyperlink();
+                hyperlinkButton.NavigateUri = HyperLinkUri;
+                hyperlinkButton.Inlines.Add(new Run { Text = CleanText(node?.InnerText ?? "") });
+                var span = new Span();
+                span.Inlines.Add(hyperlinkButton);
+                return span;
+            }
+            else if (href?.StartsWith("mailto:") == true)
+            {
+                var span = new Span();
+                span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({CleanText(node?.InnerText ?? "")}) " });
+                return span;
+            }
+
             return null;
-            /*
-                        var span = new Span();
-                        var inlineUiContainer = new InlineUIContainer();
-                        var hyperlinkButton = new Hyperlink//new HyperlinkButton
-                        {
-                            NavigateUri = new Uri(node.Attributes["href"].Value, UriKind.Absolute),
-                            //Content = CleanText(node.InnerText)
-                        };
-                        */
-            /*
-            if (node.ParentNode != null && (node.ParentNode.Name == "li" || node.ParentNode.Name == "LI"))
-                hyperlinkButton.Style = (Style)Application.Current.Resources["RTLinkLI"];
-            else if ((node.NextSibling == null
-                || string.IsNullOrWhiteSpace(node.NextSibling.InnerText)) && (node.PreviousSibling == null
-                || string.IsNullOrWhiteSpace(node.PreviousSibling.InnerText)))
-                hyperlinkButton.Style = (Style)Application.Current.Resources["RTLinkOnly"];
-            else
-                hyperlinkButton.Style = (Style)Application.Current.Resources["RTLink"];
-            */
-            /*
-            inlineUiContainer.Child = hyperlinkButton;
-            span.Inlines.Add(inlineUiContainer);
-            return span;
-            */
+
         }
         catch (Exception ex)
         {
@@ -791,52 +795,68 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static Inline? GenerateIFrame(HtmlNode node)
+    private static Inline? GenerateIFrame(HtmlNode node, Uri? baseUri)
     {
         try
         {
-            if (node.Attributes != null)
+            if (node.Attributes == null)
             {
-                var src = string.Empty;
-                if (node.Attributes["src"] != null)
-                    src = node?.Attributes["src"]?.Value;
-                var title = string.Empty;
-                if (node?.Attributes["title"] != null)
-                    title = node?.Attributes["title"]?.Value;
+                return null;
+            }
 
-                if (!string.IsNullOrEmpty(src))
+            var sourceUri = string.Empty;
+            if (node.Attributes["src"] != null)
+                sourceUri = node?.Attributes["src"]?.Value;
+            var title = string.Empty;
+            if (node?.Attributes["title"] != null)
+                title = node?.Attributes["title"]?.Value;
+
+            if (string.IsNullOrEmpty(sourceUri))
+            {
+                return null;
+            }
+
+            var span = new Span();
+            span.Inlines.Add(new LineBreak());
+
+            if (string.IsNullOrEmpty(sourceUri))
+            {
+                Debug.WriteLine("GenerateIFrame: sourceUri is null or empty.");
+                return span;
+            }
+
+            var srcUri = new Uri(sourceUri, UriKind.Absolute);
+            if (sourceUri?.StartsWith("http") != true)
+            {
+                if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                 {
-                    var span = new Span();
-                    span.Inlines.Add(new LineBreak());
+                    Debug.WriteLine(absoluteUri.ToString());
+                    srcUri = absoluteUri;
+                }
+                else
+                {
+                    Debug.WriteLine("GenerateIFrame: Could not combine URIs.");
+                    span.Inlines.Add(new Run { Text = CleanText($"Inline frame (embedded page) (relative URL): [{CleanText(title ?? "")}]({sourceUri})") });
 
-                    if (src?.StartsWith("http") == true)
-                    {
-                        var hyperlinkButton = new Hyperlink();
-                        hyperlinkButton.NavigateUri = new Uri(src, UriKind.Absolute);
-                        if (!string.IsNullOrEmpty(title))
-                        {
-                            hyperlinkButton.Inlines.Add(new Run { Text = $"Inline frame (embedded page): [{CleanText(title)}]" });
-                        }
-                        else
-                        {
-                            //hyperlinkButton.Inlines.Add(new Run { Text = $"iframe: ({src})" });
-                            hyperlinkButton.Inlines.Add(new Run { Text = $"Inline frame (embedded page): (no title)" });
-                        }
-                        span.Inlines.Add(hyperlinkButton);
-                    }
-                    else
-                    {
-                        // md like..
-                        //span.Inlines.Add(new Run { Text = CleanText($"[Inline frame (embedded page) (relative url): {CleanText(title)}]({src})") });
-                        span.Inlines.Add(new Run { Text = CleanText($"Inline frame (embedded page) (relative URL): [{CleanText(title ?? "")}]({src})") });
-                    }
-
-                    span.Inlines.Add(new LineBreak());
                     return span;
                 }
-
             }
-            return null;
+
+            var hyperlinkButton = new Hyperlink();
+            hyperlinkButton.NavigateUri = srcUri;
+            if (!string.IsNullOrEmpty(title))
+            {
+                hyperlinkButton.Inlines.Add(new Run { Text = $"Inline frame (embedded page): [{CleanText(title)}]" });
+            }
+            else
+            {
+                //hyperlinkButton.Inlines.Add(new Run { Text = $"iframe: ({src})" });
+                hyperlinkButton.Inlines.Add(new Run { Text = $"Inline frame (embedded page): (no title)" });
+            }
+            span.Inlines.Add(hyperlinkButton);
+
+            span.Inlines.Add(new LineBreak());
+            return span;
         }
         catch (Exception ex)
         {
