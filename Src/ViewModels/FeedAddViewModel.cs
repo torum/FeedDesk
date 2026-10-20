@@ -143,7 +143,7 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient, IDisposabl
     #region == Commands ==
 
     [RelayCommand]
-    private void GoBack()
+    private static void GoBack()
     {
         var shell = App.GetService<ShellPage>();
         _ = shell.NavFrame.Navigate(typeof(MainPage), null, new SlideNavigationTransitionInfo() { Effect = SlideNavigationTransitionEffect.FromRight });
@@ -234,7 +234,7 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient, IDisposabl
             return;
         }
 
-        if (!(uri.Scheme.Equals("http") || uri.Scheme.Equals("https")))
+        if (!(uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) || uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)))
         {
             StatusTitleText = "Invalid URI scheme";
             StatusText = "Should be http or https: " + uri.Scheme;
@@ -447,7 +447,7 @@ internal sealed partial class FeedAddViewModel : ObservableRecipient, IDisposabl
             return false;
         }
 
-        if (!WebsiteOrEndpointUrl.StartsWith("http"))
+        if (!WebsiteOrEndpointUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

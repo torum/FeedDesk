@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace FeedDesk.Models;
 
@@ -20,8 +21,10 @@ public enum ApiTypes
     AtFeed,
     AtAtomPub,
     //AtomPub_Hatena,
+#pragma warning disable CA1707 // Identifiers should not contain underscores
     AtXMLRPC_MovableType,
     AtXMLRPC_WordPress,
+#pragma warning restore CA1707 // Identifiers should not contain underscores
     //atWPJson,
     AtAtomApi,
     AtUnknown
@@ -142,7 +145,7 @@ public abstract class NodeTree : Node
                 //SubNodeText = "";
             }
         }
-    } = 0;
+    }
 
     // InfoBadge Text for EntryNewCount (if more than 999, show "999+")
     // But the its value is int only....so currently not used. 
@@ -156,7 +159,7 @@ public abstract class NodeTree : Node
             }
             else
             {
-                return EntryNewCount.ToString();
+                return EntryNewCount.ToString(CultureInfo.InvariantCulture);
             }
         }
     }
@@ -269,7 +272,7 @@ public abstract class NodeTree : Node
         }
     }
 
-    private protected int _isBusyChildrenCount = 0;
+    private protected int _isBusyChildrenCount;
     public int IsBusyChildrenCount
     {
         get => _isBusyChildrenCount;
@@ -728,7 +731,7 @@ public partial class NodeFeed : NodeService
             OnPropertyChanged();
             OnPropertyChanged(nameof(UpdatedDateTimeFormated));
         }
-    } = default;
+    }
 
     public string? UpdatedDateTimeFormated
     {
@@ -736,7 +739,7 @@ public partial class NodeFeed : NodeService
         {
             if (Updated != default)
             {
-                return Updated.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                return Updated.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentCulture);
             }
             else
             {
@@ -814,7 +817,9 @@ public partial class NodeWorkspace : NodeTree
 }
 
 // Base class for Entry Collection (Node/NodeTree) 
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix
 public abstract class NodeEntryCollection : NodeTree
+#pragma warning restore CA1711 // Identifiers should not have incorrect suffix
 {
     /// <summary>
     /// entries resource URI or xml-rpc URL for a blog.
@@ -869,7 +874,9 @@ public abstract class NodeEntryCollection : NodeTree
 }
 
 // AtomPub Entry Collection (Node/NodeTree/NodeEntryCollection) 
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix
 public partial class NodeAtomPubEntryCollection : NodeEntryCollection
+#pragma warning restore CA1711 // Identifiers should not have incorrect suffix
 {
     public Uri? CategoriesUri { get; set; }
 
@@ -886,7 +893,7 @@ public partial class NodeAtomPubEntryCollection : NodeEntryCollection
     //image/png
     //image/jpeg
     //image/gif
-    public Collection<string> AcceptTypes = [];
+    public Collection<string> AcceptTypes { get; set; } = [];
 
     public NodeAtomPubEntryCollection(string name, Uri uri, string id) : base(name, uri, id)
     {
@@ -895,7 +902,9 @@ public partial class NodeAtomPubEntryCollection : NodeEntryCollection
 }
 
 // XML-RPC Entry Collection (Node/NodeTree/NodeEntryCollection) 
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix
 public partial class NodeXmlRpcEntryCollection : NodeEntryCollection
+#pragma warning restore CA1711 // Identifiers should not have incorrect suffix
 {
     public NodeXmlRpcEntryCollection(string name, Uri uri, string id) : base(name, uri, id)
     {
@@ -930,7 +939,7 @@ public partial class NodeAtomPubCatetories : NodeTree
 
     public string? Scheme { get; set; }
 
-    public List<NodeAtomPubCategory> CategoryList = [];
+    public List<NodeAtomPubCategory> CategoryList { get; set; } = [];
 
     public NodeAtomPubCatetories(string title) : base(title)
     {

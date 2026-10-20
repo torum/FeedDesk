@@ -112,7 +112,7 @@ internal sealed partial class ServiceDocumentLinkItem : LinkItem
 
             foreach (var hoge in rd.Apis)
             {
-                if ((hoge.Name?.ToLower() == "wordpress") && hoge.Preferred)
+                if ((hoge.Name?.ToLowerInvariant() == "wordpress") && hoge.Preferred)
                 {
                     TypeText = "XML-RPC (WP)";
                     IconPath = IconPathStrings["XML-RPC"];
@@ -125,7 +125,7 @@ internal sealed partial class ServiceDocumentLinkItem : LinkItem
                         IsSupported = false;
                     }
                 }
-                else if ((hoge.Name?.ToLower() == "movable type") && hoge.Preferred)
+                else if ((hoge.Name?.ToLowerInvariant() == "movable type") && hoge.Preferred)
                 {
                     TypeText = "XML-RPC (MT)";
                     IconPath = IconPathStrings["XML-RPC"];

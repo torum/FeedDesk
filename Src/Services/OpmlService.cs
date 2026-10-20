@@ -1,6 +1,7 @@
 ﻿using FeedDesk.Models;
 using FeedDesk.Services.Contracts;
 using System;
+using System.Globalization;
 using System.Xml;
 
 namespace FeedDesk.Services;
@@ -46,7 +47,7 @@ internal sealed class OpmlService : IOpmlService
     {
         foreach (XmlNode outline in childs)
         {
-            if (!outline.LocalName.Equals("outline"))
+            if (!outline.LocalName.Equals("outline", StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var title = "empty";
@@ -130,7 +131,7 @@ internal sealed class OpmlService : IOpmlService
 
         XmlElement eleHead = xdoc.CreateElement(string.Empty, "head", string.Empty);
         XmlElement eleTitle = xdoc.CreateElement(string.Empty, "title", string.Empty);
-        eleTitle.InnerText = "Exported from FeedDesk at " + DateTime.Now.ToString();
+        eleTitle.InnerText = "Exported from FeedDesk at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         eleHead.AppendChild(eleTitle);
         eleRoot.AppendChild(eleHead);
 

@@ -500,7 +500,7 @@ public sealed class ConfigurationService : IConfigurationService
 
         var xLeftPane = doc.CreateElement(string.Empty, "LeftPane", string.Empty);
         var xAttrs = doc.CreateAttribute("width");
-        xAttrs.Value = config.WidthLeftPane.ToString();
+        xAttrs.Value = config.WidthLeftPane.ToString(CultureInfo.InvariantCulture);
         xLeftPane.SetAttributeNode(xAttrs);
 
         mainWindow.AppendChild(xLeftPane);
@@ -515,7 +515,7 @@ public sealed class ConfigurationService : IConfigurationService
         */
         var xListViewPane = doc.CreateElement(string.Empty, "ListViewPane", string.Empty);
         xAttrs = doc.CreateAttribute("width");
-        xAttrs.Value = config.WidthListViewPane.ToString();
+        xAttrs.Value = config.WidthListViewPane.ToString(CultureInfo.InvariantCulture);
         xListViewPane.SetAttributeNode(xAttrs);
 
         mainWindow.AppendChild(xListViewPane);

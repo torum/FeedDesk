@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -354,7 +355,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 _ = ObserveBackgroundTaskAsync(UpdateEntryStatusAsReadAsync(SelectedTreeViewItem, field),"UpdateEntryStatusAsReadAsync",lifetimeToken);
             }
         }
-    } = null;
+    }
 
     [ObservableProperty]
     public partial HtmlWithBaseUri? HtmlSource { get; set; }
@@ -434,7 +435,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 ToggleInboxAppButtonLabel();
             }
         }
-    } = false;
+    }
 
     private void ToggleInboxAppButtonLabel()
     {
@@ -504,7 +505,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             SetProperty(ref field, value);
             IsNotShowFeedError = !value;
         }
-    } = false;
+    }
 
     [ObservableProperty]
     public partial bool IsNotShowFeedError { get; set; } = true;
@@ -534,7 +535,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
             SetProperty(ref field, value);
         }
-    } = false;
+    }
 
     #endregion
 
@@ -588,7 +589,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             }
         }
     
-    } = false;
+    }
 
     [RelayCommand]
     private void CheckIfFeedIsValidUsingValidator()
@@ -1228,7 +1229,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                 //if ((last > now.AddMinutes(-1)) && (last <= now))
                 if (timeSinceLastFetch < TimeSpan.FromMinutes(1) && last <= now)
                 {
-                    Debug.WriteLine("Skipping " + feed.Name + ": " + last.ToString());
+                    Debug.WriteLine("Skipping " + feed.Name + ": " + last.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                 }
                 else
                 {
@@ -2416,7 +2417,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             if (c is NodeFeed nf)
             {
-                if (nf.EndPoint.AbsoluteUri.Equals(feedUri))
+                if (nf.EndPoint.AbsoluteUri.Equals(feedUri, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

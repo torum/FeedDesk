@@ -47,25 +47,25 @@ public class ErrorObject
 // Result Wrapper Class
 public abstract class ResultWrapper
 {
-    public ErrorObject Error = new();
-    public bool IsError = false;
+    public ErrorObject Error { get; set; } = new();
+    public bool IsError { get; set; }
 }
 
 public class SqliteDataAccessResultWrapper : ResultWrapper
 {
-    public int AffectedCount = 0;
+    public int AffectedCount { get; set; }
 }
 
 public class SqliteDataAccessInsertResultWrapper : SqliteDataAccessResultWrapper
 {
-    public List<EntryItem> InsertedEntries = [];
+    public List<EntryItem> InsertedEntries { get; set; } = [];
 }
 
 public class SqliteDataAccessSelectResultWrapper : SqliteDataAccessResultWrapper
 {
-    public int UnreadCount = 0;
+    public int UnreadCount { get; set; }
 
-    public List<EntryItem> SelectedEntries = [];
+    public List<EntryItem> SelectedEntries { get; set; } = [];
 }
 
 /*
@@ -117,7 +117,7 @@ public class HttpClientEntryItemCollectionResultWrapper : ResultWrapper
         get; set;
     } = string.Empty;
 
-    public List<EntryItem> Entries = [];
+    public List<EntryItem> Entries { get; set; } = [];
 
     public HttpClientEntryItemCollectionResultWrapper()
     {

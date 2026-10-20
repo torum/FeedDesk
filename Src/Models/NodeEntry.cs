@@ -129,7 +129,7 @@ public abstract class EntryItem : Node
             field = value;
             OnPropertyChanged();
         }
-    } = default;
+    }
 
     public string PublishedDateTimeFormatedAbout
     {
@@ -159,13 +159,13 @@ public abstract class EntryItem : Node
         {
             if (Published != default)
             {
-                return Published.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                return Published.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentCulture);
             }
             else
             {
                 if (Updated != default)
                 {
-                    return Updated.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentUICulture);
+                    return Updated.ToLocalTime().ToString(System.Globalization.CultureInfo.CurrentCulture);
                 }
                 else
                 {
@@ -187,7 +187,7 @@ public abstract class EntryItem : Node
             field = value;
             OnPropertyChanged();
         }
-    } = default;
+    }
 
     public string Author
     {
@@ -379,7 +379,7 @@ public abstract class EntryItem : Node
     }
     */
 
-    public BaseClient? Client { get; } = null;
+    public BaseClient? Client { get; }
 
     public EntryItem(string title, string serviceId, BaseClient? bc) : base(title)
     {
@@ -495,7 +495,7 @@ public partial class FeedEntryItem : EntryItem
                 CommonStatus = "IsArchived"; //?
 
         }
-    } = false;
+    }
 
     // not in spec. for internal/UI use.
     //private string _publisher = "";
@@ -825,8 +825,7 @@ public partial class WPEntry : EntryFull
 // StringWriter With Encoding.
 internal sealed partial class StringWriterWithEncoding : StringWriter
 {
-    public StringWriterWithEncoding(StringBuilder sb, Encoding encoding)
-        : base(sb)
+    public StringWriterWithEncoding(StringBuilder sb, Encoding encoding) : base(sb)
     {
         this.m_Encoding = encoding;
     }

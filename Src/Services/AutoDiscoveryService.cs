@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -84,7 +85,7 @@ public class RsdApi
         get; set;
     }
 
-    public bool Preferred { get; set; } = false;
+    public bool Preferred { get; set; }
 
     public Uri? ApiLink
     {
@@ -191,7 +192,7 @@ internal sealed class ServiceResultFeed : ServiceResultBase
 
 public class ServiceResultRsd : ServiceResultBase
 {
-    public RsdLink? Rsd;
+    public RsdLink? Rsd { get; set; }
 
     public ServiceResultRsd()
     {
@@ -204,7 +205,7 @@ public abstract class ServiceResult(ServiceTypes serviceType, Uri endpointUri, A
 {
     public ServiceTypes ServiceType { get; set; } = serviceType;
 
-    public Uri EndpointUri = endpointUri;
+    public Uri EndpointUri { get; set; } = endpointUri;
 
     public AuthTypes AuthType { get; set; } = authType;
 }
@@ -280,7 +281,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
     public async Task<ServiceResultBase> DiscoverService(Uri addr, bool isFeed, bool isAutoDiscoveryEnabled)
     {
-        UpdateStatus(string.Format(">> HTTP GET " + addr.AbsoluteUri));
+        UpdateStatus(">> HTTP GET " + addr.AbsoluteUri);
 
         // Force get rss (for GitHub)
         _httpClient.DefaultRequestHeaders.Accept.Remove(new MediaTypeWithQualityHeaderValue("text/html"));
@@ -293,7 +294,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
         {
             var httpResponse = await _httpClient.GetAsync(addr);
 
-            UpdateStatus(string.Format("<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
+            UpdateStatus(string.Format(CultureInfo.InvariantCulture, "<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
 
             if (httpResponse.IsSuccessStatusCode)
             {
@@ -308,10 +309,10 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                 if (!string.IsNullOrEmpty(contenTypeString))
                 {
-                    UpdateStatus(string.Format("- Content-Type header is {0}", contenTypeString));
+                    UpdateStatus(string.Format(CultureInfo.InvariantCulture, "- Content-Type header is {0}", contenTypeString));
 
                     // HTML page.
-                    if (contenTypeString.StartsWith("text/html"))
+                    if (contenTypeString.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- Parsing the HTML document ...");
 
@@ -339,9 +340,9 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return res;
                     }
-                    else if (contenTypeString.StartsWith("text/xml") || contenTypeString.StartsWith("application/xml"))
+                    else if (contenTypeString.StartsWith("text/xml", StringComparison.OrdinalIgnoreCase) || contenTypeString.StartsWith("application/xml", StringComparison.OrdinalIgnoreCase))
                     {
-                        UpdateStatus(string.Format("- Ambiguous Content-Type {0} returned. ", contenTypeString));
+                        UpdateStatus(string.Format(CultureInfo.InvariantCulture, "- Ambiguous Content-Type {0} returned. ", contenTypeString));
 
                         UpdateStatus("- Parsing XML document to determine the what this is ...");
 
@@ -350,7 +351,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return xml;
                     }
-                    else if (contenTypeString.StartsWith("application/rss+xml"))
+                    else if (contenTypeString.StartsWith("application/rss+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- Parsing RSS feed ...");
 
@@ -359,7 +360,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return feed;
                     }
-                    else if (contenTypeString.StartsWith("application/rdf+xml"))
+                    else if (contenTypeString.StartsWith("application/rdf+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- Parsing RSS/RDF feed ...");
 
@@ -369,7 +370,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         return feed;
                     }
                     //
-                    else if (contenTypeString.StartsWith("application/atomsvc+xml"))
+                    else if (contenTypeString.StartsWith("application/atomsvc+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         // This is the AtomPub endpoint.
                         /*
@@ -383,10 +384,10 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         UpdateStatus("- AtomPub endpoint (UNDERDEVELOPENT).");
 
-                        var re = new ServiceResultErr("AtomPub endpoint (UNDERDEVELOPENT).", string.Format("{0} is AtomPub endpoint. (UNDERDEVELOPENT)", contenTypeString));
+                        var re = new ServiceResultErr("AtomPub endpoint (UNDERDEVELOPENT).", string.Format(CultureInfo.InvariantCulture, "{0} is AtomPub endpoint. (UNDERDEVELOPENT)", contenTypeString));
                         return re;
                     }
-                    else if (contenTypeString.StartsWith("application/rsd+xml"))
+                    else if (contenTypeString.StartsWith("application/rsd+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- Parsing RSD document ...");
 
@@ -407,7 +408,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return (resRsd as ServiceResultBase);
                     }
-                    else if (contenTypeString.StartsWith("application/atom+xml"))
+                    else if (contenTypeString.StartsWith("application/atom+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         // TODO:
                         // Possibly AtomApi endopoint. Or Atom Feed...
@@ -425,7 +426,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         return re;
                         */
                     }
-                    else if (contenTypeString.StartsWith("atom;"))
+                    else if (contenTypeString.StartsWith("atom;", StringComparison.OrdinalIgnoreCase))
                     {
                         // Ssme as "application/atom+xml", GitHub returns this...
 
@@ -435,7 +436,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return feed;
                     }
-                    else if (contenTypeString.StartsWith("application/x.atom+xml"))
+                    else if (contenTypeString.StartsWith("application/x.atom+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         /*
                         // TODO:
@@ -449,10 +450,10 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         */
                         UpdateStatus("- AtomAPI (UNDERDEVELOPENT).");
 
-                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format("{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
+                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format(CultureInfo.InvariantCulture, "{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
                         return re;
                     }
-                    else if (contenTypeString.StartsWith("application/x.atom+xml"))
+                    else if (contenTypeString.StartsWith("application/x.atom+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         /*
                         // TODO:
@@ -466,14 +467,14 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         */
                         UpdateStatus("- AtomAPI (UNDERDEVELOPENT).");
 
-                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format("{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
+                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format(CultureInfo.InvariantCulture, "{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
                         return re;
                     }
                     else
                     {
                         UpdateStatus("- Unknown Content-Type returned.");
 
-                        var re = new ServiceResultErr("Received unsupported Content-Type.", string.Format("{0} is not supported.", contenTypeString));
+                        var re = new ServiceResultErr("Received unsupported Content-Type.", string.Format(CultureInfo.InvariantCulture, "{0} is not supported.", contenTypeString));
                         return re;
                     }
                 }
@@ -545,7 +546,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
             //var httpResponse = await _httpClient.GetAsync(addr);
 
-            UpdateStatus(string.Format("<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
+            UpdateStatus(string.Format(CultureInfo.InvariantCulture, "<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
 
             if (httpResponse.IsSuccessStatusCode)
             {
@@ -560,10 +561,10 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                 if (!string.IsNullOrEmpty(contenTypeString))
                 {
-                    UpdateStatus(string.Format("- Content-Type header is {0}", contenTypeString));
+                    UpdateStatus(string.Format(CultureInfo.InvariantCulture, "- Content-Type header is {0}", contenTypeString));
 
                     // HTML page.
-                    if (contenTypeString.StartsWith("text/html"))
+                    if (contenTypeString.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- HTML document returned. Something is wrong.");
 
@@ -571,9 +572,9 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         var re = new ServiceResultErr("API/Protocol authentication failed", "A HTML page returned.");
                         return re;
                     }
-                    else if (contenTypeString.StartsWith("text/xml") || contenTypeString.StartsWith("application/xml"))
+                    else if (contenTypeString.StartsWith("text/xml", StringComparison.OrdinalIgnoreCase) || contenTypeString.StartsWith("application/xml", StringComparison.OrdinalIgnoreCase))
                     {
-                        UpdateStatus(string.Format("- Ambiguous Content-Type {0} returned. ", contenTypeString));
+                        UpdateStatus(string.Format(CultureInfo.InvariantCulture, "- Ambiguous Content-Type {0} returned. ", contenTypeString));
 
                         UpdateStatus("- Parsing XML document to determine the what this is ...");
 
@@ -582,7 +583,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return xml;
                     }
-                    else if (contenTypeString.StartsWith("application/rss+xml"))
+                    else if (contenTypeString.StartsWith("application/rss+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- RSS feed returned. Something is wrong.");
 
@@ -590,7 +591,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         var re = new ServiceResultErr("API/Protocol authentication failed", "A RSS feed returned.");
                         return re;
                     }
-                    else if (contenTypeString.StartsWith("application/rdf+xml"))
+                    else if (contenTypeString.StartsWith("application/rdf+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- RSS/RDF feed returned. Something is wrong.");
 
@@ -599,7 +600,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         return re;
                     }
                     //
-                    else if (contenTypeString.StartsWith("application/atomsvc+xml"))
+                    else if (contenTypeString.StartsWith("application/atomsvc+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         // AtomPub endpoint.
                         UpdateStatus("- Atom Publishing Protocol Service document returned.");
@@ -607,17 +608,17 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         var ap = await Task.Run(() => ParseAtomServiceDocument(httpResponse.Content, addr, userName, apiKey, authType));
                         return ap;
                     }
-                    else if (contenTypeString.StartsWith("application/rsd+xml"))
+                    else if (contenTypeString.StartsWith("application/rsd+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         //await ParseRsd(httpResponse.Content);
 
                         UpdateStatus("- RSD (No need to be authenticated). Something went wrong.");
 
                         // Error
-                        var re = new ServiceResultErr("RSD (No need to be authenticated).", string.Format("{0} is RSD. (Something went wrong)", contenTypeString));
+                        var re = new ServiceResultErr("RSD (No need to be authenticated).", string.Format(CultureInfo.InvariantCulture, "{0} is RSD. (Something went wrong)", contenTypeString));
                         return re;
                     }
-                    else if (contenTypeString.StartsWith("application/atom+xml"))
+                    else if (contenTypeString.StartsWith("application/atom+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- Parsing Atom feed ...");
 
@@ -626,7 +627,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         return feed;
                     }
-                    else if (contenTypeString.StartsWith("application/x.atom+xml"))
+                    else if (contenTypeString.StartsWith("application/x.atom+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         /*
                         // TODO:
@@ -640,10 +641,10 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         */
                         UpdateStatus("- AtomAPI (UNDERDEVELOPENT).");
 
-                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format("{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
+                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format(CultureInfo.InvariantCulture, "{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
                         return re;
                     }
-                    else if (contenTypeString.StartsWith("application/x.atom+xml"))
+                    else if (contenTypeString.StartsWith("application/x.atom+xml", StringComparison.OrdinalIgnoreCase))
                     {
                         /*
                         // TODO:
@@ -657,14 +658,14 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         */
                         UpdateStatus("- AtomAPI (UNDERDEVELOPENT).");
 
-                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format("{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
+                        var re = new ServiceResultErr("AtomAPI (UNDERDEVELOPENT).", string.Format(CultureInfo.InvariantCulture, "{0} is AtomAPI. (UNDERDEVELOPENT)", contenTypeString));
                         return re;
                     }
                     else
                     {
                         UpdateStatus("- Unknown Content-Type returned.");
 
-                        var re = new ServiceResultErr("Received unsupported Content-Type.", string.Format("{0} is not supported.", contenTypeString));
+                        var re = new ServiceResultErr("Received unsupported Content-Type.", string.Format(CultureInfo.InvariantCulture, "{0} is not supported.", contenTypeString));
                         return re;
                     }
                 }
@@ -792,7 +793,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                                         try
                                         {
                                             //_rsdUrl = new Uri(hf);
-                                            if (hf.StartsWith("http"))
+                                            if (hf.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // Absolute uri.
                                                 _rsdUrl = new Uri(hf);
@@ -867,7 +868,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                                         try
                                         {
                                             Uri _atomFeedUrl;
-                                            if (hf.StartsWith("http"))
+                                            if (hf.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // Absolute uri.
                                                 _atomFeedUrl = new Uri(hf);
@@ -897,7 +898,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                                         {
                                             Uri _rssFeedUrl;
 
-                                            if (hf.StartsWith("http"))
+                                            if (hf.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // Absolute uri.
                                                 _rssFeedUrl = new Uri(hf);
@@ -979,12 +980,12 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                 if (document.DocumentElement != null)
                 {
                     // Possibly RSS 2.0
-                    if (document.DocumentElement.LocalName.Equals("rss"))
+                    if (document.DocumentElement.LocalName.Equals("rss", StringComparison.OrdinalIgnoreCase))
                     {
                         var ver = document.DocumentElement.GetAttribute("version");
                         if (!string.IsNullOrEmpty(ver))
                         {
-                            if (ver.Equals("2.0"))
+                            if (ver.Equals("2.0", StringComparison.OrdinalIgnoreCase))
                             {
                                 UpdateStatus("RSS 2.0 feed detected.");
                                 isOK = true;
@@ -1054,18 +1055,18 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         }
                     }
                     // Possibly RSS 1.0
-                    else if (document.DocumentElement.LocalName.Equals("RDF"))
+                    else if (document.DocumentElement.LocalName.Equals("RDF", StringComparison.OrdinalIgnoreCase))
                     {
                         var ns = document.DocumentElement.GetAttribute("xmlns");
 
                         if (!string.IsNullOrEmpty(ns))
                         {
-                            if (ns.Equals("http://purl.org/rss/1.0/"))
+                            if (ns.Equals("http://purl.org/rss/1.0/", StringComparison.OrdinalIgnoreCase))
                             {
                                 ns = document.DocumentElement.GetAttribute("xmlns:rdf");
                                 if (!string.IsNullOrEmpty(ns))
                                 {
-                                    if (ns.Equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#"))
+                                    if (ns.Equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#", StringComparison.OrdinalIgnoreCase))
                                     {
                                         UpdateStatus("RSS 1.0 feed detected.");
                                         isOK = true;
@@ -1117,13 +1118,13 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         }
                     }
                     // Possibly Atom 1.0 or 0.3 feed
-                    else if (document.DocumentElement.LocalName.Equals("feed"))
+                    else if (document.DocumentElement.LocalName.Equals("feed", StringComparison.OrdinalIgnoreCase))
                     {
                         var ns = document.DocumentElement.GetAttribute("xmlns");
 
                         if (!string.IsNullOrEmpty(ns))
                         {
-                            if (ns.Equals("http://www.w3.org/2005/Atom") || ns.Equals("http://purl.org/atom/ns#"))
+                            if (ns.Equals("http://www.w3.org/2005/Atom", StringComparison.OrdinalIgnoreCase) || ns.Equals("http://purl.org/atom/ns#", StringComparison.OrdinalIgnoreCase))
                             {
                                 UpdateStatus("Atom feed detected.");
                                 isOK = true;
@@ -1178,7 +1179,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                             return (atom as ServiceResultBase);
                         }
                     }
-                    else if (document.DocumentElement.LocalName.Equals("rsd"))
+                    else if (document.DocumentElement.LocalName.Equals("rsd", StringComparison.OrdinalIgnoreCase))
                     {
                         UpdateStatus("- Parsing RSD document ...");
 
@@ -1429,7 +1430,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
     private async Task<SearviceDocumentLinkBase> GetAndParseRsdAsync(Uri addr)
     {
-        UpdateStatus(string.Format(">> HTTP GET " + addr.AbsoluteUri));
+        UpdateStatus(">> HTTP GET " + addr.AbsoluteUri);
 
         // This is a little hack for wordpress.com. Without this, wordpress.com returns HTTP status Forbidden 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0");
@@ -1438,13 +1439,13 @@ public class AutoDiscoveryService : IAutoDiscoveryService
         {
             var httpResponse = await _httpClient.GetAsync(addr);
 
-            UpdateStatus(string.Format("<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
+            UpdateStatus(string.Format(CultureInfo.InvariantCulture, "<< HTTP status {0} returned.", httpResponse.StatusCode.ToString()));
 
             if (httpResponse.IsSuccessStatusCode)
             {
                 if (httpResponse.Content != null)
                 {
-                    UpdateStatus(string.Format("- Parsing RSD document."));
+                    UpdateStatus("- Parsing RSD document.");
 
                     return await ParseRsdAsync(httpResponse.Content);
                     /*
@@ -1523,7 +1524,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                         {
                             try
                             {
-                                if (homePageLink.StartsWith("http"))
+                                if (homePageLink.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                     rsdDoc.HomePageLink = new Uri(homePageLink);
                             }
                             catch { }
@@ -1561,7 +1562,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
                                         };
                                         if (!string.IsNullOrEmpty(apiPreferred?.Value))
                                         {
-                                            if (apiPreferred?.Value.ToLower() == "true")
+                                            if (apiPreferred?.Value.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
                                             {
                                                 hoge.Preferred = true;
                                             }
@@ -1586,9 +1587,9 @@ public class AutoDiscoveryService : IAutoDiscoveryService
 
                         foreach (var fuga in rsdDoc.Apis)
                         {
-                            if ((fuga.Name?.ToLower() == "wordpress") && (fuga.Preferred))
+                            if ((fuga.Name?.Equals("wordpress", StringComparison.OrdinalIgnoreCase) == true) && (fuga.Preferred))
                             {
-                                UpdateStatus(string.Format("-  WordPress found."));
+                                UpdateStatus("-  WordPress found.");
                             }
                             else
                             {
@@ -1716,7 +1717,7 @@ public class AutoDiscoveryService : IAutoDiscoveryService
         var nonce = GenNounce(40);
         var nonceBytes = Encoding.UTF8.GetBytes(nonce);
         var nonce64 = Convert.ToBase64String(nonceBytes);
-        var createdString = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var createdString = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
         var digest = GenDigest(password, createdString, nonce);
         var header = string.Format(
             @"UsernameToken Username=""{0}"", PasswordDigest=""{1}"", Nonce=""{2}"", Created=""{3}""",

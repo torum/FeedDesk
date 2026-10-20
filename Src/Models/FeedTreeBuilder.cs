@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Xml;
 using static FeedDesk.Models.ErrorObject;
 
@@ -32,7 +33,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
 
             foreach (XmlNode s in serviceList)
             {
-                if (s.LocalName.Equals("Service"))
+                if (s.LocalName.Equals("Service", StringComparison.OrdinalIgnoreCase))
                 {
                     var accountName = s.Attributes?["Name"]?.Value;
 
@@ -229,7 +230,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                         this.Children.Add(account);
                     }
                 }
-                else if (s.LocalName.Equals("Feed"))
+                else if (s.LocalName.Equals("Feed", StringComparison.OrdinalIgnoreCase))
                 {
                     NodeFeed? feed = LoadXmlChildFeed(s);
                     if (feed == null)
@@ -241,7 +242,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                         this.Children.Add(feed);
 
                 }
-                else if (s.LocalName.Equals("Folder"))
+                else if (s.LocalName.Equals("Folder", StringComparison.OrdinalIgnoreCase))
                 {
                     NodeFolder? folder = LoadXmlChildFolder(s);
                     if (folder == null)
@@ -282,7 +283,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
             {
                 var s = node.Attributes?["UnreadCount"]?.Value;
                 if (!string.IsNullOrEmpty(s))
-                    unreadCount = int.Parse(s);
+                    unreadCount = int.Parse(s, CultureInfo.InvariantCulture);
             }
             folder.EntryNewCount = unreadCount;
 
@@ -333,7 +334,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
             // Re-write.
             foreach (XmlNode hoge in node.ChildNodes)
             {
-                if (hoge.LocalName.Equals("Folder"))
+                if (hoge.LocalName.Equals("Folder", StringComparison.OrdinalIgnoreCase))
                 {
                     NodeFolder? fuga = LoadXmlChildFolder(hoge);
                     if (fuga == null)
@@ -344,7 +345,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                     if (fuga != null)
                         folder.Children.Add(fuga);
                 }
-                else if (hoge.LocalName.Equals("Feed"))
+                else if (hoge.LocalName.Equals("Feed", StringComparison.OrdinalIgnoreCase))
                 {
                     NodeFeed? fuga = LoadXmlChildFeed(hoge);
                     if (fuga == null)
@@ -423,7 +424,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
         {
             var s = node.Attributes?["Updated"]?.Value;
             if (!string.IsNullOrEmpty(s))
-                Updated = DateTime.Parse(s);
+                Updated = DateTime.Parse(s, CultureInfo.InvariantCulture);
         }
 
         var unreadCount = 0;
@@ -432,7 +433,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
         {
             var s = node.Attributes?["UnreadCount"]?.Value;
             if (!string.IsNullOrEmpty(s))
-                unreadCount = int.Parse(s);
+                unreadCount = int.Parse(s, CultureInfo.InvariantCulture);
         }
 
         DateTime lastUpdate = default;
@@ -441,7 +442,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
         {
             var s = node.Attributes?["LastUpdate"]?.Value;
             if (!string.IsNullOrEmpty(s))
-                lastUpdate = DateTime.Parse(s);
+                lastUpdate = DateTime.Parse(s, CultureInfo.InvariantCulture);
         }
 
         var etag = string.IsNullOrEmpty(node.Attributes?["Etag"]?.Value) ? "" : node.Attributes?["Etag"]?.Value;
@@ -520,7 +521,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                 {
                     var s = errNode?.Attributes?["ErrDatetime"]?.Value;
                     if (!string.IsNullOrEmpty(s))
-                        errHttpObj.ErrDatetime = DateTime.Parse(s);
+                        errHttpObj.ErrDatetime = DateTime.Parse(s, CultureInfo.InvariantCulture);
                 }
 
             }
@@ -597,7 +598,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
                 {
                     var s = err?.Attributes?["ErrDatetime"]?.Value;
                     if (!string.IsNullOrEmpty(s))
-                        errDbObj.ErrDatetime = DateTime.Parse(s);
+                        errDbObj.ErrDatetime = DateTime.Parse(s, CultureInfo.InvariantCulture);
                 }
 
             }
@@ -896,7 +897,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
         folder.SetAttributeNode(attrd);
 
         attrd = doc.CreateAttribute("UnreadCount");
-        attrd.Value = fd.EntryNewCount.ToString();
+        attrd.Value = fd.EntryNewCount.ToString(CultureInfo.InvariantCulture);
         folder.SetAttributeNode(attrd);
 
         attrd = doc.CreateAttribute("ViewType");
@@ -1005,15 +1006,15 @@ public sealed partial class FeedTreeBuilder : NodeRoot
         feed.SetAttributeNode(attrf);
 
         attrf = doc.CreateAttribute("Updated");
-        attrf.Value = fd.Updated.ToString("yyyy-MM-dd HH:mm:ss");
+        attrf.Value = fd.Updated.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         feed.SetAttributeNode(attrf);
 
         attrf = doc.CreateAttribute("UnreadCount");
-        attrf.Value = fd.EntryNewCount.ToString();
+        attrf.Value = fd.EntryNewCount.ToString(CultureInfo.InvariantCulture);
         feed.SetAttributeNode(attrf);
 
         attrf = doc.CreateAttribute("LastUpdate");
-        attrf.Value = fd.LastFetched.ToString("yyyy-MM-dd HH:mm:ss");
+        attrf.Value = fd.LastFetched.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         feed.SetAttributeNode(attrf);
 
         attrf = doc.CreateAttribute("Etag");
@@ -1053,7 +1054,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
             httpError.SetAttributeNode(attrErr);
 
             attrErr = doc.CreateAttribute("ErrDatetime");
-            attrErr.Value = fd.ErrorHttp.ErrDatetime.ToString("yyyy-MM-dd HH:mm:ss");
+            attrErr.Value = fd.ErrorHttp.ErrDatetime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             httpError.SetAttributeNode(attrErr);
 
             feed.AppendChild(httpError);
@@ -1088,7 +1089,7 @@ public sealed partial class FeedTreeBuilder : NodeRoot
             DatabaseError.SetAttributeNode(attrErr);
 
             attrErr = doc.CreateAttribute("ErrDatetime");
-            attrErr.Value = fd.ErrorDatabase.ErrDatetime.ToString("yyyy-MM-dd HH:mm:ss");
+            attrErr.Value = fd.ErrorDatabase.ErrDatetime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             DatabaseError.SetAttributeNode(attrErr);
 
             feed.AppendChild(DatabaseError);

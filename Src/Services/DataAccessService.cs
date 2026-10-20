@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using static FeedDesk.Models.FeedEntryItem;
 using static FeedDesk.Services.FeedLink;
@@ -274,7 +275,7 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.Parameters.AddWithValue("@Name", feedName);
                 cmd.Parameters.AddWithValue("@Title", feedTitle);
                 cmd.Parameters.AddWithValue("@Description", feedDescription);
-                cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                 if (htmlUri != null)
                 {
                     cmd.Parameters.AddWithValue("@HtmlUri", htmlUri.AbsoluteUri);
@@ -676,7 +677,7 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.Parameters.AddWithValue("@Name", feedName);
                 cmd.Parameters.AddWithValue("@Title", feedTitle);
                 cmd.Parameters.AddWithValue("@Description", feedDescription);
-                cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                cmd.Parameters.AddWithValue("@Updated", updated.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                 cmd.Parameters.AddWithValue("@FeedId", feedId);
                 if (htmlUri is not null)
                 {
@@ -753,25 +754,25 @@ internal sealed class DataAccessService : IDataAccessService
                     {
                         if (entry.Updated != default)
                         {
-                            cmd.Parameters.AddWithValue("@Published", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                            cmd.Parameters.AddWithValue("@Published", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                         }
                         else
                         {
-                            cmd.Parameters.AddWithValue("@Published", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                            cmd.Parameters.AddWithValue("@Published", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                         }
                     }
                     else
                     {
-                        cmd.Parameters.AddWithValue("@Published", entry.Published.ToString("yyyy-MM-dd HH:mm:ss"));
+                        cmd.Parameters.AddWithValue("@Published", entry.Published.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                     }
 
                     if (entry.Updated == default)
                     {
-                        cmd.Parameters.AddWithValue("@Updated", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                        cmd.Parameters.AddWithValue("@Updated", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                     }
                     else
                     {
-                        cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                        cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                     }
                     //cmd.Parameters.AddWithValue("@Updated", entry.Updated.ToString("yyyy-MM-dd HH:mm:ss"));
 
@@ -965,8 +966,8 @@ internal sealed class DataAccessService : IDataAccessService
                         cmd.Parameters.AddWithValue("@ImageUri", entry.ImageUri?.AbsoluteUri ?? "");
                         cmd.Parameters.AddWithValue("@AudioUri", entry.AudioUri?.AbsoluteUri ?? "");
                         cmd.Parameters.AddWithValue("@Updated", entry.Updated == default
-                                ? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-                                : updated.ToString("yyyy-MM-dd HH:mm:ss"));
+                                ? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+                                : updated.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
                         cmd.Parameters.AddWithValue("@EntryId", entry.Id);
 
                         if (entry.AltHtmlUri is not null)
@@ -1121,55 +1122,55 @@ internal sealed class DataAccessService : IDataAccessService
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                var s = Convert.ToString(reader["entryTitle"]);
+                var s = Convert.ToString(reader["entryTitle"], CultureInfo.CurrentCulture);
                 if (string.IsNullOrEmpty(s))
                 {
                     s = "-";
                 }
                 var entry = new FeedEntryItem(s, feedId, null)
                 {
-                    EntryId = Convert.ToString(reader["entryId"])
+                    EntryId = Convert.ToString(reader["entryId"], CultureInfo.InvariantCulture)
                 };
 
-                s = Convert.ToString(reader["entryUrl"]);
+                s = Convert.ToString(reader["entryUrl"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(s))
                 {
                     entry.AltHtmlUri = new Uri(RestoreSingleQuote(s));
                 }
 
-                s = Convert.ToString(reader["entryPublished"]);
+                s = Convert.ToString(reader["entryPublished"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(s))
                 {
                     try
                     {
-                        entry.Published = DateTime.Parse(s);
+                        entry.Published = DateTime.Parse(s, CultureInfo.InvariantCulture);
                     }
                     catch { }
                 }
 
-                s = Convert.ToString(reader["entryUpdated"]);
+                s = Convert.ToString(reader["entryUpdated"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(s))
                 {
                     try
                     {
-                        entry.Updated = DateTime.Parse(s);
+                        entry.Updated = DateTime.Parse(s, CultureInfo.InvariantCulture);
                     }
                     catch { }
                 }
 
-                s = Convert.ToString(reader["entrySummary"]);
+                s = Convert.ToString(reader["entrySummary"], CultureInfo.CurrentCulture);
                 if (!string.IsNullOrEmpty(s))
                 {
                     entry.Summary = s;
                 }
 
-                s = Convert.ToString(reader["entryContent"]);
+                s = Convert.ToString(reader["entryContent"], CultureInfo.CurrentCulture);
                 if (!string.IsNullOrEmpty(s))
                 {
                     entry.Content = s;
                 }
 
-                var t = Convert.ToString(reader["entryContentType"]);
+                var t = Convert.ToString(reader["entryContentType"], CultureInfo.InvariantCulture);
                 if (t == "textHtml")
                 {
                     entry.ContentType = EntryItem.ContentTypes.textHtml;
@@ -1199,33 +1200,33 @@ internal sealed class DataAccessService : IDataAccessService
                     entry.ContentType = EntryItem.ContentTypes.unknown;
                 }
 
-                entry.Source = Convert.ToString(reader["entrySource"]) ?? "";
+                entry.Source = Convert.ToString(reader["entrySource"], CultureInfo.InvariantCulture) ?? "";
 
-                var su = Convert.ToString(reader["entrySourceUri"]);
+                var su = Convert.ToString(reader["entrySourceUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(su))
                 {
                     entry.SourceUri = new Uri(su);
                 }
 
-                var u = Convert.ToString(reader["entryImageUri"]);
+                var u = Convert.ToString(reader["entryImageUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(u))
                 {
                     entry.ImageUri = new Uri(RestoreSingleQuote(u));
                 }
 
-                var au = Convert.ToString(reader["entryAudioUri"]);
+                var au = Convert.ToString(reader["entryAudioUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(au))
                 {
                     entry.AudioUri = new Uri(RestoreSingleQuote(au));
                 }
 
-                var cu = Convert.ToString(reader["entryCommentUri"]);
+                var cu = Convert.ToString(reader["entryCommentUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(cu))
                 {
                     entry.CommentUri = new Uri(cu);
                 }
 
-                var cbu = Convert.ToString(reader["entryContentBaseUri"]);
+                var cbu = Convert.ToString(reader["entryContentBaseUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(cbu))
                 {
                     entry.ContentBaseUri = new Uri(cbu);
@@ -1264,17 +1265,17 @@ internal sealed class DataAccessService : IDataAccessService
                 */
                 //entry.ImageId = Convert.ToString(reader["image_id"]);
 
-                var status = Convert.ToString(reader["entryStatus"]);
+                var status = Convert.ToString(reader["entryStatus"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(status))
                 {
                     entry.Status = StatusTextToType(status);
                 }
 
-                entry.Author = Convert.ToString(reader["entryAuthor"]) ?? "";
+                entry.Author = Convert.ToString(reader["entryAuthor"], CultureInfo.CurrentCulture) ?? "";
 
-                entry.Category = Convert.ToString(reader["entryCategory"]) ?? "";
+                entry.Category = Convert.ToString(reader["entryCategory"], CultureInfo.CurrentCulture) ?? "";
 
-                var blnstr = Convert.ToString(reader["entryArchived"]);
+                var blnstr = Convert.ToString(reader["entryArchived"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(blnstr))
                 {
                     if (blnstr == bool.TrueString)
@@ -1298,7 +1299,7 @@ internal sealed class DataAccessService : IDataAccessService
                 }
 
                 //entry.Publisher = Convert.ToString(reader["name"]);
-                entry.FeedTitle = Convert.ToString(reader["feedName"]) ?? "";
+                entry.FeedTitle = Convert.ToString(reader["feedName"], CultureInfo.CurrentCulture) ?? "";
 
                 res.AffectedCount++;
 
@@ -1458,47 +1459,47 @@ internal sealed class DataAccessService : IDataAccessService
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                var fid = Convert.ToString(reader["feedId"]);
+                var fid = Convert.ToString(reader["feedId"], CultureInfo.InvariantCulture);
                 if (string.IsNullOrEmpty(fid))
                     continue;
 
-                var entry = new FeedEntryItem(Convert.ToString(reader["entryTitle"]) ?? "no title", fid, null)
+                var entry = new FeedEntryItem(Convert.ToString(reader["entryTitle"], CultureInfo.CurrentCulture) ?? "no title", fid, null)
                 {
                     //entry.MyNodeFeed = ndf;
 
-                    EntryId = Convert.ToString(reader["entryId"])
+                    EntryId = Convert.ToString(reader["entryId"], CultureInfo.InvariantCulture)
                 };
 
                 //if (!string.IsNullOrEmpty(Convert.ToString(reader["entryUrl"])))
                 //    entry.AltHtmlUri = new Uri(Convert.ToString(reader["entryUrl"]));
 
-                var s = Convert.ToString(reader["entryUrl"]);
+                var s = Convert.ToString(reader["entryUrl"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(s))
                 {
                     entry.AltHtmlUri = new Uri(RestoreSingleQuote(s));
                 }
 
-                var pnsd = Convert.ToString(reader["entryPublished"]);
+                var pnsd = Convert.ToString(reader["entryPublished"], CultureInfo.CurrentCulture);
                 if (!string.IsNullOrEmpty(pnsd))
                 {
-                    entry.Published = DateTime.Parse(pnsd);
+                    entry.Published = DateTime.Parse(pnsd, CultureInfo.CurrentCulture);
                 }
 
                 try
                 {
-                    var hoge = Convert.ToString(reader["entryUpdated"]);
+                    var hoge = Convert.ToString(reader["entryUpdated"], CultureInfo.CurrentCulture);
                     if (!string.IsNullOrEmpty(hoge))
                     {
-                        entry.Updated = DateTime.Parse(hoge);
+                        entry.Updated = DateTime.Parse(hoge, CultureInfo.CurrentCulture);
                     }
                 }
                 catch { }
 
-                entry.Summary = Convert.ToString(reader["entrySummary"]) ?? "";
+                entry.Summary = Convert.ToString(reader["entrySummary"], CultureInfo.CurrentCulture) ?? "";
 
-                entry.Content = Convert.ToString(reader["entryContent"]) ?? "";
+                entry.Content = Convert.ToString(reader["entryContent"], CultureInfo.CurrentCulture) ?? "";
 
-                var t = Convert.ToString(reader["entryContentType"]);
+                var t = Convert.ToString(reader["entryContentType"], CultureInfo.CurrentCulture);
                 if (t == "textHtml")
                 {
                     entry.ContentType = EntryItem.ContentTypes.textHtml;
@@ -1528,25 +1529,25 @@ internal sealed class DataAccessService : IDataAccessService
                     entry.ContentType = EntryItem.ContentTypes.unknown;
                 }
 
-                var u = Convert.ToString(reader["entryImageUri"]);
+                var u = Convert.ToString(reader["entryImageUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(u))
                 {
                     entry.ImageUri = new Uri(RestoreSingleQuote(u));
                 }
 
-                var au = Convert.ToString(reader["entryAudioUri"]);
+                var au = Convert.ToString(reader["entryAudioUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(au))
                 {
                     entry.AudioUri = new Uri(RestoreSingleQuote(au));
                 }
 
-                var cu = Convert.ToString(reader["entryCommentUri"]);
+                var cu = Convert.ToString(reader["entryCommentUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(cu))
                 {
                     entry.CommentUri = new Uri(cu);
                 }
 
-                var cbu = Convert.ToString(reader["entryContentBaseUri"]);
+                var cbu = Convert.ToString(reader["entryContentBaseUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(cbu))
                 {
                     entry.ContentBaseUri = new Uri(cbu);
@@ -1586,25 +1587,25 @@ internal sealed class DataAccessService : IDataAccessService
                 if (!string.IsNullOrEmpty(status))
                     entry.Status = entry.StatusTextToType(status);
                 */
-                var status = Convert.ToString(reader["entryStatus"]);
+                var status = Convert.ToString(reader["entryStatus"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(status))
                 {
                     entry.Status = StatusTextToType(status);
                 }
 
-                entry.Source = Convert.ToString(reader["entrySource"]) ?? "";
+                entry.Source = Convert.ToString(reader["entrySource"], CultureInfo.InvariantCulture) ?? "";
 
-                var su = Convert.ToString(reader["entrySourceUri"]);
+                var su = Convert.ToString(reader["entrySourceUri"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(su))
                 {
                     entry.SourceUri = new Uri(su);
                 }
 
-                entry.Author = Convert.ToString(reader["entryAuthor"]) ?? "";
+                entry.Author = Convert.ToString(reader["entryAuthor"], CultureInfo.CurrentCulture) ?? "";
 
-                entry.Category = Convert.ToString(reader["entryCategory"]) ?? "";
+                entry.Category = Convert.ToString(reader["entryCategory"], CultureInfo.CurrentCulture) ?? "";
 
-                var blnstr = Convert.ToString(reader["entryArchived"]);
+                var blnstr = Convert.ToString(reader["entryArchived"], CultureInfo.InvariantCulture);
                 if (!string.IsNullOrEmpty(blnstr))
                 {
                     if (blnstr == bool.TrueString)
@@ -1631,7 +1632,7 @@ internal sealed class DataAccessService : IDataAccessService
                     res.UnreadCount++;
                 }
 
-                entry.FeedTitle = Convert.ToString(reader["feedName"]) ?? "";
+                entry.FeedTitle = Convert.ToString(reader["feedName"], CultureInfo.CurrentCulture) ?? "";
 
                 res.AffectedCount++;
 
@@ -1703,7 +1704,7 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.CommandText = "SELECT COUNT(*) FROM entries WHERE feed_id = $feedId;";
             }
             cmd.Parameters.AddWithValue("$feedId", feedId);
-            res = Convert.ToInt32(cmd.ExecuteScalar());
+            res = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         }
         catch (Exception e)
         {
@@ -1745,7 +1746,7 @@ internal sealed class DataAccessService : IDataAccessService
                 cmd.CommandText = $"SELECT COUNT(*) FROM entries WHERE feed_id IN ({placeholders});";
             }
 
-            res = Convert.ToInt32(cmd.ExecuteScalar());
+            res = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         }
         catch (Exception e)
         {
@@ -2228,7 +2229,7 @@ internal sealed class DataAccessService : IDataAccessService
             _readerWriterLock.ExitWriteLock();
         }
 
-        Debug.WriteLine(string.Format("{0} Entries Deleted from DB", res.AffectedCount));
+        Debug.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0} Entries Deleted from DB", res.AffectedCount));
 
         return res;
     }
@@ -2238,7 +2239,7 @@ internal sealed class DataAccessService : IDataAccessService
     {
         for (var i = 0; i < dr.FieldCount; i++)
         {
-            if (dr.GetName(i).Equals(columnName, StringComparison.InvariantCultureIgnoreCase))
+            if (dr.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

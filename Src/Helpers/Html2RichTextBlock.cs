@@ -196,19 +196,19 @@ public class HtmlProperties : DependencyObject
 
     private static Block? GenerateBlockForTopNode(HtmlNode node, Uri? baseUri)
     {
-        if ((node.Name.ToLower() == "p") || (node.Name.ToLower() == "div") || (node.Name.ToLower() == "span"))
+        if ((node.Name.Equals("p", StringComparison.OrdinalIgnoreCase)) || (node.Name.Equals("div", StringComparison.OrdinalIgnoreCase)) || (node.Name.Equals("span", StringComparison.OrdinalIgnoreCase)))
         {
             var paragraph = GenerateParagraph(node, baseUri);
             return paragraph;
         }
-        else if (node.Name.ToLower() == "blockquote")
+        else if (node.Name.Equals("blockquote", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = GenerateParagraph(node, baseUri);
             paragraph.Margin = BlockquoteMargin;
             paragraph.FontStyle = Windows.UI.Text.FontStyle.Italic;
             return paragraph;
         }
-        else if (node.Name.ToLower() == "h1")
+        else if (node.Name.Equals("h1", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -218,7 +218,7 @@ public class HtmlProperties : DependencyObject
             paragraph.Inlines.Add(span);
             return paragraph;
         }
-        else if (node.Name.ToLower() == "h2")
+        else if (node.Name.Equals("h2", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -228,7 +228,7 @@ public class HtmlProperties : DependencyObject
             paragraph.Inlines.Add(span);
             return paragraph;
         }
-        else if (node.Name.ToLower() == "h3")
+        else if (node.Name.Equals("h3", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -238,7 +238,7 @@ public class HtmlProperties : DependencyObject
             paragraph.Inlines.Add(span);
             return paragraph;
         }
-        else if (node.Name.ToLower() == "h4")
+        else if (node.Name.Equals("h4", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -248,12 +248,12 @@ public class HtmlProperties : DependencyObject
             paragraph.Inlines.Add(bold);
             return paragraph;
         }
-        else if (node.Name.ToLower() == "a")
+        else if (node.Name.Equals("a", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
             //var link = GenerateHyperLink(node);
-            var link = node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLower() == "img")
+            var link = node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.Equals("img", StringComparison.OrdinalIgnoreCase) == true)
                         ? GenerateImageWithHyperLink(node, baseUri)
                         : GenerateHyperLink(node, baseUri);
             if (link is not null)
@@ -266,7 +266,7 @@ public class HtmlProperties : DependencyObject
                 return null;
             }
         }
-        else if (node.Name.ToLower() == "img")
+        else if (node.Name.Equals("img", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -281,7 +281,7 @@ public class HtmlProperties : DependencyObject
                 return null;
             }
         }
-        else if ((node.Name.ToLower() == "pre") || (node.Name.ToLower() == "code"))
+        else if ((node.Name.Equals("pre", StringComparison.OrdinalIgnoreCase)) || (node.Name.Equals("code", StringComparison.OrdinalIgnoreCase)))
         {
             var paragraph = new Paragraph();
             //AddChildren(paragraph, node);
@@ -290,7 +290,7 @@ public class HtmlProperties : DependencyObject
             paragraph.FontFamily = PreCodeFontFamily;
             return paragraph;
         }
-        else if ((node.Name.ToLower() == "b") || (node.Name.ToLower() == "strong"))
+        else if ((node.Name.Equals("b", StringComparison.OrdinalIgnoreCase)) || (node.Name.Equals("strong", StringComparison.OrdinalIgnoreCase)))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -305,7 +305,7 @@ public class HtmlProperties : DependencyObject
                 return null;
             }
         }
-        else if (node.Name.ToLower() == "iframe")
+        else if (node.Name.Equals("iframe", StringComparison.OrdinalIgnoreCase))
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
@@ -320,7 +320,7 @@ public class HtmlProperties : DependencyObject
                 return null;
             }
         }
-        else if (node.Name.ToLower() == "#text")
+        else if (node.Name.Equals("#text", StringComparison.OrdinalIgnoreCase))
         {
             if (!string.IsNullOrWhiteSpace(ReplaceHtmlEntities(node.InnerText)))
             {
@@ -335,7 +335,7 @@ public class HtmlProperties : DependencyObject
                 return null;
             }
         }
-        else if ((node.Name.ToLower() == "script") || (node.Name.ToLower() == "style") || (node.Name.ToLower() == "link"))
+        else if ((node.Name.Equals("script", StringComparison.OrdinalIgnoreCase)) || (node.Name.Equals("style", StringComparison.OrdinalIgnoreCase)) || (node.Name.Equals("link", StringComparison.OrdinalIgnoreCase)))
         {
             return null;
         }
@@ -347,7 +347,7 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static Block GenerateParagraph(HtmlNode node, Uri? baseUri)
+    private static Paragraph GenerateParagraph(HtmlNode node, Uri? baseUri)
     {
         var paragraph = new Paragraph();
         paragraph.Margin = ParagraphMargin;
@@ -399,7 +399,7 @@ public class HtmlProperties : DependencyObject
     {
         try
         {
-            switch (node.Name.ToLower())
+            switch (node.Name.ToLowerInvariant())
             {
                 case "span":
                     return GenerateSpan(node, baseUri);
@@ -410,7 +410,7 @@ public class HtmlProperties : DependencyObject
                 case "img":
                     return GenerateImage(node, baseUri);
                 case "a":
-                    return node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLower() == "img")
+                    return node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLowerInvariant() == "img")
                         ? GenerateImageWithHyperLink(node, baseUri)
                         : GenerateHyperLink(node, baseUri);
                 case "ul":
@@ -486,7 +486,7 @@ public class HtmlProperties : DependencyObject
                 }
 
                 var imageUri = new Uri(sourceUri, UriKind.RelativeOrAbsolute);
-                if (sourceUri?.StartsWith("http") != true)
+                if (sourceUri?.StartsWith("http", StringComparison.OrdinalIgnoreCase) != true)
                 {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                     {
@@ -495,7 +495,7 @@ public class HtmlProperties : DependencyObject
                     }
                     else
                     {
-                        Debug.WriteLine("GenerateImage: Could not combine URIs.");
+                        Debug.WriteLine($"GenerateImage: Could not combine URIs. BaseUri: {baseUri}, SourceUri: {sourceUri}");
                         span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
                         return span;
                     }
@@ -583,7 +583,7 @@ public class HtmlProperties : DependencyObject
                 }
 
                 var imageUri = new Uri(sourceUri, UriKind.RelativeOrAbsolute);
-                if ((sourceUri?.StartsWith("http") != true) && (sourceUri?.StartsWith("mailto:") != true))
+                if ((sourceUri?.StartsWith("http", StringComparison.OrdinalIgnoreCase) != true) && (sourceUri?.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) != true))
                 {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                     {
@@ -592,13 +592,13 @@ public class HtmlProperties : DependencyObject
                     }
                     else
                     {
-                        Debug.WriteLine("GenerateImageWithHyperLink: Could not combine URIs.");
+                        Debug.WriteLine($"GenerateImageWithHyperLink: Could not combine URIs. BaseUri: {baseUri}, SourceUri: {sourceUri}");
                         span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
                         return span;
                     }
                 }
 
-                if (imageUri?.AbsoluteUri.StartsWith("http") == true)
+                if (imageUri?.AbsoluteUri.StartsWith("http", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     var sourceWidth = WebUtility.HtmlDecode(node?.Attributes["width"]?.Value);
                     var sourceHeight = WebUtility.HtmlDecode(node?.Attributes["height"]?.Value);
@@ -645,7 +645,7 @@ public class HtmlProperties : DependencyObject
                     span.Inlines.Add(inlineUiContainer);
                     span.Inlines.Add(new LineBreak());
                 }
-                else if (sourceUri?.StartsWith("mailto:") == true)
+                else if (sourceUri?.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({sourceUri})" });
                 }
@@ -749,7 +749,7 @@ public class HtmlProperties : DependencyObject
             //Debug.WriteLine("GenerateHyperLink: href=" + href);
 
             var HyperLinkUri = new Uri(href, UriKind.RelativeOrAbsolute);
-            if ((href?.StartsWith("http") != true) && (href?.StartsWith("mailto:") != true))
+            if ((href?.StartsWith("http", StringComparison.OrdinalIgnoreCase) != true) && (href?.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) != true))
             {
                 if (Uri.TryCreate(baseUri, href ?? string.Empty, out Uri? absoluteUri))
                 {
@@ -766,7 +766,7 @@ public class HtmlProperties : DependencyObject
                 }
             }
 
-            if (HyperLinkUri?.AbsoluteUri.StartsWith("http") == true)
+            if (HyperLinkUri?.AbsoluteUri.StartsWith("http", StringComparison.OrdinalIgnoreCase) == true)
             {
                 var hyperlinkButton = new Hyperlink();
                 hyperlinkButton.NavigateUri = HyperLinkUri;
@@ -775,7 +775,7 @@ public class HtmlProperties : DependencyObject
                 span.Inlines.Add(hyperlinkButton);
                 return span;
             }
-            else if (href?.StartsWith("mailto:") == true)
+            else if (href?.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) == true)
             {
                 var span = new Span();
                 span.Inlines.Add(new Run { Text = $" Email Address: [mailto:]({CleanText(node?.InnerText ?? "")}) " });
@@ -823,7 +823,7 @@ public class HtmlProperties : DependencyObject
             }
 
             var srcUri = new Uri(sourceUri, UriKind.RelativeOrAbsolute);
-            if (sourceUri?.StartsWith("http") != true)
+            if (sourceUri?.StartsWith("http", StringComparison.OrdinalIgnoreCase) != true)
             {
                 if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                 {
@@ -832,7 +832,7 @@ public class HtmlProperties : DependencyObject
                 }
                 else
                 {
-                    Debug.WriteLine("GenerateIFrame: Could not combine URIs.");
+                    Debug.WriteLine($"GenerateIFrame: Could not combine URIs. BaseUri: {baseUri}, SourceUri: {sourceUri}");
                     span.Inlines.Add(new Run { Text = CleanText($"Inline frame (embedded page) (relative URL): [{CleanText(title ?? "")}]({sourceUri})") });
 
                     return span;

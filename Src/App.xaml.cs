@@ -9,14 +9,15 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WinRT;
 using Windows.Storage;
+using WinRT;
 
 // https://github.com/CommunityToolkit/Windows/issues/612
 [assembly: GeneratedWinRTExposedExternalType(typeof(GridLength))]
@@ -36,11 +37,11 @@ public partial class App
     public CancellationTokenSource AppCancellationToken => _cts;
     // ErrorLog
 #if DEBUG
-    public bool IsSaveErrorLog = true;
+    public bool IsSaveErrorLog { get; set; } = true;
 #else
-    public bool IsSaveErrorLog = false;
+    public bool IsSaveErrorLog { get; set; } = false;
 #endif
-    public string LogFilePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
+    public string LogFilePath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + Path.DirectorySeparatorChar + "FeedDesk_errors.txt";
     private readonly StringBuilder _errortxt = new();
     private readonly Lock _errorLogLock = new();
     private Task? _appHostStartTask;
@@ -51,7 +52,7 @@ public partial class App
         get => _appHostStopTask;
         set => _appHostStopTask = value;
     }
-    private bool _isAppHostStopping = false;
+    private bool _isAppHostStopping;
 
     private bool _allowWindowClose;
     public static bool IsAllowWindowClose
@@ -133,7 +134,7 @@ public partial class App
                 {
                     // Addition to this timeout, also use the per-request cancellation token as the fallback timeout mechanism.
                     // Though, not a good idea to set timeout here to avoid disposable race. 
-                    client.Timeout = TimeSpan.FromSeconds(10);//Timeout.InfiniteTimeSpan;//
+                    client.Timeout = TimeSpan.FromSeconds(13);//Timeout.InfiniteTimeSpan;//
                     // Preemptively close the connection to avoid IOExceptions caused by remote server silently tears down an idle TLS/socket connection.
                     // .NET's internal reading loops encounter expected IOExceptions or SocketExceptions on server side closed idle keep-alive sockets.
                     client.DefaultRequestHeaders.ConnectionClose = true;
@@ -453,7 +454,7 @@ public partial class App
         {
             _errortxt.AppendLine(kindTxt + ": " + errorTxt);
             var dt = DateTime.Now;
-            _errortxt.AppendLine($"Occurred at {dt:yyyy/MM/dd HH:mm:ss}");
+            _errortxt.AppendLine(CultureInfo.InvariantCulture, $"Occurred at {dt:yyyy/MM/dd HH:mm:ss}");
             _errortxt.AppendLine();
         }
     }
@@ -469,7 +470,7 @@ public partial class App
 
             var dt = DateTime.Now;
             _errortxt.AppendLine();
-            _errortxt.AppendLine($"Saved at {dt:yyyy/MM/dd HH:mm:ss}");
+            _errortxt.AppendLine(CultureInfo.InvariantCulture, $"Saved at {dt:yyyy/MM/dd HH:mm:ss}");
 
             File.WriteAllText(LogFilePath, _errortxt.ToString());
         }

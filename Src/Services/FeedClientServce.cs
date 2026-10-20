@@ -5,6 +5,7 @@ using FeedDesk.Services.Contracts;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -44,7 +45,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         //Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36");
         Client.DefaultRequestHeaders.UserAgent.ParseAdd("FeedDesk/1.0");
 
-        Client.Timeout = TimeSpan.FromSeconds(10); // 10 sec timeout here
+        Client.Timeout = TimeSpan.FromSeconds(13); // 13 sec timeout here
 
         //Client.DefaultRequestVersion = new Version(2, 0);
         */
@@ -55,7 +56,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
         var res = new HttpClientEntryItemCollectionResultWrapper();
          res.Entries ??= [];
 
-        if (!(entriesUrl.Scheme.Equals("http") || entriesUrl.Scheme.Equals("https")))
+        if (!(entriesUrl.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) || entriesUrl.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)))
         {
             ToDebugWindow("<< Invalid URI scheme:"
                 + Environment.NewLine
@@ -67,9 +68,9 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             return res;
         }
 
-        //using var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 10 sec http timeout.
+        //using var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 13 sec http timeout.
         //using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(timoutCts.Token, token);
-        var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 10 sec http timeout.
+        var timoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(16));// 16 sec cancel timeout here, but also 13 sec http timeout.
         var requestCts = CancellationTokenSource.CreateLinkedTokenSource(token, timoutCts.Token);
         var cancelltoken = requestCts.Token;
 
@@ -208,7 +209,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 cancelltoken.ThrowIfCancellationRequested();
 
                 // RSS 2.0
-                if (xdoc.DocumentElement.LocalName.Equals("rss"))
+                if (xdoc.DocumentElement.LocalName.Equals("rss", StringComparison.OrdinalIgnoreCase))
                 {
                     XmlNamespaceManager NsMgr = new(xdoc.NameTable);
                     NsMgr.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
@@ -227,7 +228,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     {
                         if (feedLinkUri != null)
                             if (!string.IsNullOrEmpty(feedLinkUri.InnerText))
-                                if (feedLinkUri.InnerText.StartsWith("http"))
+                                if (feedLinkUri.InnerText.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                     res.HtmlUri = new Uri(feedLinkUri.InnerText);
                     }
                     catch (Exception e)
@@ -335,7 +336,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     //await GetImages(list);
                 }
                 // RSS 1.0
-                else if (xdoc.DocumentElement.LocalName.Equals("RDF"))
+                else if (xdoc.DocumentElement.LocalName.Equals("RDF", StringComparison.OrdinalIgnoreCase))
                 {
                     XmlNamespaceManager NsMgr = new(xdoc.NameTable);
                     NsMgr.AddNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
@@ -376,7 +377,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         {
                             try
                             {
-                                var date = DateTimeOffset.Parse(s);
+                                var date = DateTimeOffset.Parse(s, CultureInfo.InvariantCulture);
 
                                 res.Updated = date.UtcDateTime;
                             }
@@ -413,10 +414,10 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     //await GetImages(list);
                 }
                 // Atom 0.3 or 1.0
-                else if (xdoc.DocumentElement.LocalName.Equals("feed"))
+                else if (xdoc.DocumentElement.LocalName.Equals("feed", StringComparison.OrdinalIgnoreCase))
                 {
                     // Atom 1.0
-                    if (xdoc.DocumentElement.NamespaceURI.Equals("http://www.w3.org/2005/Atom"))
+                    if (xdoc.DocumentElement.NamespaceURI.Equals("http://www.w3.org/2005/Atom", StringComparison.OrdinalIgnoreCase))
                     {
                         XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
                         atomNsMgr.AddNamespace("atom", "http://www.w3.org/2005/Atom");
@@ -446,14 +447,14 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                                     if (!string.IsNullOrEmpty(hrefAttr))
                                     {
-                                        if (relAttr.Equals("alternate") || relAttr == "")
+                                        if (relAttr.Equals("alternate", StringComparison.OrdinalIgnoreCase) || relAttr == "")
                                         {
                                             if ((typeAttr == "text/html") || typeAttr == "")
                                             {
                                                 try
                                                 {
                                                     //altUri = new Uri(hrefAttr);
-                                                    if (hrefAttr.StartsWith("http"))
+                                                    if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                                     {
                                                         // Absolute uri.
                                                         altUri = new Uri(hrefAttr);
@@ -532,7 +533,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         //await GetImages(list);
                     }
                     // Old Atom 0.3
-                    else if (xdoc.DocumentElement.NamespaceURI.Equals("http://purl.org/atom/ns#"))
+                    else if (xdoc.DocumentElement.NamespaceURI.Equals("http://purl.org/atom/ns#", StringComparison.OrdinalIgnoreCase))
                     {
                         XmlNamespaceManager atomNsMgr = new(xdoc.NameTable);
                         atomNsMgr.AddNamespace("atom", "http://purl.org/atom/ns#");
@@ -561,14 +562,14 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                                     if (!string.IsNullOrEmpty(hrefAttr))
                                     {
-                                        if (relAttr.Equals("alternate") || relAttr == "")
+                                        if (relAttr.Equals("alternate", StringComparison.OrdinalIgnoreCase) || relAttr == "")
                                         {
                                             if ((typeAttr == "text/html") || typeAttr == "")
                                             {
                                                 try
                                                 {
                                                     //altUri = new Uri(hrefAttr);
-                                                    if (hrefAttr.StartsWith("http"))
+                                                    if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                                     {
                                                         // Absolute uri.
                                                         altUri = new Uri(hrefAttr);
@@ -813,7 +814,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 + entriesUrl.AbsoluteUri + " - " + e.Message
                 + Environment.NewLine);
 
-            HttpTimeoutException(res.Error, e.Message + " (Timeout 10 sec)", "Client.GetAsync", "FeedHttpClient.GetEntries");
+            HttpTimeoutException(res.Error, e.Message + " (Timeout 13 sec)", "Client.GetAsync", "FeedHttpClient.GetEntries");
             res.IsError = true;
 
             return res;
@@ -872,7 +873,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 var link = entryLinkUri.InnerText;
                 if (!string.IsNullOrEmpty(link))
                 {
-                    if (link.StartsWith("http"))
+                    if (link.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                     {
                         entItem.AltHtmlUri = new Uri(link);
                     }
@@ -1260,7 +1261,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                 var link = entryLinkUri.InnerText;
                 if (!string.IsNullOrEmpty(link))
                 {
-                    if (link.StartsWith("http"))
+                    if (link.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                     {
                         entItem.AltHtmlUri = new Uri(link);
                     }
@@ -1293,7 +1294,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             {
                 try
                 {
-                    var date = DateTimeOffset.Parse(s);
+                    var date = DateTimeOffset.Parse(s, CultureInfo.InvariantCulture);
                     entItem.Published = date.UtcDateTime;
                 }
                 catch (Exception e)
@@ -1542,7 +1543,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                         try
                                         {
                                             //altUri = new Uri(hrefAttr);
-                                            if (hrefAttr.StartsWith("http"))
+                                            if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 altUri = new Uri(hrefAttr);
                                             }
@@ -1573,7 +1574,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                         try
                                         {
                                             //altUri = new Uri(hrefAttr);
-                                            if (hrefAttr.StartsWith("http"))
+                                            if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 altUri = new Uri(hrefAttr);
                                             }
@@ -1594,7 +1595,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                     {
                                         // I am not happy but let's assume it is html.
                                         //altUri = new Uri(hrefAttr);
-                                        if (hrefAttr.StartsWith("http"))
+                                        if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                         {
                                             altUri = new Uri(hrefAttr);
                                         }
@@ -1845,7 +1846,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                         try
                                         {
                                             //altUri = new Uri(hrefAttr);
-                                            if (hrefAttr.StartsWith("http"))
+                                            if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // Absolute uri.
                                                 altUri = new Uri(hrefAttr);
@@ -1874,7 +1875,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                     {
                                         // let's assume it is html.
                                         //altUri = new Uri(hrefAttr);
-                                        if (hrefAttr.StartsWith("http"))
+                                        if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                         {
                                             // Absolute uri.
                                             altUri = new Uri(hrefAttr);
@@ -1912,7 +1913,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                         try
                                         {
                                             //entItem.ImageUri = new Uri(hrefAttr);
-                                            if (hrefAttr.StartsWith("http"))
+                                            if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // Absolute uri.
                                                 entItem.ImageUri = new Uri(hrefAttr);
@@ -1940,7 +1941,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                     try
                                     {
                                         //entItem.AudioUri = new Uri(hrefAttr);
-                                        if (hrefAttr.StartsWith("http"))
+                                        if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                         {
                                             // Absolute uri.
                                             entItem.AudioUri = new Uri(hrefAttr);
@@ -1976,7 +1977,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                         try
                                         {
                                             //altUri = new Uri(hrefAttr);
-                                            if (hrefAttr.StartsWith("http"))
+                                            if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 // Absolute uri.
                                                 altUri = new Uri(hrefAttr);
@@ -2005,7 +2006,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                                     {
                                         // I am not happy but let's assume it is html.
                                         //altUri = new Uri(hrefAttr);
-                                        if (hrefAttr.StartsWith("http"))
+                                        if (hrefAttr.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                                         {
                                             // Absolute uri.
                                             altUri = new Uri(hrefAttr);
