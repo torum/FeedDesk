@@ -1911,6 +1911,93 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
     }
 
+    private async Task ArchiveSelectedAsync(NodeTree nd, FeedEntryItem entry)
+    {
+        if (_cts.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (nd is not (NodeFeed or NodeFolder))
+        {
+            return;
+        }
+
+        await _dispatcherService.EnqueueAsync(() =>
+        {
+            nd.IsBusy = true;
+            if (nd == SelectedTreeViewItem)
+            {
+                SelectedEntryArchiveCommand.NotifyCanExecuteChanged();
+            }
+        });
+
+        var res = await Task.Run(() => _dataAccessService.UpdateEntryAsArchived(entry.EntryId), _cts.Token);
+        
+        if (_cts.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (res.IsError)
+        {
+            Debug.WriteLine("ArchiveAsync:" + res.Error.ErrText);
+
+            if (_cts.IsCancellationRequested)
+            {
+                return;
+            }
+            await _dispatcherService.EnqueueAsync(() =>
+            {
+                nd.ErrorDatabase = res.Error;
+
+                if (nd == SelectedTreeViewItem)
+                {
+                    ErrorObj = nd.ErrorDatabase;
+                    IsShowFeedError = true;
+                }
+
+                if (nd is NodeFeed feed)
+                {
+                    feed.Status = NodeFeed.DownloadStatus.Error;
+                }
+
+                nd.IsBusy = false;
+                SelectedEntryArchiveCommand.NotifyCanExecuteChanged();
+            });
+
+            return;
+        }
+
+        if (res.AffectedCount > 0)
+        {
+            Debug.WriteLine("ArchiveAsync: AffectedCount=" + res.AffectedCount);
+            await _dispatcherService.EnqueueAsync(async () =>
+            {
+                if (nd is NodeFeed feed)
+                {
+                    feed.EntryNewCount -= 1;
+
+                    if (feed.Parent is NodeFolder parentFolder)
+                    {
+                        await MinusAllParentEntryCount(parentFolder, 1);
+                    }
+                }
+
+                if (nd == SelectedTreeViewItem)
+                {
+                    if (entry.Status == FeedEntryItem.ReadStatus.rsNewVisited)
+                    {
+                        Entries.Remove(entry);
+                    }
+                }
+
+                nd.IsBusy = false;
+                SelectedEntryArchiveCommand.NotifyCanExecuteChanged();
+            });
+        }
+    }
+
     private async Task ResetAllEntryCountAtChildNodes(ObservableCollection<NodeTree> list, bool isReadOnly)
     {
         if (_cts.IsCancellationRequested)
@@ -2865,6 +2952,70 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     #region == Listview commands  ==
 
+    [RelayCommand(CanExecute = nameof(CanSelectedEntryArchive))]
+    private async Task SelectedEntryArchive()
+    {
+        if (SelectedTreeViewItem is null)
+        {
+            return;
+        }
+
+        if (!((SelectedTreeViewItem is NodeFeed) || (SelectedTreeViewItem is NodeFolder)))
+        {
+            return;
+        }
+
+        var nt = SelectedTreeViewItem;
+        var selectedEntry = SelectedListViewItem;
+
+        if (selectedEntry is null || nt is null)
+        {
+            return;
+        }
+
+        await ArchiveSelectedAsync(nt, selectedEntry);
+
+    }
+    private bool CanSelectedEntryArchive()
+    {
+        if (SelectedTreeViewItem is null)
+        {
+            return false;
+        }
+
+        if (!((SelectedTreeViewItem is NodeFeed) || (SelectedTreeViewItem is NodeFolder)))
+        {
+            return false;
+        }
+
+        if (SelectedTreeViewItem.EntryNewCount <= 0)
+        {
+            return false;
+        }
+
+        if (SelectedTreeViewItem.IsBusy)
+        {
+            //return false;
+        }
+
+        if (SelectedTreeViewItem.IsBusyChildrenCount > 0)
+        {
+            return false;
+        }
+
+        if (Entries.Count <= 0)
+        {
+            return false;
+        }
+
+        if (SelectedListViewItem is null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private async Task EntryArchive(bool isReadOnly = false)
     {
         if (SelectedTreeViewItem is null)
@@ -2886,10 +3037,10 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"EntryArchiveAll: {ex.Message}");
+            Debug.WriteLine($"EntryArchive: {ex.Message}");
             _dispatcherService.TryEnqueue(() =>
             {
-                (Application.Current as App)?.AppendErrorLog("EntryArchiveAll", ex.Message);
+                (Application.Current as App)?.AppendErrorLog("EntryArchive", ex.Message);
             });
         }
     }

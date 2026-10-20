@@ -462,4 +462,7 @@
   <data name="ShellMenuBarItem_Feed_SlectedFeed_ArchiveAll.Text" xml:space="preserve">
     <value>Archive All Entries</value>
   </data>
+  <data name="ShellMenuBarItem_Entry_SlectedEntry_Archive.Text" xml:space="preserve">
+    <value>Archive</value>
+  </data>
 </root>

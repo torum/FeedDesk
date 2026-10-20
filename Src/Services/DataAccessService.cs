@@ -8,6 +8,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Threading;
 using static FeedDesk.Models.FeedEntryItem;
+using static FeedDesk.Services.FeedLink;
 
 namespace FeedDesk.Services;
 
@@ -1891,6 +1892,104 @@ internal sealed class DataAccessService : IDataAccessService
         }
 
         //Debug.WriteLine(string.Format("{0} Entries from {1} Updated as read in the DB", c.ToString(), feedId));
+
+        return res;
+    }
+
+    public SqliteDataAccessResultWrapper UpdateEntryAsArchived(string? entryId)
+    {
+        var res = new SqliteDataAccessResultWrapper();
+        if (string.IsNullOrEmpty(entryId))
+        {
+            res.IsError = true;
+            // TODO:
+            return res;
+        }
+
+        _readerWriterLock.EnterWriteLock();
+        try
+        {
+            using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = connection.BeginTransaction();
+
+            try
+            {
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "PRAGMA journal_mode = PERSIST;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = $"""
+                    UPDATE entries
+                    SET archived = $archived
+                    WHERE entry_id = $entryId AND archived = $unarchived;
+                    """;
+                cmd.Parameters.AddWithValue("$archived", bool.TrueString);
+                cmd.Parameters.AddWithValue("$unarchived", bool.FalseString);
+                cmd.Parameters.AddWithValue("$entryId", entryId);
+
+                res.AffectedCount = cmd.ExecuteNonQuery();
+
+                cmd.Transaction.Commit();
+            }
+            catch (Exception e)
+            {
+                cmd.Transaction.Rollback();
+
+                res.IsError = true;
+                res.Error.ErrType = ErrorObject.ErrTypes.DB;
+                res.Error.ErrCode = "";
+                res.Error.ErrText = e.Message;
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrDatetime = DateTime.Now;
+                res.Error.ErrPlace = "connection.Open(),Transaction.Commit";
+                res.Error.ErrPlaceParent = "DataAccess::UpdateEntryAsArchived";
+
+                return res;
+            }
+        }
+        catch (System.InvalidOperationException ex)
+        {
+            res.IsError = true;
+            res.Error.ErrType = ErrorObject.ErrTypes.DB;
+            res.Error.ErrCode = "";
+            res.Error.ErrText = ex.Message;
+            res.Error.ErrDescription = "InvalidOperationException";
+            res.Error.ErrDatetime = DateTime.Now;
+            res.Error.ErrPlace = "connection.Open(),BeginTransaction()";
+            res.Error.ErrPlaceParent = "DataAccess::UpdateEntryAsArchived";
+
+            return res;
+        }
+        catch (Exception e)
+        {
+            res.IsError = true;
+            res.Error.ErrType = ErrorObject.ErrTypes.DB;
+            res.Error.ErrCode = "";
+
+            if (e.InnerException != null)
+            {
+                res.Error.ErrDescription = "InnerException";
+                res.Error.ErrText = e.Message + " " + e.InnerException.Message;
+            }
+            else
+            {
+                res.Error.ErrDescription = "Exception";
+                res.Error.ErrText = e.Message;
+            }
+            res.Error.ErrDatetime = DateTime.Now;
+            res.Error.ErrPlace = "connection.Open(),BeginTransaction()";
+            res.Error.ErrPlaceParent = "DataAccess::UpdateEntryAsArchived";
+
+            return res;
+        }
+        finally
+        {
+            _readerWriterLock.ExitWriteLock();
+        }
+
 
         return res;
     }

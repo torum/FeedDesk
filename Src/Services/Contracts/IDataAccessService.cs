@@ -27,6 +27,8 @@ public interface IDataAccessService
 
     SqliteDataAccessResultWrapper UpdateAllEntriesAsArchived(List<string> feedIds, bool isReadOnly = false);
 
+    SqliteDataAccessResultWrapper UpdateEntryAsArchived(string? entryId);
+
     SqliteDataAccessResultWrapper UpdateEntryReadStatus(string? entryId, ReadStatus readStatus);
 
     SqliteDataAccessResultWrapper DeleteEntriesByFeedIds(List<string> feedIds);
