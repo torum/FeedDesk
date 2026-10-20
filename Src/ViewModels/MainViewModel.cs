@@ -338,6 +338,13 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     field.ContentBaseUri
                 );
             }
+            else
+            {
+                HtmlSource = new HtmlWithBaseUri(
+                    string.Empty,
+                    field.ContentBaseUri
+                );
+            }
 
             //Debug.WriteLine("SelectedListViewItem AbsBaseUri: " + field.ContentBaseUri?.AbsoluteUri);
 
