@@ -1933,7 +1933,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         });
 
         var res = await Task.Run(() => _dataAccessService.UpdateEntryAsArchived(entry.EntryId), _cts.Token);
-        
+
         if (_cts.IsCancellationRequested)
         {
             return;
@@ -1969,33 +1969,47 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             return;
         }
 
-        if (res.AffectedCount > 0)
+        if (res.AffectedCount <= 0)
         {
-            Debug.WriteLine("ArchiveAsync: AffectedCount=" + res.AffectedCount);
-            await _dispatcherService.EnqueueAsync(async () =>
-            {
-                if (nd is NodeFeed feed)
-                {
-                    feed.EntryNewCount -= 1;
-
-                    if (feed.Parent is NodeFolder parentFolder)
-                    {
-                        await MinusAllParentEntryCount(parentFolder, 1);
-                    }
-                }
-
-                if (nd == SelectedTreeViewItem)
-                {
-                    if (entry.Status == FeedEntryItem.ReadStatus.rsNewVisited)
-                    {
-                        Entries.Remove(entry);
-                    }
-                }
-
-                nd.IsBusy = false;
-                SelectedEntryArchiveCommand.NotifyCanExecuteChanged();
-            });
+            return;
         }
+
+        //Debug.WriteLine("ArchiveAsync: AffectedCount=" + res.AffectedCount);
+        await _dispatcherService.EnqueueAsync(async () =>
+        {
+            if (nd is NodeFeed feed)
+            {
+                feed.EntryNewCount -= 1;
+
+                if (feed.Parent is NodeFolder parentFolder)
+                {
+                    await MinusAllParentEntryCount(parentFolder, 1);
+                }
+            }
+            else if (nd is NodeFolder folder)
+            {
+                folder.EntryNewCount -= 1;
+
+                if (folder.Parent is NodeFolder parentFolder)
+                {
+                    await MinusAllParentEntryCount(parentFolder, 1);
+
+                }
+
+                await ResetAllEntryCountAtChildNodes(folder.Children, true);
+            }
+
+            if (nd == SelectedTreeViewItem)
+            {
+                if (entry.Status == FeedEntryItem.ReadStatus.rsNewVisited)
+                {
+                    Entries.Remove(entry);
+                }
+            }
+
+            nd.IsBusy = false;
+            SelectedEntryArchiveCommand.NotifyCanExecuteChanged();
+        });
     }
 
     private async Task ResetAllEntryCountAtChildNodes(ObservableCollection<NodeTree> list, bool isReadOnly)

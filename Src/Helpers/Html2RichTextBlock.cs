@@ -490,7 +490,7 @@ public class HtmlProperties : DependencyObject
                 {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                     {
-                        Debug.WriteLine(absoluteUri.ToString());
+                        //Debug.WriteLine(absoluteUri.ToString());
                         imageUri = absoluteUri;
                     }
                     else
@@ -587,7 +587,7 @@ public class HtmlProperties : DependencyObject
                 {
                     if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                     {
-                        Debug.WriteLine(absoluteUri.ToString());
+                        //Debug.WriteLine(absoluteUri.ToString());
                         imageUri = absoluteUri;
                     }
                     else
@@ -827,7 +827,7 @@ public class HtmlProperties : DependencyObject
             {
                 if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
                 {
-                    Debug.WriteLine(absoluteUri.ToString());
+                    //Debug.WriteLine(absoluteUri.ToString());
                     srcUri = absoluteUri;
                 }
                 else
