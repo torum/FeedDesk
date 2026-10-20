@@ -38,9 +38,9 @@ public sealed partial class MainWindow : Window
         _configurationService = configurationService;
         _vm = App.GetService<MainViewModel>();
 
-        LoadSettings();
-
         InitializeComponent();
+
+        LoadSettings();
 
         this.Title = "AppDisplayName".GetLocalized();
         this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Icons\\FeedDesk3.ico"));

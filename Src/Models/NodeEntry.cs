@@ -106,19 +106,16 @@ public abstract class EntryItem : Node
         }
     }
 
-    // TODO:
     public Uri? ContentBaseUri
     {
-        get; set;
+        get; set
+        {
+            if (field == value)
+                return;
+            field = value;
+            OnPropertyChanged();
+        }
     }
-
-    /*
-    // TODO:
-    public HtmlWithBaseUri? ContentHtmlWithBaseUri
-    {
-        get; set; 
-    }
-    */
 
     // UTC
     public DateTime Published

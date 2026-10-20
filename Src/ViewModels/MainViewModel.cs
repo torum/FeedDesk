@@ -321,6 +321,25 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
             IsCommentPageLinkExists = field.CommentUri != null;
 
+            if (IsContentHtml)
+            {
+                //Debug.WriteLine("SelectedListViewItem.Content: " + IsContentHtml);
+                HtmlSource = new HtmlWithBaseUri(
+                    field.Content,
+                    field.ContentBaseUri
+                );
+            }
+            else if (IsSummaryExists)
+            {
+                //Debug.WriteLine("SelectedListViewItem.Summary: " + IsSummaryExists);
+                HtmlSource = new HtmlWithBaseUri(
+                    field.Summary,
+                    field.ContentBaseUri
+                );
+            }
+
+            Debug.WriteLine("SelectedListViewItem AbsBaseUri: " + field.ContentBaseUri?.AbsoluteUri);
+
             if ((field.Status != FeedEntryItem.ReadStatus.rsNewVisited) && (field.Status != FeedEntryItem.ReadStatus.rsNormalVisited))
             {
                 //Task.Run(() => UpdateEntryStatusAsReadAsync(SelectedTreeViewItem!, _selectedListViewItem));
@@ -336,6 +355,9 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             }
         }
     } = null;
+
+    [ObservableProperty]
+    public partial HtmlWithBaseUri? HtmlSource { get; set; }
 
     [ObservableProperty]
     public partial bool IsSummaryExists { get; set; }

@@ -21,11 +21,23 @@ using Image = Microsoft.UI.Xaml.Controls.Image;
 
 namespace FeedDesk.Helpers;
 
+public record HtmlWithBaseUri(string Html, Uri? BaseUri);
+
 public class HtmlProperties : DependencyObject
 {
-    // TODO:
-    //public record HtmlWithBaseUri(string html, Uri baseUri);
+    /*
+    public static readonly DependencyProperty BaseUrlStringProperty = DependencyProperty.RegisterAttached(
+        name: "BaseUrlString",
+        propertyType: typeof(string),
+        ownerType: typeof(HtmlProperties),
+        defaultMetadata: new PropertyMetadata(null, OnBaseUrlChanged));
 
+    public static void SetBaseUrlString(DependencyObject obj, string? value) => obj.SetValue(BaseUrlStringProperty, value);
+
+    public static string? GetBaseUrlString(DependencyObject obj) => (string?)obj.GetValue(BaseUrlStringProperty);
+    */
+
+    /*
     public static readonly DependencyProperty HtmlProperty = DependencyProperty.RegisterAttached(
              "Html",
             typeof(string),
@@ -35,29 +47,18 @@ public class HtmlProperties : DependencyObject
     public static void SetHtml(DependencyObject obj, string value) => obj.SetValue(HtmlProperty, value);
 
     public static string GetHtml(DependencyObject obj) => (string)obj.GetValue(HtmlProperty);
-
-    /*
-    public static Func<Span>? H1SpanFactory
-    {
-        get; set;
-    }
-    public static Func<Span>? H2SpanFactory
-    {
-        get; set;
-    }
-    public static Func<Span>? H3SpanFactory
-    {
-        get; set;
-    }
     */
 
-    public static Action<object, TappedRoutedEventArgs>? OnImageTapped
-    {
-        get; set;
-    }
+    public static readonly DependencyProperty SourceProperty = DependencyProperty.RegisterAttached(
+        name: "Source",
+        propertyType: typeof(HtmlWithBaseUri),
+        ownerType: typeof(HtmlProperties),
+        defaultMetadata: new PropertyMetadata(null, HtmlChanged));
 
-    // TODO:
-    public static Uri? BaseUri
+    public static void SetSource(DependencyObject obj, HtmlWithBaseUri? value) => obj.SetValue(SourceProperty, value);
+    public static HtmlWithBaseUri? GetSource(DependencyObject obj) => (HtmlWithBaseUri?)obj.GetValue(SourceProperty);
+
+    public static Action<object, TappedRoutedEventArgs>? OnImageTapped
     {
         get; set;
     }
@@ -83,20 +84,40 @@ public class HtmlProperties : DependencyObject
     [DynamicWindowsRuntimeCast(typeof(RichTextBlock))]
     private static void HtmlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
+        if (d is not RichTextBlock richText || e.NewValue is not HtmlWithBaseUri sourceData)
+        {
+            return;
+        }
+        /*
         var richText = d as RichTextBlock;
         if (richText == null)
             return;
+        */
 
         richText.Blocks.Clear();
+
+        if (string.IsNullOrEmpty(sourceData.Html))
+        {
+            return;
+        }
+
+        if (sourceData.BaseUri is null)
+        {
+            Debug.WriteLine("HtmlChanged: BaseUri is null");
+        }
+        else
+        {
+            Debug.WriteLine("HtmlChanged: BaseUri is " + sourceData.BaseUri.ToString());
+        }
 
         _currentObject = richText;
 
         try
         {
-            if (e.NewValue is string xhtml)
+            if (sourceData.Html is string xhtml)
             {
                 //Generate blocks
-                var blocks = GenerateBlocksForHtml(xhtml);
+                var blocks = GenerateBlocksForHtml(xhtml, sourceData.BaseUri);
                 _currentObject = null;
 
                 //Add the blocks to the RichTextBlock
@@ -112,7 +133,7 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static List<Block> GenerateBlocksForHtml(string xhtml)
+    private static List<Block> GenerateBlocksForHtml(string xhtml, Uri? baseUri)
     {
         //Debug.WriteLine(xhtml);
 
@@ -132,7 +153,7 @@ public class HtmlProperties : DependencyObject
             {
                 foreach (var node in doc.DocumentNode.ChildNodes)
                 {
-                    var block = GenerateBlockForTopNode(node);
+                    var block = GenerateBlockForTopNode(node, baseUri);
                     if (block != null)
                     {
                         blocks.Add(block);
@@ -172,16 +193,16 @@ public class HtmlProperties : DependencyObject
         return WebUtility.HtmlDecode(input);
     }
 
-    private static Block? GenerateBlockForTopNode(HtmlNode node)
+    private static Block? GenerateBlockForTopNode(HtmlNode node, Uri? baseUri)
     {
         if ((node.Name.ToLower() == "p") || (node.Name.ToLower() == "div") || (node.Name.ToLower() == "span"))
         {
-            var paragraph = GenerateParagraph(node);
+            var paragraph = GenerateParagraph(node, baseUri);
             return paragraph;
         }
         else if (node.Name.ToLower() == "blockquote")
         {
-            var paragraph = GenerateParagraph(node);
+            var paragraph = GenerateParagraph(node, baseUri);
             paragraph.Margin = BlockquoteMargin;
             paragraph.FontStyle = Windows.UI.Text.FontStyle.Italic;
             return paragraph;
@@ -232,8 +253,8 @@ public class HtmlProperties : DependencyObject
             paragraph.Margin = ParagraphMargin;
             //var link = GenerateHyperLink(node);
             var link = node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLower() == "img")
-                        ? GenerateImageWithHyperLink(node)
-                        : GenerateHyperLink(node);
+                        ? GenerateImageWithHyperLink(node, baseUri)
+                        : GenerateHyperLink(node, baseUri);
             if (link is not null)
             {
                 paragraph.Inlines.Add(link);
@@ -248,7 +269,7 @@ public class HtmlProperties : DependencyObject
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
-            var img = GenerateImage(node);
+            var img = GenerateImage(node, baseUri);
             if (img is not null)
             {
                 paragraph.Inlines.Add(img);
@@ -272,7 +293,7 @@ public class HtmlProperties : DependencyObject
         {
             var paragraph = new Paragraph();
             paragraph.Margin = ParagraphMargin;
-            var bold = GenerateBold(node);
+            var bold = GenerateBold(node, baseUri);
             if (bold is not null)
             {
                 paragraph.Inlines.Add(bold);
@@ -320,26 +341,26 @@ public class HtmlProperties : DependencyObject
         else
         {
             //Debug.WriteLine("else: " + node.Name);
-            var paragraph = GenerateParagraph(node);
+            var paragraph = GenerateParagraph(node, baseUri);
             return paragraph;
         }
     }
 
-    private static Block GenerateParagraph(HtmlNode node)
+    private static Block GenerateParagraph(HtmlNode node, Uri? baseUri)
     {
         var paragraph = new Paragraph();
         paragraph.Margin = ParagraphMargin;
-        AddChildren(paragraph, node);
+        AddChildren(paragraph, node, baseUri);
         return paragraph;
     }
 
-    private static void AddChildren(Paragraph p, HtmlNode node)
+    private static void AddChildren(Paragraph p, HtmlNode node, Uri? baseUri)
     {
         var added = false;
 
         foreach (var child in node.ChildNodes)
         {
-            var i = GenerateInlineForNode(child);
+            var i = GenerateInlineForNode(child, baseUri);
             if (i != null)
             {
                 p.Inlines.Add(i);
@@ -353,13 +374,13 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static void AddChildren(Span s, HtmlNode node)
+    private static void AddChildren(Span s, HtmlNode node, Uri? baseUri)
     {
         var added = false;
 
         foreach (var child in node.ChildNodes)
         {
-            var i = GenerateInlineForNode(child);
+            var i = GenerateInlineForNode(child, baseUri);
             if (i != null)
             {
                 s.Inlines.Add(i);
@@ -373,37 +394,37 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static Inline? GenerateInlineForNode(HtmlNode node)
+    private static Inline? GenerateInlineForNode(HtmlNode node, Uri? baseUri)
     {
         try
         {
             switch (node.Name.ToLower())
             {
                 case "span":
-                    return GenerateSpan(node);
+                    return GenerateSpan(node, baseUri);
                 case "div":
-                    return GenerateSpan(node);
+                    return GenerateSpan(node, baseUri);
                 case "p":
-                    return GenerateInnerParagraph(node);
+                    return GenerateInnerParagraph(node, baseUri);
                 case "img":
-                    return GenerateImage(node);
+                    return GenerateImage(node, baseUri);
                 case "a":
                     return node.ChildNodes.Count >= 1 && (node.FirstChild?.Name.ToLower() == "img")
-                        ? GenerateImageWithHyperLink(node)
-                        : GenerateHyperLink(node);
+                        ? GenerateImageWithHyperLink(node, baseUri)
+                        : GenerateHyperLink(node, baseUri);
                 case "ul":
-                    return GenerateUl(node);
+                    return GenerateUl(node, baseUri);
                 // TODO:
                 case "li":
-                    return GenerateLi(node);
+                    return GenerateLi(node, baseUri);
                 case "b":
                 case "strong":
-                    return GenerateBold(node);
+                    return GenerateBold(node, baseUri);
                 case "i":
                 case "em":
-                    return GenerateItalic(node);
+                    return GenerateItalic(node, baseUri);
                 case "u":
-                    return GenerateUnderline(node);
+                    return GenerateUnderline(node, baseUri);
                 case "br":
                     return new LineBreak();
                 case "script":
@@ -414,7 +435,7 @@ public class HtmlProperties : DependencyObject
                     return null;
                 // TODO:
                 case "blockquote":
-                    return GenerateInnerBlockquote(node);
+                    return GenerateInnerBlockquote(node, baseUri);
                 // TODO:
                 case "pre":
                 case "code":
@@ -436,7 +457,7 @@ public class HtmlProperties : DependencyObject
                     return GenerateH4(node);
                 default:
                     //return null;
-                    return GenerateSpanWNewLine(node);
+                    return GenerateSpanWNewLine(node, baseUri);
             }
         }
         catch (Exception e)
@@ -447,7 +468,7 @@ public class HtmlProperties : DependencyObject
         return null;
     }
 
-    private static Inline GenerateImage(HtmlNode node)
+    private static Inline GenerateImage(HtmlNode node, Uri? baseUri)
     {
         var span = new Span();//
         try
@@ -510,6 +531,17 @@ public class HtmlProperties : DependencyObject
                 {
                     // TODO: 
                     span.Inlines.Add(new Run { Text = $" Image (relative URL): ({sourceUri}) " });
+
+                    //Uri absoluteUri = new Uri(baseUri, sourceUri);
+                    if (Uri.TryCreate(baseUri, sourceUri ?? string.Empty, out Uri? absoluteUri))
+                    {
+                        Debug.WriteLine(absoluteUri.ToString());
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Could not combine URIs.");
+                    }
+
                 }
             }
         }
@@ -521,7 +553,7 @@ public class HtmlProperties : DependencyObject
         return span;
     }
 
-    private static Inline? GenerateImageWithHyperLink(HtmlNode node)
+    private static Inline? GenerateImageWithHyperLink(HtmlNode node, Uri? baseUri)
     {
         // TODO:
 
@@ -670,7 +702,7 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static Inline? GenerateHyperLink(HtmlNode node)
+    private static Inline? GenerateHyperLink(HtmlNode node, Uri? baseUri)
     {
         if (node.Attributes == null)
         {
@@ -708,7 +740,16 @@ public class HtmlProperties : DependencyObject
                     else
                     {
                         // TODO: handle baseUrl
-                        Debug.WriteLine("GenerateHyperLink Relative Uri!!");
+                        Debug.WriteLine($"GenerateHyperLink Relative Uri!! baseUri={baseUri}, href={href}");
+                        //Uri absoluteUri = new Uri(baseUri, sourceUri);
+                        if (Uri.TryCreate(baseUri, href ?? string.Empty, out Uri? absoluteUri))
+                        {
+                            Debug.WriteLine(absoluteUri.ToString());
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Could not combine URIs: baseUri={baseUri}, href={href}");
+                        }
 
                         var span = new Span();
                         span.Inlines.Add(new Run { Text = $" Url (relative): [{CleanText(node?.InnerText ?? "")}]({href}) " });
@@ -804,36 +845,36 @@ public class HtmlProperties : DependencyObject
         }
     }
 
-    private static Inline GenerateBold(HtmlNode node)
+    private static Inline GenerateBold(HtmlNode node, Uri? baseUri)
     {
         var bold = new Bold();
-        AddChildren(bold, node);
+        AddChildren(bold, node, baseUri);
         return bold;
     }
 
-    private static Inline GenerateUnderline(HtmlNode node)
+    private static Inline GenerateUnderline(HtmlNode node, Uri? baseUri)
     {
         var underline = new Underline();
-        AddChildren(underline, node);
+        AddChildren(underline, node, baseUri);
         return underline;
     }
 
-    private static Inline GenerateItalic(HtmlNode node)
+    private static Inline GenerateItalic(HtmlNode node, Uri? baseUri)
     {
         var italic = new Italic();
-        AddChildren(italic, node);
+        AddChildren(italic, node, baseUri);
         return italic;
     }
 
-    private static Inline GenerateUl(HtmlNode node)
+    private static Inline GenerateUl(HtmlNode node, Uri? baseUri)
     {
         var span = new Span();
         span.Inlines.Add(new LineBreak());
-        AddChildren(span, node);
+        AddChildren(span, node, baseUri);
         return span;
     }
 
-    private static Inline GenerateLi(HtmlNode node)
+    private static Inline GenerateLi(HtmlNode node, Uri? baseUri)
     {
         var span = new Span();
         var inlineUiContainer = new InlineUIContainer();
@@ -851,35 +892,35 @@ public class HtmlProperties : DependencyObject
         span.Inlines.Add(new Run { Text = "\t" });
 
         span.Inlines.Add(inlineUiContainer);
-        AddChildren(span, node);
+        AddChildren(span, node, baseUri);
         //span.Inlines.Add(new LineBreak());//?
         return span;
     }
 
-    private static Inline GenerateInnerParagraph(HtmlNode node)
+    private static Inline GenerateInnerParagraph(HtmlNode node, Uri? baseUri)
     {
         var span = new Span();
         span.Inlines.Add(new LineBreak());
-        AddChildren(span, node);
+        AddChildren(span, node, baseUri);
         span.Inlines.Add(new LineBreak());
         return span;
     }
 
-    private static Inline GenerateInnerBlockquote(HtmlNode node)
+    private static Inline GenerateInnerBlockquote(HtmlNode node, Uri? baseUri)
     {
         var italic = new Italic();
         italic.Inlines.Add(new LineBreak());
         italic.Inlines.Add(new LineBreak());
-        AddChildren(italic, node);
+        AddChildren(italic, node, baseUri);
         italic.Inlines.Add(new LineBreak());
         italic.Inlines.Add(new LineBreak());
         return italic;
     }
 
-    private static Inline GenerateSpan(HtmlNode node)
+    private static Inline GenerateSpan(HtmlNode node, Uri? baseUri)
     {
         var span = new Span();
-        AddChildren(span, node);
+        AddChildren(span, node, baseUri);
         return span;
     }
 
@@ -898,10 +939,10 @@ public class HtmlProperties : DependencyObject
         */
     }
 
-    private static Inline GenerateSpanWNewLine(HtmlNode node)
+    private static Inline GenerateSpanWNewLine(HtmlNode node, Uri? baseUri)
     {
         var span = new Span();
-        AddChildren(span, node);
+        AddChildren(span, node, baseUri);
         if (span.Inlines.Count > 0)
             span.Inlines.Add(new LineBreak());
         return span;

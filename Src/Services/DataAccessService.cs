@@ -83,7 +83,7 @@ internal sealed class DataAccessService : IDataAccessService
                     "summary TEXT," +
                     "content TEXT," +
                     "content_type TEXT," +
-                    //"content_baseurl TEXT," +
+                    "content_baseuri TEXT," +
                     "source TEXT," +
                     "source_url TEXT," +
                     //"image_id TEXT," +
@@ -95,6 +95,10 @@ internal sealed class DataAccessService : IDataAccessService
                     "CONSTRAINT fk_feeds FOREIGN KEY (feed_id) REFERENCES feeds(feed_id) ON DELETE CASCADE" +
                     ")";
                 tableCmd.ExecuteNonQuery();
+
+
+                AddColumnsIfNotExist(connection);
+
                 /*
                 tableCmd.CommandText = "CREATE TABLE IF NOT EXISTS images (" +
                     "image_id TEXT NOT NULL PRIMARY KEY," +
@@ -107,7 +111,7 @@ internal sealed class DataAccessService : IDataAccessService
                 tableCmd.ExecuteNonQuery();
                 */
 
-                //tableCmd.CommandText = "ALTER TABLE entries ADD COLUMN category TEXT;";
+                //tableCmd.CommandText = "ALTER TABLE entries ADD COLUMN content_baseuri TEXT;";
                 //tableCmd.ExecuteNonQuery();
 
                 //
@@ -198,6 +202,43 @@ internal sealed class DataAccessService : IDataAccessService
         }
 
         return res;
+    }
+
+    private static void AddColumnsIfNotExist(SqliteConnection conn)
+    {
+        var cmd = conn.CreateCommand();
+        bool exists = false;
+        cmd.CommandText = "PRAGMA table_info(entries);";
+        
+        using (var reader = cmd.ExecuteReader())
+        {
+            // content_baseuri
+            while (reader.Read())
+            {
+                if (reader.GetString(1) == "content_baseuri")
+                {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists)
+            {
+                var altcmd = conn.CreateCommand();
+
+                try
+                {
+                    altcmd.CommandText = "ALTER TABLE entries ADD COLUMN content_baseuri TEXT;";
+                    altcmd.ExecuteNonQuery();
+                }
+                catch (SqliteException ex)
+                {
+                    _ = ex;
+                    Debug.WriteLine("SqliteException on ADD COLUMN content_baseuri @InitializeDatabase: " + ex);
+                }
+            }
+
+            reader.Close();
+        }
     }
 
     public SqliteDataAccessResultWrapper InsertFeed(string feedId, Uri feedUri, string feedName, string feedTitle, string feedDescription, DateTime updated, Uri? htmlUri)
@@ -678,7 +719,7 @@ internal sealed class DataAccessService : IDataAccessService
 
                     // Test Upsert...> no way to know how many are newly inserted...
                     //var sqlInsert = "INSERT INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived) ON CONFLICT(entry_id) DO UPDATE SET title=excluded.title, updated=excluded.updated, summary=excluded.summary, content=excluded.content, content_type=excluded.content_type";
-                    var sqlInsert = "INSERT OR IGNORE INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived)";
+                    var sqlInsert = "INSERT OR IGNORE INTO entries (entry_id, feed_id, url, title, published, updated, author, category, summary, content, content_type, image_url, audio_url, source, source_url, comment_url, status, archived, content_baseuri) VALUES (@EntryId, @FeedId, @AltHtmlUri, @Title, @Published, @Updated, @Author, @Category, @Summary, @Content, @ContentType, @ImageUri, @AudioUri, @Source, @SourceUri, @CommentUri, @Status, @IsArchived, @ContentBaseUri)";
 
                     cmd.CommandText = sqlInsert;
 
@@ -771,6 +812,15 @@ internal sealed class DataAccessService : IDataAccessService
                     }
 
                     cmd.Parameters.AddWithValue("@ContentType", entry.ContentType.ToString());
+
+                    if (entry.ContentBaseUri != null)
+                    {
+                        cmd.Parameters.AddWithValue("@ContentBaseUri", entry.ContentBaseUri.AbsoluteUri);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@ContentBaseUri", "");
+                    }
 
                     /*
                     if (entry.IsImageDownloaded)
@@ -1050,7 +1100,8 @@ internal sealed class DataAccessService : IDataAccessService
                        entries.audio_url AS entryAudioUri, entries.source AS entrySource,
                        entries.source_url AS entrySourceUri, entries.author AS entryAuthor,
                        entries.category AS entryCategory, entries.comment_url AS entryCommentUri,
-                       entries.archived AS entryArchived, entries.status AS entryStatus
+                       entries.archived AS entryArchived, entries.status AS entryStatus,
+                       entries.content_baseuri AS entryContentBaseUri
                 FROM entries INNER JOIN feeds USING (feed_id)
                 WHERE feed_id = $feedId
                 """;
@@ -1171,6 +1222,12 @@ internal sealed class DataAccessService : IDataAccessService
                 if (!string.IsNullOrEmpty(cu))
                 {
                     entry.CommentUri = new Uri(cu);
+                }
+
+                var cbu = Convert.ToString(reader["entryContentBaseUri"]);
+                if (!string.IsNullOrEmpty(cbu))
+                {
+                    entry.ContentBaseUri = new Uri(cbu);
                 }
 
                 /*
@@ -1381,7 +1438,8 @@ internal sealed class DataAccessService : IDataAccessService
                        entries.source AS entrySource, entries.source_url AS entrySourceUri,
                        entries.author AS entryAuthor, entries.category AS entryCategory,
                        entries.comment_url AS entryCommentUri, entries.archived AS entryArchived,
-                       entries.status AS entryStatus
+                       entries.status AS entryStatus,
+                       entries.content_baseuri AS entryContentBaseUri
                 FROM entries INNER JOIN feeds USING (feed_id)
                 WHERE feed_id IN ({placeholders})
                 """;
@@ -1485,6 +1543,12 @@ internal sealed class DataAccessService : IDataAccessService
                 if (!string.IsNullOrEmpty(cu))
                 {
                     entry.CommentUri = new Uri(cu);
+                }
+
+                var cbu = Convert.ToString(reader["entryContentBaseUri"]);
+                if (!string.IsNullOrEmpty(cbu))
+                {
+                    entry.ContentBaseUri = new Uri(cbu);
                 }
                 /*
 

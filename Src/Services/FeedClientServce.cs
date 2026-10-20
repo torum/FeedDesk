@@ -201,6 +201,10 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                     return res;
                 }
 
+                string baseStr = entriesUrl.GetLeftPart(UriPartial.Path);
+                // Ensure it ends with exactly one trailing slash
+                Uri baseUri = new Uri(baseStr.EndsWith('/') ? baseStr : baseStr + "/");
+
                 cancelltoken.ThrowIfCancellationRequested();
 
                 // RSS 2.0
@@ -321,7 +325,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
                         FeedEntryItem ent = new("", feedId, this);
 
-                        FillEntryItemFromXmlRss(ent, l, NsMgr, entriesUrl);
+                        FillEntryItemFromXmlRss(ent, l, NsMgr, baseUri);
 
                         if (!string.IsNullOrEmpty(ent.EntryId))
                             res.Entries.Add(ent);
@@ -399,7 +403,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                         i++;
                         FeedEntryItem ent = new("", feedId, this);
 
-                        FillEntryItemFromXmlRdf(ent, l, NsMgr, entriesUrl);
+                        FillEntryItemFromXmlRdf(ent, l, NsMgr, baseUri);
 
                         if (!string.IsNullOrEmpty(ent.EntryId))
                             res.Entries.Add(ent);
@@ -518,7 +522,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             FeedEntryItem ent = new("", feedId, this);
                             //ent.Status = EditEntryItem.EditStatus.esNormal;
 
-                            FillEntryItemFromXmlAtom10(ent, l, atomNsMgr, entriesUrl);
+                            FillEntryItemFromXmlAtom10(ent, l, atomNsMgr, baseUri);
 
                             if (!string.IsNullOrEmpty(ent.EntryId))
                                 res.Entries.Add(ent);
@@ -632,7 +636,7 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
                             FeedEntryItem ent = new("", feedId, this);
                             //ent.Status = EditEntryItem.EditStatus.esNormal;
 
-                            FillEntryItemFromXmlAtom03(ent, l, atomNsMgr, entriesUrl);
+                            FillEntryItemFromXmlAtom03(ent, l, atomNsMgr, baseUri);
 
                             if (!string.IsNullOrEmpty(ent.EntryId))
                                 res.Entries.Add(ent);
@@ -1210,7 +1214,21 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             }
         }
 
+        /*
         if ((entItem.ContentType == EntryItem.ContentTypes.textHtml) || (entItem.ContentType == EntryItem.ContentTypes.unknown) || entItem.ContentType == EntryItem.ContentTypes.markdown)
+        {
+            entItem.ContentBaseUri = baseUri;
+        }
+        */
+
+        if (entItem.AltHtmlUri is not null)
+        {
+            //entItem.AltHtmlUriBaseUri = new Uri(entItem.AltHtmlUri.GetLeftPart(UriPartial.Authority));
+            string baseStr = entItem.AltHtmlUri.GetLeftPart(UriPartial.Path);
+            // Ensure it ends with exactly one trailing slash
+            entItem.ContentBaseUri = new Uri(baseStr.EndsWith('/') ? baseStr : baseStr + "/");
+        }
+        else
         {
             entItem.ContentBaseUri = baseUri;
         }
@@ -1432,7 +1450,20 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             }
         }
 
+        /*
         if ((entItem.ContentType == EntryItem.ContentTypes.textHtml) || (entItem.ContentType == EntryItem.ContentTypes.unknown) || entItem.ContentType == EntryItem.ContentTypes.markdown)
+        {
+            entItem.ContentBaseUri = baseUri;
+        }
+        */
+        if (entItem.AltHtmlUri is not null)
+        {
+            //entItem.AltHtmlUriBaseUri = new Uri(entItem.AltHtmlUri.GetLeftPart(UriPartial.Authority));
+            string baseStr = entItem.AltHtmlUri.GetLeftPart(UriPartial.Path);
+            // Ensure it ends with exactly one trailing slash
+            entItem.ContentBaseUri = new Uri(baseStr.EndsWith('/') ? baseStr : baseStr + "/");
+        }
+        else
         {
             entItem.ContentBaseUri = baseUri;
         }
@@ -1669,10 +1700,22 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
             }
 
             entItem.Content = cont.InnerText;
-
+            /*
             if ((entItem.ContentType == EntryItem.ContentTypes.textHtml) || (entItem.ContentType == EntryItem.ContentTypes.unknown) || entItem.ContentType == EntryItem.ContentTypes.markdown)
             {
                 // TODO: if content element has a baseuri attribute, use it instead.
+                entItem.ContentBaseUri = baseUri;
+            }
+            */
+            if (entItem.AltHtmlUri is not null)
+            {
+                //entItem.AltHtmlUriBaseUri = new Uri(entItem.AltHtmlUri.GetLeftPart(UriPartial.Authority));
+                string baseStr = entItem.AltHtmlUri.GetLeftPart(UriPartial.Path);
+                // Ensure it ends with exactly one trailing slash
+                entItem.ContentBaseUri = new Uri(baseStr.EndsWith('/') ? baseStr : baseStr + "/");
+            }
+            else
+            {
                 entItem.ContentBaseUri = baseUri;
             }
         }
@@ -2144,10 +2187,22 @@ internal sealed partial class FeedClientService : BaseClient, IFeedClientService
 
             // TODO: if xhtml, use innerXML
             entItem.Content = cont.InnerText;
-
+            /*
             if ((entItem.ContentType == EntryItem.ContentTypes.textHtml) || (entItem.ContentType == EntryItem.ContentTypes.unknown) || entItem.ContentType == EntryItem.ContentTypes.markdown)
             {
                 // TODO: if content element has a baseuri attribute, use it instead.
+                entItem.ContentBaseUri = baseUri;
+            }
+            */
+            if (entItem.AltHtmlUri is not null)
+            {
+                //entItem.AltHtmlUriBaseUri = new Uri(entItem.AltHtmlUri.GetLeftPart(UriPartial.Authority));
+                string baseStr = entItem.AltHtmlUri.GetLeftPart(UriPartial.Path);
+                // Ensure it ends with exactly one trailing slash
+                entItem.ContentBaseUri = new Uri(baseStr.EndsWith('/') ? baseStr : baseStr + "/");
+            }
+            else
+            {
                 entItem.ContentBaseUri = baseUri;
             }
         }
