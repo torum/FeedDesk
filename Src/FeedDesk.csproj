@@ -17,9 +17,9 @@
 		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-		<VersionPrefix>1.2.1.0</VersionPrefix>
-		<FileVersion>1.2.1.0</FileVersion>
-		<AssemblyVersion>1.2.1.0</AssemblyVersion>
+		<VersionPrefix>1.2.2.0</VersionPrefix>
+		<FileVersion>1.2.2.0</FileVersion>
+		<AssemblyVersion>1.2.2.0</AssemblyVersion>
 
 		<!-- Workaround for MS bug: https://github.com/microsoft/WindowsAppSDK/issues/5817 -->
 		<AppxFilterOutUnusedLanguagesResourceFileMaps>false</AppxFilterOutUnusedLanguagesResourceFileMaps>

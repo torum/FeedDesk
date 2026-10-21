@@ -18,7 +18,7 @@ dotnet publish FeedDesk.csproj /p:Configuration=Release /p:PlatformTarget=ARM64 
 ---
 
 
-Should be .msixupload files in AppPackages folder.
+Should be .msixupload files in AppPackages folder. If not, select a *.msix file and a *.appxsym (not a foloder) and zip themand rename it to *.msixupload.
 
 
 FeedDesk_1.1.1.0_x64.msixupload
