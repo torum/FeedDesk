@@ -31,8 +31,8 @@ public partial class App
     private static readonly string AppDeveloper = "torum";
     private static readonly string EnvDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
     public static readonly string AppName = "FeedDesk";//_resourceLoader.GetString("AppName");
-    public static string AppDataFolder { get; } = EnvDataFolder + Path.DirectorySeparatorChar + AppDeveloper + Path.DirectorySeparatorChar + AppName;
-    public static string AppConfigFilePath { get; } = Path.Combine(AppDataFolder, AppName + ".config");
+    public static string AppDataFolder { get; private set; } = System.IO.Path.Combine(System.IO.Path.Combine(EnvDataFolder, AppDeveloper), AppName);//EnvDataFolder + Path.DirectorySeparatorChar + AppDeveloper + Path.DirectorySeparatorChar + AppName;
+    public static string AppConfigFilePath { get; private set; } = Path.Combine(AppDataFolder, AppName + ".config");
     private readonly CancellationTokenSource _cts = new();
     public CancellationTokenSource AppCancellationToken => _cts;
     // ErrorLog
@@ -105,6 +105,15 @@ public partial class App
     public App()
     {
         CurrentDispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+        
+        if (RuntimeHelper.IsMSIX)
+        {
+            //var envDataFolder = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+            //AppDataFolder = System.IO.Path.Combine(System.IO.Path.Combine(envDataFolder, AppDeveloper), AppName); // Ops. should have been this...
+            AppConfigFilePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
+            //AppConfigFilePath = Path.Combine(AppDataFolder, App.AppName + ".config");// Ops. should have been this...
+        }
 
         // Only works in packaged environment.
         //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en-US";
@@ -210,12 +219,14 @@ public partial class App
             }
 
             var configurationService = GetService<IConfigurationService>();
+            /*
             var filePath = App.AppConfigFilePath;
             if (RuntimeHelper.IsMSIX)
             {
                 filePath = Path.Combine(ApplicationData.Current.LocalFolder.Path, App.AppName + ".config");
             }
-            configurationService.Initialize(filePath);
+            */
+            configurationService.Initialize(AppConfigFilePath);
             await configurationService.LoadConfigurationAsync();
 
             _appHostStartTask = StartAppHostAsync();

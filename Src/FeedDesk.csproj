@@ -162,6 +162,7 @@
 		<IncludeSymbols>False</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
 		<Optimize>True</Optimize>

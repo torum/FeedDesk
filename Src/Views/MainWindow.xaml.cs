@@ -26,7 +26,7 @@ public sealed partial class MainWindow : Window
     private int _winRestoreLeft = 100;
 
     //private readonly UISettings settings;
-    private ElementTheme theme = ElementTheme.Default;
+    private ElementTheme _theme = ElementTheme.Default;
 
     private readonly MainViewModel _vm;
 
@@ -53,7 +53,7 @@ public sealed partial class MainWindow : Window
         this.Content = shell;
 
         // It is necessary to set theme here after the content is set.
-        shell.RequestedTheme = theme;
+        shell.RequestedTheme = _theme;
 
         // Don't do this. This right here interfear the color change in active state change.
         //SetCapitionButtonColorForWin11();
@@ -370,7 +370,7 @@ public sealed partial class MainWindow : Window
                 _vm.IsBackdropEnabled = true;
             }
 
-            theme = ElementTheme.Default;
+            _theme = ElementTheme.Default;
 
             return;
         }
@@ -458,7 +458,7 @@ public sealed partial class MainWindow : Window
         // Apply theme and backdrop
         if (config.SystemBackdrop != SystemBackdropOption.None)
         {
-            theme = config.Theme;
+            _theme = config.Theme;
             _vm.Theme = config.Theme;
         }
         _vm.Material = config.SystemBackdrop;
@@ -517,10 +517,10 @@ public sealed partial class MainWindow : Window
             vm.Material = SystemBackdropOption.None;
             vm.IsBackdropEnabled = false;
             vm.Theme = ElementTheme.Default;
-            theme = ElementTheme.Default;
+            _theme = ElementTheme.Default;
             if (this.Content is ShellPage root)
             {
-                root.RequestedTheme = theme;
+                root.RequestedTheme = _theme;
 
                 //TitleBarHelper.UpdateTitleBar(theme, this);
                 //SetCapitionButtonColorForWin11();

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using WinRT;
 
@@ -398,5 +399,6 @@ internal sealed partial class MainPage : Page
             DetailsContentStackPanel.Width = double.NaN;
             DetailsContentStackPanel.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
+
     }
 }
