@@ -281,13 +281,13 @@ internal sealed partial class MainPage : Page
 
     private void LeftPane_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        // save the width when closed.
+        // Save the width when closed.
         ViewModel.WidthLeftPane = LeftPaneGridColumn.ActualWidth;
     }
 
     private void ListViewPane_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        // save the width when closed.
+        // Save the width when closed.
         //ViewModel.WidthDetailPane = col2.ActualWidth;
         ViewModel.WidthListViewPane = col1.ActualWidth;
     }
@@ -398,7 +398,15 @@ internal sealed partial class MainPage : Page
         {
             DetailsContentStackPanel.Width = double.NaN;
             DetailsContentStackPanel.HorizontalAlignment = HorizontalAlignment.Stretch;
-        }
 
+        }
+    }
+
+    private void ContentArea_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if ((col1.ActualWidth > 256) && (col2.ActualWidth == 256) && ContentArea.ActualWidth > 512)
+        {
+            col1.Width = new GridLength(256, GridUnitType.Pixel);
+        }
     }
 }
