@@ -257,6 +257,8 @@ public sealed partial class MainWindow : Window
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
+        //_vm.WindowActualWidth = this.AppWindow.Size.Width;
+
         // Ensure that the restore position and sizes are updated when the window is activated, especially after being minimized or restored.
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
         if (appWindow == null)
@@ -283,6 +285,8 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
+
+        //_vm.WindowActualWidth = sender.Size.Width;
 
         //Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
         if (sender == null)
@@ -468,8 +472,7 @@ public sealed partial class MainWindow : Window
 
     public void SwitchBackdrop(SystemBackdropOption backdrop)
     {
-        var vm = App.GetService<MainViewModel>();
-
+        
         if (backdrop == SystemBackdropOption.Mica)
         {
             if (MicaController.IsSupported())
@@ -478,10 +481,10 @@ public sealed partial class MainWindow : Window
                 {
                     Kind = MicaKind.Base
                 };
-                vm.Material = SystemBackdropOption.Mica;
+                _vm.Material = SystemBackdropOption.Mica;
                 //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
 
-                vm.IsBackdropEnabled = true;
+                _vm.IsBackdropEnabled = true;
             }
         }
         else if (backdrop == SystemBackdropOption.MicaAlt)
@@ -492,10 +495,10 @@ public sealed partial class MainWindow : Window
                 {
                     Kind = MicaKind.BaseAlt
                 };
-                vm.Material = SystemBackdropOption.MicaAlt;
+                _vm.Material = SystemBackdropOption.MicaAlt;
                 //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
 
-                vm.IsBackdropEnabled = true;
+                _vm.IsBackdropEnabled = true;
             }
         }
         else if (backdrop == SystemBackdropOption.Acrylic)
@@ -504,19 +507,19 @@ public sealed partial class MainWindow : Window
             {
                 this.SystemBackdrop = new DesktopAcrylicBackdrop();
 
-                vm.Material = SystemBackdropOption.Acrylic;
+                _vm.Material = SystemBackdropOption.Acrylic;
                 //TitleBarHelper.UpdateTitleBar(Theme, App.MainWnd);
 
-                vm.IsBackdropEnabled = true;
+                _vm.IsBackdropEnabled = true;
             }
         }
         else if (backdrop == SystemBackdropOption.None)
         {
             this.SystemBackdrop = null;
 
-            vm.Material = SystemBackdropOption.None;
-            vm.IsBackdropEnabled = false;
-            vm.Theme = ElementTheme.Default;
+            _vm.Material = SystemBackdropOption.None;
+            _vm.IsBackdropEnabled = false;
+            _vm.Theme = ElementTheme.Default;
             _theme = ElementTheme.Default;
             if (this.Content is ShellPage root)
             {
@@ -533,25 +536,26 @@ public sealed partial class MainWindow : Window
     [DynamicWindowsRuntimeCast(typeof(OverlappedPresenter))]
     private void Window_SizeChanged(object sender, WindowSizeChangedEventArgs args)
     {
+        //_vm.WindowActualWidth = args.Size.Width;
+
         Microsoft.UI.Windowing.AppWindow? appWindow = this.AppWindow;
-        if (appWindow != null)
+        if (appWindow == null || appWindow.Presenter is not OverlappedPresenter presenter)
         {
-            if (appWindow.Presenter is OverlappedPresenter presenter)
-            {
-                if (presenter.State == OverlappedPresenterState.Maximized)
-                {
-                }
-                else if (presenter.State == OverlappedPresenterState.Minimized)
-                {
-                }
-                else
-                {
-                    _winRestoreHeight = (int)appWindow.Size.Height;
-                    _winRestoreWidth = (int)appWindow.Size.Width;
-                    _winRestoreTop = (int)appWindow.Position.Y;
-                    _winRestoreLeft = (int)appWindow.Position.X;
-                }
-            }
+            return;
+        }
+
+        if (presenter.State == OverlappedPresenterState.Maximized)
+        {
+        }
+        else if (presenter.State == OverlappedPresenterState.Minimized)
+        {
+        }
+        else
+        {
+            _winRestoreHeight = (int)appWindow.Size.Height;
+            _winRestoreWidth = (int)appWindow.Size.Width;
+            _winRestoreTop = (int)appWindow.Position.Y;
+            _winRestoreLeft = (int)appWindow.Position.X;
         }
     }
 

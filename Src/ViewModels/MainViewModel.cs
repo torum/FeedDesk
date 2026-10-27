@@ -716,6 +716,8 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     [ObservableProperty]
     public partial double WidthListViewPane { get; set; } = 300;//256;
 
+    //public double WindowActualWidth {get; set;} = 780;
+
     #endregion
 
     #region == Setting ==
@@ -1060,6 +1062,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             feed.IsBusy = true;
             feed.Status = NodeFeed.DownloadStatus.Downloading;
             feed.ErrorDatabase = null;
+            EntryArchiveAllCommand.NotifyCanExecuteChanged();
         });
 
         try
@@ -1147,6 +1150,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             _dispatcherService.TryEnqueue(() =>
             {
                 feed.IsBusy = false;
+                // This may be too early (before loading new entries)
                 EntryArchiveAllCommand.NotifyCanExecuteChanged();
             });
         }
@@ -1594,6 +1598,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
             //Debug.WriteLine("Saving entries: " + feed.Name);
             feed.Status = NodeFeed.DownloadStatus.Saving;
             feed.IsBusy = true;
+            EntryArchiveAllCommand.NotifyCanExecuteChanged();
         });
 
         if (_cts.IsCancellationRequested)
@@ -2891,6 +2896,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                         return;
                     }
                     await LoadEntriesAsync(tvn, _ctsForSelectedTreeViewItem.Token);
+                    EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -3092,7 +3098,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
         if (SelectedTreeViewItem.IsBusy)
         {
-            //return false;
+            return false;
         }
 
         if (SelectedTreeViewItem.IsBusyChildrenCount > 0)

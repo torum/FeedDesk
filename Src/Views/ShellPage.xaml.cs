@@ -67,6 +67,9 @@ public sealed partial class ShellPage : Page
     private async void ShellPage_Loaded(object sender, RoutedEventArgs e)
     {
         Loaded -= ShellPage_Loaded;
+
+        await Task.Yield();
+
         try
         {
             await ViewModel.InitializeAsync();
