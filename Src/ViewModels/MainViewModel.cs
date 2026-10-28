@@ -8,17 +8,11 @@ using FeedDesk.Services.Contracts;
 using FeedDesk.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
 using Windows.ApplicationModel;
@@ -42,7 +36,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     private readonly IDataAccessService _dataAccessService;
     private readonly IOpmlService _opmlService;
     private readonly IDispatcherService _dispatcherService;
-    //private readonly IFeedRefreshService _feedRefreshService;
     private readonly IFeedTreePersistenceService _feedTreePersistenceService;
     private readonly IFeedClientService _feedClientService;
 
@@ -59,7 +52,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         _fileDialogService = fileDialogService;
         _dataAccessService = dataAccessService;
         _feedClientService = feedClientService;
-        //_feedRefreshService = feedRefreshService; , IFeedRefreshService feedRefreshService
         _opmlService = opmlService;
         _dispatcherService = dispatcherService;
         _feedTreePersistenceService = feedTreePersistenceService;
@@ -86,8 +78,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
 #if DEBUG
         //IsDebugWindowEnabled = true;
-#else
-        IsDebugWindowEnabled = false;
 #endif
     }
 
