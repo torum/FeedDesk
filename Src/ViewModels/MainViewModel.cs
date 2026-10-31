@@ -1012,10 +1012,12 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task<FeedRefreshResult> RefreshAsync(FeedRefreshRequest request, Func<FeedRefreshStage, Task> reportStageAsync, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
         await reportStageAsync(FeedRefreshStage.Downloading);
         cancellationToken.ThrowIfCancellationRequested();
 
         var fetchResult = await _feedClientService.GetEntries(request.EndPoint, request.FeedId, request.Etag, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var fetchedAt = DateTime.Now;
 
@@ -1023,23 +1025,13 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             return new FeedRefreshResult(fetchedAt, fetchResult, null);
         }
-        cancellationToken.ThrowIfCancellationRequested();
 
         await reportStageAsync(FeedRefreshStage.Saving);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var saveResult = await Task.Run(
-            () => _dataAccessService.InsertEntries(
-                fetchResult.Entries,
-                request.FeedId,
-                request.Name,
-                fetchResult.Title,
-                fetchResult.Description,
-                fetchResult.Updated,
-                fetchResult.HtmlUri),
-            cancellationToken);
-
+        var saveResult = await Task.Run(() => _dataAccessService.InsertEntries(fetchResult.Entries, request.FeedId, request.Name, fetchResult.Title, fetchResult.Description, fetchResult.Updated, fetchResult.HtmlUri), cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
+
         return new FeedRefreshResult(fetchedAt, fetchResult, saveResult);
     }
 
@@ -1059,8 +1051,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
             var request = new FeedRefreshRequest(feed.Id, feed.EndPoint, feed.Name, feed.Etag);
-            var result = await RefreshAsync(request,
-                stage => _dispatcherService.EnqueueAsync(() =>
+            var result = await RefreshAsync(request, stage => _dispatcherService.EnqueueAsync(() =>
                 {
                     feed.Status = stage switch
                     {
@@ -1068,9 +1059,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                         FeedRefreshStage.Saving => NodeFeed.DownloadStatus.Saving,
                         _ => throw new ArgumentOutOfRangeException(nameof(stage))
                     };
-                }),
-                cancellationToken);
-
+                }), cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
 
             await _dispatcherService.EnqueueAsync(() =>
@@ -1202,10 +1191,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         Debug.WriteLine($"[{DateTimeOffset.UtcNow:O}] Refresh task ID {completed.Id} IsFaulted; exception: {completed.Exception}");
                     }
-                },
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
             return task;
         }
@@ -1247,22 +1233,6 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
                         //await Task.Delay(100);
                     }));
-
-                    /*
-                    tasks.Add(Task.Run(async () =>
-                    {
-
-                        await RefreshFeedAsync(feed, _cts.Token);
-
-                        if (_cts.IsCancellationRequested)
-                        {
-                            return;
-                        }
-
-                        await Task.Delay(100);
-
-                    }, _cts.Token));
-                    */
                 }
             }
 
@@ -1418,17 +1388,21 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         return;
                     }
+
                     await dispatcher.EnqueueAsync(() =>
                     {
                         folder.IsBusy = false;
                         EntryArchiveAllCommand.NotifyCanExecuteChanged();
                     });
+
                     return;
                 }
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
+
                 //res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsInboxOnly), _cts.Token);
                 res = await Task.Run(() => _dataAccessService.SelectEntriesByFeedIds(tmpList, folder.IsInboxOnly), cancellationToken);
 
@@ -1440,8 +1414,8 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         folder.IsBusy = false;
                         EntryArchiveAllCommand.NotifyCanExecuteChanged();
-
                     });
+
                     return;
                 }
 
@@ -1451,6 +1425,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         return;
                     }
+
                     await dispatcher.EnqueueAsync(() =>
                     {
                         // show error
@@ -1483,6 +1458,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     nt.IsBusy = false;
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
                 });
+
                 return;
             }
             if (dispatcher is null)
@@ -1527,6 +1503,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     {
                         feed.IsPendingReload = false;
                     }
+
                     if (nt is NodeFolder folder)
                     {
                         folder.IsPendingReload = false;
@@ -3071,6 +3048,11 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
 
     private bool CanEntryArchiveAll()
     {
+        if (Root.IsBusy)
+        {
+            return false;
+        }
+
         if (SelectedTreeViewItem is null)
         {
             return false;
