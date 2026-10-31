@@ -17,7 +17,7 @@ internal sealed class DataAccessService : IDataAccessService
 {
     private readonly SqliteConnectionStringBuilder connectionStringBuilder = [];
 
-    private readonly ReaderWriterLockSlim _readerWriterLock = new();
+    //private readonly ReaderWriterLockSlim _readerWriterLock = new();
 
     public SqliteDataAccessResultWrapper InitializeDatabase(string dataBaseFilePath)
     {
@@ -254,7 +254,7 @@ internal sealed class DataAccessService : IDataAccessService
             return res;
         }
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -360,7 +360,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         //Debug.WriteLine(string.Format("{0} Entries Inserted to DB", res.AffectedCount.ToString()));
@@ -379,7 +379,7 @@ internal sealed class DataAccessService : IDataAccessService
             return res;
         }
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -466,7 +466,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         //Debug.WriteLine(string.Format("{0} feed Deleted from DB", res.AffectedCount));
@@ -485,7 +485,7 @@ internal sealed class DataAccessService : IDataAccessService
             return res;
         }
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -611,7 +611,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         //Debug.WriteLine(string.Format("{0} feed updated", res.AffectedCount.ToString()));
@@ -628,7 +628,7 @@ internal sealed class DataAccessService : IDataAccessService
             return res;
         }
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1053,7 +1053,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         //Debug.WriteLine(string.Format("{0} Entries Inserted to DB", res.AffectedCount.ToString()));
@@ -1686,7 +1686,8 @@ internal sealed class DataAccessService : IDataAccessService
         {
             return res;
         }
-        _readerWriterLock.EnterReadLock();
+        
+        //_readerWriterLock.EnterReadLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1712,7 +1713,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitReadLock();
+            //_readerWriterLock.ExitReadLock();
         }
         return res;
     }
@@ -1724,7 +1725,8 @@ internal sealed class DataAccessService : IDataAccessService
         {
             return res;
         }
-        _readerWriterLock.EnterReadLock();
+        
+        //_readerWriterLock.EnterReadLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1754,7 +1756,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitReadLock();
+            //_readerWriterLock.ExitReadLock();
         }
         return res;
     }
@@ -1791,7 +1793,7 @@ internal sealed class DataAccessService : IDataAccessService
         */
         //Debug.WriteLine(before + middle + after);
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1889,7 +1891,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         //Debug.WriteLine(string.Format("{0} Entries from {1} Updated as read in the DB", c.ToString(), feedId));
@@ -1907,7 +1909,7 @@ internal sealed class DataAccessService : IDataAccessService
             return res;
         }
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -1988,7 +1990,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
 
@@ -2010,7 +2012,8 @@ internal sealed class DataAccessService : IDataAccessService
         sql += string.Format("status = '{0}'", readStatus.ToString());
         sql += string.Format(" WHERE entry_id = '{0}'; ", entryId);
         */
-        _readerWriterLock.EnterWriteLock();
+        
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -2085,7 +2088,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         //Debug.WriteLine(string.Format("{0} Entries from {1} Updated as read in the DB", c.ToString(), feedId));
@@ -2138,7 +2141,7 @@ internal sealed class DataAccessService : IDataAccessService
         */
         //Debug.WriteLine(sqlDelEntries);
 
-        _readerWriterLock.EnterWriteLock();
+        //_readerWriterLock.EnterWriteLock();
         try
         {
             using var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -2226,7 +2229,7 @@ internal sealed class DataAccessService : IDataAccessService
         }
         finally
         {
-            _readerWriterLock.ExitWriteLock();
+            //_readerWriterLock.ExitWriteLock();
         }
 
         Debug.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0} Entries Deleted from DB", res.AffectedCount));
