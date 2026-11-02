@@ -154,6 +154,7 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     IsToggleInboxAppButtonEnabled = false;
                     Entries.Clear();
                     EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                    EntryArchiveReadCommand.NotifyCanExecuteChanged();
                     return;
                 }
 
@@ -208,15 +209,18 @@ public sealed partial class MainViewModel : ObservableRecipient, IDisposable
                     _ = ObserveBackgroundTaskAsync(LoadEntriesAsync(folder, selectionToken), "LoadEntriesAsync", selectionToken);
                 }
 
-                // notify at last.
-                EntryArchiveAllCommand.NotifyCanExecuteChanged();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"SelectedTreeViewItem: {ex.Message}");
                 (Application.Current as App)?.AppendErrorLog("SelectedTreeViewItem", ex.Message);
             }
-
+            finally
+            {
+                // notify at last.
+                EntryArchiveAllCommand.NotifyCanExecuteChanged();
+                EntryArchiveReadCommand.NotifyCanExecuteChanged();
+            }
         }
     }
 

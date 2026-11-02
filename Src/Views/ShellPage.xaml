@@ -8,6 +8,15 @@
     xmlns:helpers="using:FeedDesk.Helpers"
     NavigationCacheMode="Required"
     mc:Ignorable="d">
+    <Page.KeyboardAccelerators>
+        <KeyboardAccelerator Modifiers="Control,Shift" Key="A" Invoked="KeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Modifiers="Control" Key="N" Invoked="KeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Modifiers="Control,Shift" Key="N" Invoked="KeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Modifiers="Control" Key="R" Invoked="KeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Modifiers="Control" Key="E" Invoked="KeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Key="Delete" Invoked="KeyboardAccelerator_Invoked"/>
+        <KeyboardAccelerator Modifiers="Control" Key="O" Invoked="KeyboardAccelerator_Invoked"/>
+    </Page.KeyboardAccelerators>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
@@ -46,7 +55,8 @@
 
                                 <MenuFlyoutSubItem x:Uid="ShellMenuBarItem_File_New">
 
-                                    <MenuFlyoutItem x:Uid="ShellMenuBarItem_File_New_Feed" Command="{x:Bind ViewModel.FeedAddCommand}">
+                                    <MenuFlyoutItem x:Uid="ShellMenuBarItem_File_New_Feed" Command="{x:Bind ViewModel.FeedAddCommand}"
+                                                    KeyboardAcceleratorTextOverride="Ctrl+N">
                                         <MenuFlyoutItem.Icon>
                                             <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <PathIcon.Data>
@@ -54,12 +64,10 @@
                                                 </PathIcon.Data>
                                             </PathIcon>
                                         </MenuFlyoutItem.Icon>
-                                        <MenuFlyoutItem.KeyboardAccelerators>
-                                            <KeyboardAccelerator Modifiers="Control" Key="N"/>
-                                        </MenuFlyoutItem.KeyboardAccelerators>
                                     </MenuFlyoutItem>
 
-                                    <MenuFlyoutItem x:Uid="ShellMenuBarItem_File_New_Folder" Command="{x:Bind ViewModel.FolderAddCommand}">
+                                    <MenuFlyoutItem x:Uid="ShellMenuBarItem_File_New_Folder" Command="{x:Bind ViewModel.FolderAddCommand}"
+                                                    KeyboardAcceleratorTextOverride="Ctrl+Shift+N">
                                         <MenuFlyoutItem.Icon>
                                             <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <PathIcon.Data>
@@ -67,9 +75,6 @@
                                                 </PathIcon.Data>
                                             </PathIcon>
                                         </MenuFlyoutItem.Icon>
-                                        <MenuFlyoutItem.KeyboardAccelerators>
-                                            <KeyboardAccelerator Modifiers="Control" Key="L"/>
-                                        </MenuFlyoutItem.KeyboardAccelerators>
                                     </MenuFlyoutItem>
                                     
                                 </MenuFlyoutSubItem>
@@ -98,16 +103,14 @@
 
                                 <MenuFlyoutSeparator/>
 
-                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_File_Exit" Command="{x:Bind ViewModel.MenuFileExitCommand}">
+                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_File_Exit" Command="{x:Bind ViewModel.MenuFileExitCommand}"
+                                                KeyboardAcceleratorTextOverride="Menu+F4">
                                     <MenuFlyoutItem.Icon>
                                         <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <PathIcon.Data>
                                                 M13.46,12L19,17.54V19H17.54L12,13.46L6.46,19H5V17.54L10.54,12L5,6.46V5H6.46L12,10.54L17.54,5H19V6.46L13.46,12Z</PathIcon.Data>
                                         </PathIcon>
                                     </MenuFlyoutItem.Icon>
-                                    <MenuFlyoutItem.KeyboardAccelerators>
-                                        <KeyboardAccelerator Modifiers="Menu" Key="F4"/>
-                                    </MenuFlyoutItem.KeyboardAccelerators>
                                 </MenuFlyoutItem>
                                 
                             </MenuBarItem.Items>
@@ -119,7 +122,8 @@
                                 <KeyboardAccelerator Modifiers="Menu" Key="D"/>
                             </MenuBarItem.KeyboardAccelerators>
 
-                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_RefreshAll" Command="{x:Bind ViewModel.FeedRefreshAllCommand}">
+                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_RefreshAll" Command="{x:Bind ViewModel.FeedRefreshAllCommand}"
+                                            KeyboardAcceleratorTextOverride="Ctrl+R">
                                 <MenuFlyoutItem.Icon>
                                     <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <PathIcon.Data>
@@ -127,9 +131,6 @@
                                         </PathIcon.Data>
                                     </PathIcon>
                                 </MenuFlyoutItem.Icon>
-                                <MenuFlyoutItem.KeyboardAccelerators>
-                                    <KeyboardAccelerator Modifiers="Control" Key="R"/>
-                                </MenuFlyoutItem.KeyboardAccelerators>
                             </MenuFlyoutItem>
 
                             <MenuFlyoutSeparator/>
@@ -146,7 +147,8 @@
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
 
-                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_Edit" Command="{x:Bind ViewModel.NodeEditCommand}">
+                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_Edit" Command="{x:Bind ViewModel.NodeEditCommand}"
+                                                KeyboardAcceleratorTextOverride="Ctrl+E">
                                     <MenuFlyoutItem.Icon>
                                         <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <PathIcon.Data>
@@ -154,14 +156,12 @@
                                             </PathIcon.Data>
                                         </PathIcon>
                                     </MenuFlyoutItem.Icon>
-                                    <MenuFlyoutItem.KeyboardAccelerators>
-                                        <KeyboardAccelerator Modifiers="Control" Key="E"/>
-                                    </MenuFlyoutItem.KeyboardAccelerators>
                                 </MenuFlyoutItem>
 
                                 <MenuFlyoutSeparator/>
 
-                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_Remove" Command="{x:Bind ViewModel.NodeRemoveCommand}">
+                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_SlectedFeed_Remove" Command="{x:Bind ViewModel.NodeRemoveCommand}"
+                                                KeyboardAcceleratorTextOverride="Delete">
                                     <MenuFlyoutItem.Icon>
                                         <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <PathIcon.Data>
@@ -169,9 +169,6 @@
                                             </PathIcon.Data>
                                         </PathIcon>
                                     </MenuFlyoutItem.Icon>
-                                    <MenuFlyoutItem.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Delete"/>
-                                    </MenuFlyoutItem.KeyboardAccelerators>
                                 </MenuFlyoutItem>
 
                             </MenuFlyoutSubItem>
@@ -213,7 +210,8 @@
                                 </MenuFlyoutItem.KeyboardAccelerators>
                             </MenuFlyoutItem>
 
-                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_ArchiveRead" Command="{x:Bind ViewModel.EntryArchiveReadCommand}">
+                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_ArchiveRead" Command="{x:Bind ViewModel.EntryArchiveReadCommand}"
+                                KeyboardAcceleratorTextOverride="Ctrl+Shift+A">
                                 <MenuFlyoutItem.Icon>
                                     <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <PathIcon.Data>
@@ -221,9 +219,6 @@
                                         </PathIcon.Data>
                                     </PathIcon>
                                 </MenuFlyoutItem.Icon>
-                                <MenuFlyoutItem.KeyboardAccelerators>
-                                    <KeyboardAccelerator Modifiers="Control,Shift" Key="A"/>
-                                </MenuFlyoutItem.KeyboardAccelerators>
                             </MenuFlyoutItem>
 
                             <MenuFlyoutSubItem x:Uid="ShellMenuBarItem_Entry_View">
@@ -253,7 +248,8 @@
 
                             <MenuFlyoutSubItem x:Uid="ShellMenuBarItem_Entry_SlectedEntry">
 
-                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_SlectedEntry_Open" Command="{x:Bind ViewModel.EntryViewExternalCommand}">
+                                <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_SlectedEntry_Open" Command="{x:Bind ViewModel.EntryViewExternalCommand}"
+                                                KeyboardAcceleratorTextOverride="Ctrl+O">
                                     <MenuFlyoutItem.Icon>
                                         <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <PathIcon.Data>
@@ -261,9 +257,6 @@
                                             </PathIcon.Data>
                                         </PathIcon>
                                     </MenuFlyoutItem.Icon>
-                                    <MenuFlyoutItem.KeyboardAccelerators>
-                                        <KeyboardAccelerator Modifiers="Control" Key="O"/>
-                                    </MenuFlyoutItem.KeyboardAccelerators>
                                 </MenuFlyoutItem>
 
                                 <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_SlectedEntry_CopyURL" Command="{x:Bind ViewModel.EntryCopyUrlCommand}">

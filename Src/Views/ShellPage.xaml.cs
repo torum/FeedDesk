@@ -2,8 +2,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using WinRT;
 using System;
+using Windows.System;
+using WinRT;
 
 namespace FeedDesk.Views;
 
@@ -87,5 +88,95 @@ public sealed partial class ShellPage : Page
         _mainWindow?.Activated -= MainWindow_Activated;
 
         this.ActualThemeChanged -= this.This_ActualThemeChanged;
+    }
+
+    private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+    {
+        VirtualKeyModifiers modifiers = args.KeyboardAccelerator.Modifiers;
+
+        bool isControlPressed = modifiers.HasFlag(VirtualKeyModifiers.Control);
+        bool isShiftPressed = modifiers.HasFlag(VirtualKeyModifiers.Shift);
+        bool isAltPressed = modifiers.HasFlag(VirtualKeyModifiers.Menu); // Note: Alt maps to 'Menu'
+
+        bool isAKeyPressed = args.KeyboardAccelerator.Key == VirtualKey.A;
+
+        if (isControlPressed && isShiftPressed && isAKeyPressed)
+        {
+            if (ViewModel.EntryArchiveReadCommand.CanExecute(null))
+            {
+                ViewModel.EntryArchiveReadCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
+
+        bool isNKeyPressed = args.KeyboardAccelerator.Key == VirtualKey.N;
+
+        if (isControlPressed && isShiftPressed && isNKeyPressed)
+        {
+            if (ViewModel.FolderAddCommand.CanExecute(null))
+            {
+                ViewModel.FolderAddCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
+        else if (isControlPressed && isNKeyPressed)
+        {
+            if (ViewModel.FeedAddCommand.CanExecute(null))
+            {
+                ViewModel.FeedAddCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
+
+        bool isRKeyPressed = args.KeyboardAccelerator.Key == VirtualKey.R;
+
+        if (isControlPressed && isRKeyPressed)
+        {
+            if (ViewModel.FeedRefreshAllCommand.CanExecute(null))
+            {
+                ViewModel.FeedRefreshAllCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
+
+        bool isEKeyPressed = args.KeyboardAccelerator.Key == VirtualKey.E;
+
+        if (isControlPressed && isEKeyPressed)
+        {
+            if (ViewModel.NodeEditCommand.CanExecute(null))
+            {
+                ViewModel.NodeEditCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
+
+        bool isDelKeyPressed = args.KeyboardAccelerator.Key == VirtualKey.Delete;
+
+        if (isDelKeyPressed && (!isControlPressed && !isShiftPressed && !isAltPressed))
+        {
+            if (ViewModel.NodeRemoveCommand.CanExecute(null))
+            {
+                ViewModel.NodeRemoveCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
+
+        bool isOKeyPressed = args.KeyboardAccelerator.Key == VirtualKey.O;
+
+        if (isControlPressed && isOKeyPressed)
+        {
+            if (ViewModel.EntryViewExternalCommand.CanExecute(null))
+            {
+                ViewModel.EntryViewExternalCommand.Execute(null);
+            }
+            args.Handled = true;
+            return;
+        }
     }
 }
