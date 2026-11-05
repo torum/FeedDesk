@@ -6,6 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:animatedvisuals="using:Microsoft.UI.Xaml.Controls.AnimatedVisuals"
     xmlns:helpers="using:FeedDesk.Helpers"
+    KeyboardAcceleratorPlacementMode="Hidden"
     NavigationCacheMode="Required"
     mc:Ignorable="d">
     <Page.KeyboardAccelerators>
@@ -173,23 +174,6 @@
 
                             </MenuFlyoutSubItem>
 
-                            <!--
-                            <MenuFlyoutSeparator/>
-
-                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Feed_Focus" Command="{x:Bind MainViewModel.SetFocusTreeViewCommand}" Visibility="Collapsed">
-                                <MenuFlyoutItem.Icon>
-                                    <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <PathIcon.Data>
-                                            M19,10H17V8H19M19,13H17V11H19M16,10H14V8H16M16,13H14V11H16M16,17H8V15H16M7,10H5V8H7M7,13H5V11H7M8,11H10V13H8M8,8H10V10H8M11,11H13V13H11M11,8H13V10H11M20,5H4C2.89,5 2,5.89 2,7V17A2,2 0 0,0 4,19H20A2,2 0 0,0 22,17V7C22,5.89 21.1,5 20,5Z</PathIcon.Data>
-                                    </PathIcon>
-                                </MenuFlyoutItem.Icon>
-                                <MenuFlyoutItem.KeyboardAccelerators>
-                                    <KeyboardAccelerator Modifiers="Control" Key="Number0"/>
-                                    <KeyboardAccelerator Modifiers="Control" Key="NumberPad0"/>
-                                </MenuFlyoutItem.KeyboardAccelerators>
-                            </MenuFlyoutItem>
-                            -->
-                            
                         </MenuBarItem>
 
                         <MenuBarItem x:Uid="ShellMenuBarItem_Entry">
@@ -271,30 +255,7 @@
 
                             </MenuFlyoutSubItem>
 
-                            <!--
-                            <MenuFlyoutSeparator/>
-
-                            <MenuFlyoutItem x:Uid="ShellMenuBarItem_Entry_Focus" Command="{x:Bind MainViewModel.SetFocusListViewCommand}" Visibility="Collapsed">
-                                <MenuFlyoutItem.Icon>
-                                    <PathIcon Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <PathIcon.Data>
-                                            M19,10H17V8H19M19,13H17V11H19M16,10H14V8H16M16,13H14V11H16M16,17H8V15H16M7,10H5V8H7M7,13H5V11H7M8,11H10V13H8M8,8H10V10H8M11,11H13V13H11M11,8H13V10H11M20,5H4C2.89,5 2,5.89 2,7V17A2,2 0 0,0 4,19H20A2,2 0 0,0 22,17V7C22,5.89 21.1,5 20,5Z</PathIcon.Data>
-                                    </PathIcon>
-                                </MenuFlyoutItem.Icon>
-                                <MenuFlyoutItem.KeyboardAccelerators>
-                                    <KeyboardAccelerator Modifiers="Control" Key="Number1"/>
-                                    <KeyboardAccelerator Modifiers="Control" Key="NumberPad1"/>
-                                </MenuFlyoutItem.KeyboardAccelerators>
-                            </MenuFlyoutItem>
-                            -->
-
                         </MenuBarItem>
-
-                        <!--
-                        <MenuBarItem x:Uid="ShellMenuBarItem_View" Visibility="Collapsed">
-
-                        </MenuBarItem>
-                        -->
 
                         <MenuBarItem x:Uid="ShellMenuBarItem_Tool" Visibility="Collapsed">
                             <MenuBarItem.KeyboardAccelerators>
@@ -366,63 +327,5 @@
 
         </Grid>
         
-        <!--
-        <NavigationView
-                         Canvas.ZIndex="0"
-                         Margin="0,0,0,0"
-            x:Name="NavigationViewControl"
-             SelectedItem="{x:Bind ViewModel.Selected, Mode=OneWay}" 
-                        IsBackEnabled="{x:Bind ViewModel.IsBackEnabled, Mode=OneWay}"
-            IsTitleBarAutoPaddingEnabled="True"
-            IsBackButtonVisible="Collapsed"
-            IsPaneToggleButtonVisible="True"
-            IsSettingsVisible="True"
-            PaneDisplayMode="Left"
-            ExpandedModeThresholdWidth="1280"
-            OpenPaneLength ="180"
-            IsPaneOpen="False"
-                        
-            DisplayModeChanged="NavigationViewControl_DisplayModeChanged"
-            ItemInvoked="NavigationViewControl_ItemInvoked"
-            Loaded="NavigationViewControl_Loaded">
-
-            <NavigationView.MenuItems>
-
-                <NavigationViewItem x:Uid="ShellNavigationItem_Feeds" helpers:NavigationHelper.NavigateTo="XmlClients.ViewModels.FeedViewModel">
-                    <NavigationViewItem.Icon>
-                        <IconSourceElement>
-                            <IconSourceElement.IconSource>
-                                <PathIconSource>
-                                    <PathIconSource.Data>
-                                        M6.18,15.64A2.18,2.18 0 0,1 8.36,17.82C8.36,19 7.38,20 6.18,20C5,20 4,19 4,17.82A2.18,2.18 0 0,1 6.18,15.64M4,4.44A15.56,15.56 0 0,1 19.56,20H16.73A12.73,12.73 0 0,0 4,7.27V4.44M4,10.1A9.9,9.9 0 0,1 13.9,20H11.07A7.07,7.07 0 0,0 4,12.93V10.1Z</PathIconSource.Data>
-                                </PathIconSource>
-                            </IconSourceElement.IconSource>
-                        </IconSourceElement>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
-                <NavigationViewItem x:Uid="ShellNavigationItem_Blogs">
-                    <NavigationViewItem.Icon>
-                        <IconSourceElement>
-                            <IconSourceElement.IconSource>
-                                <PathIconSource>
-                                    <PathIconSource.Data>
-                                        M16.84,2.73C16.45,2.73 16.07,2.88 15.77,3.17L13.65,5.29L18.95,10.6L21.07,8.5C21.67,7.89 21.67,6.94 21.07,6.36L17.9,3.17C17.6,2.88 17.22,2.73 16.84,2.73M12.94,6L4.84,14.11L7.4,14.39L7.58,16.68L9.86,16.85L10.15,19.41L18.25,11.3M4.25,15.04L2.5,21.73L9.2,19.94L8.96,17.78L6.65,17.61L6.47,15.29
-                                    </PathIconSource.Data>
-                                </PathIconSource>
-                            </IconSourceElement.IconSource>
-                        </IconSourceElement>
-                       
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                
-            </NavigationView.MenuItems>
-
-            <Grid Margin="0,29,0,0">
-                <Frame x:Name="NavigationFrame" NavigationFailed="NavigationFrame_NavigationFailed"/>
-            </Grid>
-
-        </NavigationView>
-        -->
     </Grid>
 </Page>
