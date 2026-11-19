@@ -9,6 +9,7 @@
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
 		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
 		<UseWinUI>true</UseWinUI>
+		<Features>runtime-async=on</Features>
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<Nullable>enable</Nullable>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
@@ -98,10 +99,10 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.WindowsAppSDK.Foundation" Version="2.6.5" />
-		<PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.6.5" />
-		<PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.6.5" />
-		<PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.5" />
+		<PackageReference Include="Microsoft.WindowsAppSDK.Foundation" Version="2.7.0" />
+		<PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.7.0" />
+		<PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.7.0" />
+		<PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.7.0" />
 		<PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
 		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />	
 	</ItemGroup>
@@ -140,14 +141,13 @@
 		<PublishTrimmed>false</PublishTrimmed>
 		-->
 		
-		<!-- for store submission, needs to be set to true
+		<!-- for store submission, needs to be set to true 
 		<PublishAot>true</PublishAot>
 		<PublishTrimmed>True</PublishTrimmed>
 		<PublishSingleFile>false</PublishSingleFile>
 		<NativeDebugSymbols>true</NativeDebugSymbols>
 		<StripSymbols>false</StripSymbols>
-		<DebugType>full</DebugType>
-	   -->
+		<DebugType>full</DebugType>-->
 
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ApplicationIcon>Icons\FeedDesk3.ico</ApplicationIcon>
@@ -159,7 +159,7 @@
 		<GenerateTestArtifacts>True</GenerateTestArtifacts>
 		<AppxBundle>Never</AppxBundle>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-		<IncludeSymbols>False</IncludeSymbols>
+		<IncludeSymbols>True</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
